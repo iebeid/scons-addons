@@ -66,9 +66,12 @@ config_script_contents = ""
 class InstallableFile:
    """ Class to wrap any installable file.  ex. progs, libs, headers, docs, etc """
    def __init__(self, fileNode, prefix=""):
+      """ fileNode - The scons node for the file.
+          prefix - The prefix to use for the file (munus the package/bundle prefix)
+      """
       assert isinstance(fileNode, SCons.Node.Node), "Installable file called with non file node: [%s]"%str(fileNode)
-      self.fileNode = fileNode         # The scons node for the file
-      self.prefix = prefix             # The prefix to use for the file (minus the package/bundle prefix)
+      self.fileNode = fileNode
+      self.prefix = prefix
 
    def __str__(self):
       """ an installable file's string representation is its prefix/name."""
@@ -86,83 +89,99 @@ class InstallableFile:
    
 class Header(InstallableFile):
    """ This class is meant to wrap a header file to install. """
-   def __init__(self, fileNode, prefix=None):
+   def __init__(self, fileNode, prefix=""):
       InstallableFile.__init__(self, fileNode, prefix)
       
 
 class FileBundle:
    """ Wrapper class for a group of files to bundle together to install, archive, etc. 
 
-       This class provides a method to hold a group of files together with their destination structure
-       information.  Then it can be used to call install builders to setup an install where needed.
+       This class provides a method to hold a group of files together with their destination 
+       structure information.  Then it can be used to call install builders to setup an 
+       install where needed.
        
-       One area of note is prefix handling.  To allow maximum flexibility there are several used prefixes.
+       One area of note is prefix handling.  To allow maximum flexibility there are
+       several prefixes used.
        
-       The file bundle has a prefix (this is relative to the package prefix).
-       Each bundled file has a prefix (added when files is added).
+       When built, a prefix is passed as a base prefix (build_prefix)
+       The file bundle has a prefix (bundle_prefix).
+       Each bundled file has a prefix (file.prefix added when files is added).
        If path to the added file has a prefix it is added on as well.
        
-       Final file location: passed_prefix/self.prefix/added.prefix/file_prefix/file_name
+       Final file location: build.prefix/bundle.prefix/passed_prefix/file.prefix/file.name
    """
 
-   def __init__(self):
+   def __init__(self, bundlePrefix=""):
       """
       Construct file bundle object.
       """
       self.files = []                      # Installable files of class InstallableFile
+      self.bundlePrefix = bundlePrefix
+      self.built = False
 
    def addFiles(self, files, prefix = ""):
       """
-      Add these files to the list of installable files.  They will be installed as:
-      install.prefix/prefix/file_prefix. The list must come
-      in as strings as they are processed through File().
-      files - List of filenames (file nodes should also work)
+      Add these files to the list of installable files.
+      The list can either be string file names or File() nodes.
+      files - List of files to add to bundle.
       """
       if not SCons.Util.is_List(files):
          files = [files]
          
-      for fn in files:                                    # For all files
+      for f in files:                              # For all files
          local_dir_prefix = ""
-         if not isinstance(fn, SCons.Node.FS.Base):        # If we are a string filename, then get our local prefix
-            local_dir_prefix = os.path.dirname(fn)
-         f = InstallableFile( File(fn), pj(prefix, local_dir_prefix))   # Create new installable file
-         self.files.append(f)                       # Append it on
+         
+         # If we are a string filename:
+         # - get our local prefix
+         # - Create a file object to use
+         if not isinstance(f, SCons.Node.FS.Base):
+            local_dir_prefix = os.path.dirname(f)
+            f = File(f)
+         install_file = InstallableFile(f, pj(prefix, local_dir_prefix))
+         self.files.append(install_file)                       # Append it on
 
    def getFiles(self):
       return self.files
 
-   def buildInstall(self, env=None, prefix=""):
+   def buildInstall(self, env=None, installPrefix=""):
       """
       Calls install builder to setup the installation of the packaged files.
       Installs all files using the env environment under prefix.
-      NOTE: file is installed into: prefix/added.prefix/file.prefix
-
+      NOTE: file is installed into: installPrefix/bundle.prefix/passed_prefix/file.prefix/file.name
+      
       NOTE: Whatever the current directly is when this is called is the directory
       used for the builder command associated with this assembly.
       
       Returns list of the Install() targets.
       """
+      assert not self.built
+      self.built = True
       
       # Clone the base environment if we have one
       if env:
          env = env.Copy()
       else:
          env = Environment()
-
+      
       ret_targets = []
       
       # Install the files from the bundle
-      #print "FileBundle build Install:"
+      common_prefix = pj(installPrefix, self.bundlePrefix)
+      name = common_prefix
+      if hasattr(self,"name"):
+         name = self.name         
+      #print "FileBundle-[%s]: buildInstall: "%name
+      
       for f in self.files:
          fnode = f.getFileNode()
-         target_dir = path.join(prefix, f.getPrefix())
-         #print "   file:[", str(fnode), " target dir: (", prefix, ", ", f.getPrefix(), ")" # target_dir
+         target_dir = path.join(installPrefix, self.bundlePrefix, f.getPrefix())
+         #print "   file:[%s] --> target dir: [%s]"%(str(fnode),target_dir)
          inst_tgt = env.Install(target_dir, fnode)
          ret_targets.append(inst_tgt)
          
       return ret_targets
 
-         
+
 # ############################################################################ #
 #           ASSEMBLIES  
 # ############################################################################ #      
@@ -210,14 +229,15 @@ class _Assembly:
 
 class FileBundleAssembly(_Assembly):
    """ Wrapper class for a group of files to manage in an assembly for packaging. 
-
-       One area of note is prefix handling.  To allow maximum flexibility there are several used prefixes.
+       
+       One area of note is prefix handling.  To allow maximum flexibility there 
+       are several used prefixes.
        
        The file bundle has a prefix (this is relative to the package prefix).
        Each bundled file has a prefix (added when files is added).
        If path to the added file has a prefix it is added on as well.
        
-       Final file location: package.prefix/self.prefix/added.prefix/file_prefix/file_name
+       Final file location: package.prefix/filebundle.prefix/added.prefix/file.prefix/file_name
    """
 
    def __init__(self, pkg, baseEnv, prefix=""):
@@ -227,10 +247,11 @@ class FileBundleAssembly(_Assembly):
       pkg - The package this bundle is a part of
       baseEnv - The environment that this bundle should be included in
       """
+      print "WARNING: Usage of FileBundleAssembly is deprecated."
       _Assembly.__init__(self, pkg, baseEnv, prefix)
 
       self.files = []                      # Installable files of class InstallableFile
-      self.built = False;                  # Flag set once we have been built      
+      self.built = False                   # Flag set once we have been built      
 
    def addFiles(self, files, prefix = None):
       """
@@ -263,14 +284,14 @@ class FileBundleAssembly(_Assembly):
       used for the builder command associated with this assembly.
       """
       # Add files to the package file bundle
-      fb = self.package.getFileBundle()
+      fb = self.package.createFileBundle()
 
       for f in self.files:
          fnode = f.getFileNode()
          fb.addFiles(fnode, f.getPrefix())        
 
       self.built = True;         
-      
+
 
 
 class _CodeAssembly(_Assembly):
@@ -398,7 +419,7 @@ class Library(_CodeAssembly):
       Sets up the build dependencies and the install.
       """
 
-      fb = self.package.getFileBundle()
+      fb = self.package.createFileBundle()
 
       # Setup build and install for each built library
       # Use get_abspath() with fileNode so we get the path into the build_dir and not src dir
@@ -456,7 +477,7 @@ class Program(_CodeAssembly):
       prog = self.env.Program(self.fileNode, source = self.sources)
 
       # Add executable to file bundle
-      fb = self.package.getFileBundle()
+      fb = self.package.createFileBundle()
       fb.addFiles(prog, self.installPrefix)
       
       # Install the binary
@@ -490,7 +511,7 @@ class Package:
       self.name = name
       self.prefix = prefix
       self.assemblies = []
-      self.fileBundle = FileBundle()         # File bundle for all files
+      self.fileBundles = [FileBundle(),]     # File bundle for all files
       self.extra_dist = []
       self.description = description
       self.packagers = []
@@ -533,8 +554,8 @@ class Package:
    def getExtraDist(self):
       return self.extra_dist
    
-   def getFileBundle(self):
-      return self.fileBundle
+   def getFileBundles(self):
+      return self.fileBundles  
    
    def getEnv(self):
       " Get the common pakcage environment. "
@@ -602,6 +623,12 @@ class Package:
       bundle = FileBundleAssembly(pkg = self, baseEnv = baseEnv, prefix=prefix)
       self.assemblies.append(bundle)
       return bundle
+   
+   def createFileBundle(self, bundlePrefix=""):
+      """ Creates a new file bundle to use with this package. """
+      fb = FileBundle(bundlePrefix)
+      self.fileBundles.append(fb)
+      return fb   
    
    def createConfigAction(self, target, source, env):
       """ Called as action of config script builder """
@@ -717,8 +744,9 @@ class Package:
          if not assembly.isBuilt():
             assembly.build()
 
-      # Setup standard file bundle install and add alias to it
-      self.fileBundle.buildInstall(self.env, self.prefix)
+      # Build the file bundles for this package
+      for fb in self.fileBundles:
+         fb.buildInstall(self.env, self.prefix)
       #self.env.Alias('install', self.prefix)            
       
       # Setup all packagers
