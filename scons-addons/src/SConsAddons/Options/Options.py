@@ -108,7 +108,7 @@ class PackageOption(LocalUpdateOption):
     def __init__(self, name, key, help):
         LocalUpdateOption.__init__(self,name,key,help)
         
-    def isAvailable():
+    def isAvailable(self):
         " Return true if the package is available "
         return False
 
