@@ -97,7 +97,7 @@ class _Assembly:
       environment.
       """
       self.data = {}
-      self.data['name']          = name
+      self.data['name']          = File(name)
       self.data['sources']       = []
       self.data['includes']      = []
       self.data['libs']          = []
@@ -128,8 +128,6 @@ class _Assembly:
       """
       hdrs = map(lambda n: Header(n,prefix), map(File, headers))
       self.data['headers'].extend(hdrs)
-#      for h in hdrs:
-#         self.data['headers'].extend([[prefix, h]])
 
    def addIncludes(self, includes):
       """
@@ -220,7 +218,11 @@ class SharedLibrary(_Library):
       """
       Creates a new shared library builder for a library of the given name.
       """
-      _Library.__init__(self, name, baseEnv, SCons.Defaults.SharedLibrary)
+      # work around bug in SCons 0.09
+      lib_name = path.join(path.dirname(str(name)),
+                           baseEnv['SHLIBPREFIX'] + path.basename(str(name)) + baseEnv['SHLIBSUFFIX'])
+
+      _Library.__init__(self, lib_name, baseEnv, SCons.Defaults.SharedLibrary)
 
 
 class StaticLibrary(_Library):
@@ -233,7 +235,11 @@ class StaticLibrary(_Library):
       """
       Creates a new static library builder for a library of the given name.
       """
-      _Library.__init__(self, name, baseEnv, SCons.Defaults.StaticLibrary)
+      # work around bug in SCons 0.09
+      lib_name = path.join(path.dirname(str(name)),
+                           baseEnv['LIBPREFIX'] + path.basename(str(name)) + baseEnv['LIBSUFFIX'])
+
+      _Library.__init__(self, lib_name, baseEnv, SCons.Defaults.StaticLibrary)
 
 
 class Program(_Assembly):
