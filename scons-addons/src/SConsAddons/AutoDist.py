@@ -612,13 +612,17 @@ class Package:
       if value_dict["extraCflags"] != None:
          cflags = cflags + " " + value_dict["extraCflags"]
       lib_paths = [pj(self.prefix,'lib'),]
+      if value_dict["extraIncPaths"] != None:
+         cflags = cflags + " ".join([" -I"+l for l in value_dict["extraIncPaths"]])
       
       # Extend varDict with local settings
       varDict = {}
       if value_dict["varDict"] != None:
          varDict = value_dict["varDict"]
          
-      varDict["Libs"] = " ".join(["-L"+l for l in lib_paths]) + " " + " ".join(["-l"+l for l in lib_names])
+      varDict["Libs"] = " ".join(["-L"+l for l in lib_paths]) + " " + " ".join(["-L"+l for l in value_dict["extraLibPath"]]) + " " + " ".join(["-l"+l for l in lib_names])
+      if value_dict["extraLibs"]!=None:
+         varDict["Libs"] = varDict["Libs"] + " " + " ".join(["-l"+l for l in value_dict["extraLibs"]])
       varDict["Cflags"] = cflags
       varDict["Version"] = self.getFullVersion()
       varDict["Name"] = self.name
@@ -652,6 +656,7 @@ class Package:
       """ Adds a config script to the given package installation.
           varDict - Dictionary of extra variables to define.
       """
+
       if not self.env['BUILDERS'].has_key("PackageConfigScript"):
          cfg_builder = Builder(action = Action(self.createConfigAction,
                                         lambda t,s,e: "Create config script for %s package: %s"%(self.name, t[0])) )
