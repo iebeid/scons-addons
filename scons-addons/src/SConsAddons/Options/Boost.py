@@ -83,13 +83,15 @@ class Boost(SConsAddons.Options.PackageOption):
       
       # Map for extra libs needed for config test
       self.extraEnvOptions = {}
-      
+
+      # --- Build up settings using distutils.sysconfig to get Python build options --- #
       # distutils.sysconfig.get_config_vars()
+      self.python_version = distutils.sysconfig.get_python_version()    # ex: '2.3'
       self.python_inc_dir = distutils.sysconfig.get_python_inc()
       #python_link_share_flags = distutils.sysconfig.get_config_var('LINKFORSHARED')
       self.python_link_share_flags = "-Wl,-export-dynamic"
-      self.python_lib_path = "/usr/lib/python2.2/config"
-      self.python_extra_libs = ["python2.2", "util", "pthread"]
+      self.python_lib_path = distutils.sysconfig.get_python_lib(standard_lib=True) + "/config"
+      self.python_extra_libs = ["python"+self.python_version, "util", "pthread", "dl"]  # See SHLIBS
       
       
    def buildFullLibName(self, libname):
@@ -132,9 +134,11 @@ class Boost(SConsAddons.Options.PackageOption):
       # Find boost/version.hpp
       print "   searching for boost..."
       if env.Dictionary().has_key('CPPPATH'):
+         print "      Searching CPPPATH..."
          ver_header = env.FindFile(pj('boost','version.hpp'), env['CPPPATH'])
-         
-      if env.Dictionary().has_key('CPLUS_INCLUDE_PATH'):
+
+      if (None == ver_header) and env.Dictionary().has_key('CPLUS_INCLUDE_PATH'):
+         print "      Searching CPLUS_INCLUDE_PATH..."
          ver_header = SCons.Script.SConscript.FindFile(pj('boost', 'version.hpp'),
                                     string.split(env['ENV']['CPLUS_INCLUDE_PATH'], os.pathsep))
          
