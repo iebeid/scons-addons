@@ -700,7 +700,7 @@ class Package:
 
       # Setup standard file bundle install and add alias to it
       self.fileBundle.buildInstall(self.env, self.prefix)
-      self.env.Alias('install', self.prefix)            
+      #self.env.Alias('install', self.prefix)            
       
       # Setup all packagers
       for p in self.packagers:
