@@ -64,7 +64,7 @@ class Boost(SConsAddons.Options.PackageOption):
       # Map from library name to header to check for       
       self.headerMap = { 'python':'boost/python.hpp',
                          'thread':'boost/thread.hpp',
-                         'filesystem':'boost/filesystem/operations.hpp' }
+                         'filesystem':'boost/filesystem/path.hpp' }
       
       # Map for extra libs needed for config test
       self.extraEnvOptions = {}
