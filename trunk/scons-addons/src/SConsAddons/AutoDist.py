@@ -218,9 +218,8 @@ class SharedLibrary(_Library):
       """
       Creates a new shared library builder for a library of the given name.
       """
-      # work around bug in SCons 0.09
       lib_name = path.join(path.dirname(str(name)),
-                           baseEnv['SHLIBPREFIX'] + path.basename(str(name)) + baseEnv['SHLIBSUFFIX'])
+                           baseEnv.subst('${SHLIBPREFIX}') + path.basename(str(name)) + baseEnv.subst('${SHLIBSUFFIX}'))
 
       _Library.__init__(self, lib_name, baseEnv, SCons.Defaults.SharedLibrary)
 
@@ -235,9 +234,8 @@ class StaticLibrary(_Library):
       """
       Creates a new static library builder for a library of the given name.
       """
-      # work around bug in SCons 0.09
       lib_name = path.join(path.dirname(str(name)),
-                           baseEnv['LIBPREFIX'] + path.basename(str(name)) + baseEnv['LIBSUFFIX'])
+                           baseEnv.subst('${LIBPREFIX}') + path.basename(str(name)) + baseEnv.subst('${LIBSUFFIX}'))
 
       _Library.__init__(self, lib_name, baseEnv, SCons.Defaults.StaticLibrary)
 
@@ -251,6 +249,9 @@ class Program(_Assembly):
       """
       Creates a new program builder for a program of the given name.
       """
+      prog_name = path.join(path.dirname(str(name)),
+                            baseEnv.subst('${PROGPREFIX}') + path.basename(str(name)) + baseEnv.subst('${PROGSUFFIX}'))
+
       _Assembly.__init__(self, name, baseEnv)
 
    def _buildImpl(self):
