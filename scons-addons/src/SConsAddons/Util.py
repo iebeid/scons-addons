@@ -31,6 +31,7 @@ __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 import os
 import sys
 import re
+import string
 
 pj = os.path.join
 
@@ -109,5 +110,18 @@ class ConfigCmdParser:
          return ""
       return os.popen(self.config_cmd + " " + arg).read().strip()
    
-   
+def GetPlatform():
+   "Get a platform string"
+   if string.find(sys.platform, 'irix') != -1:
+      return 'irix'
+   elif string.find(sys.platform, 'linux') != -1:
+      return 'linux'
+   elif string.find(sys.platform, 'freebsd') != -1:
+      return 'linux'
+   elif string.find(sys.platform, 'cygwin') != -1:
+      return 'win32'
+   elif string.find(sys.platform, 'sun') != -1:
+      return 'sun'
+   else:
+      return sys.platform   
    
