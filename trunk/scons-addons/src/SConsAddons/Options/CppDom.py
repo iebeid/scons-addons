@@ -66,7 +66,7 @@ class CppDom(SConsAddons.Options.PackageOption):
       if self.required:
          sys.exit(0);
          
-   def isAvailable():
+   def isAvailable(self):
       return self.available
       
    def setInitial(self, optDict):
