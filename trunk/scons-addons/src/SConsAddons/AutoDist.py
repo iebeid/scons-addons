@@ -48,6 +48,8 @@ import SCons.Util
 import types
 import re
 import time
+import glob
+import shutil
 
 pj = os.path.join
 
@@ -793,7 +795,17 @@ class RpmPackager(Packager):
       rpmbuild_cmd = Action("rpmbuild -bb -v --define='_topdir %s' --define='_rpmdir %s' --buildroot=%s %s"%(topdir,topdir,buildroot,source[0]))
       rpmbuild_cmd(target, source, env)
       
-      # copy to the target location
+      # - copy to the target location
+      #   - Attempt to find the file and then copy it
+      #   - If not, then big warning
+      # Find rpm by looking in the target dir and searching for any matching rpm names in arch-based subdirs
+      matching_rpm = glob.glob(pj(topdir, '*', os.path.basename(str(target[0]))))
+      if len(matching_rpm) == 0:
+         print "ERROR: Can't find dist rpm for target:", str(target[0])
+      else:
+         print "Move: %s --> %s"%(matching_rpm[0], str(target[0]))
+         os.rename(matching_rpm[0], str(target[0]))
+      
       return None
 
    def makeDistRpm_print(self, target, source, env):
@@ -808,22 +820,25 @@ class RpmPackager(Packager):
       package_release = '1'
       package_name = self.package.getName()
       
-      # Setup the rpm file name (note this can change due to local user settings in rpmrc)
-      rpm_fn_base = "%s-%s-%s.%s.rpm"%(package_name, package_version, package_release, package_arch)
+      def specFileBuilder(target, source, env):
+         """ Quick builder for updating the spec file with the info about this package. """
+         spec_contents = source[0].get_contents()
+         spec_contents = spec_contents.replace('_SCONS_PACKAGE_NAME_',package_name)
+         spec_contents = spec_contents.replace('_SCONS_PACKAGE_VERSION_',package_version)
+         spec_contents = spec_contents.replace('_SCONS_PACKAGE_RELEASE_',package_release)
+         spec_filename_out = pj(target_rpm_dir, os.path.basename(self.specFile))
+         open(str(target[0]), 'wb').write(spec_contents)
       
-      rootname = "%s-%s-root"% (self.package.getName(), self.package.getFullVersion())
-      dist_name = "rpm"
-      build_root_dir = pj(dist_dir, dist_name, rootname)              # Path where we will put the build root to create the RPM
-      target_rpm_dir = pj(dist_dir, dist_name)                        # Path to throw the rpm output
+      # Setup the rpm file name (note this can change due to local user settings in rpmrc)
+      rpm_fn_base = "%s-%s-%s.%s.rpm"%(package_name, package_version, package_release, package_arch)      
+      rootname = "%s-%s-root"% (self.package.getName(), self.package.getFullVersion())       # Name of the build root to use with rpmbuild
+      dist_name = "rpm"                                                     # Name of the directory under dist to use
+      build_root_dir = os.path.abspath(pj(dist_dir, dist_name, rootname))   # Path of build root to create the RPM.  (abspath so rpmbuild will like it)
+      target_rpm_dir = pj(dist_dir, dist_name)                              # Path to throw the rpm output
       
       # Setup the spec file
-      spec_contents = open(self.specFile, 'rb').read()
-      print "spec contents:\n", spec_contents
-      spec_contents.replace('_SCONS_PACKAGE_NAME_',package_name)
-      spec_contents.replace('_SCONS_PACKAGE_VERSION_',package_version)
-      spec_contents.replace('_SCONS_PACKAGE_RELEASE_',package_release)
-      spec_filename_out = pj(target_rpm_dir, os.path.basename(self.specFile))
-      open(spec_filename_out, 'wb').write(spec_contents)
+      spec_filename_out = pj(target_rpm_dir, os.path.basename(self.specFile) + ".out")
+      spec_out_target = env.Command(spec_filename_out, self.specFile, specFileBuilder)
 
       # Explicitly install to the directory
       # Then create command to build dist from that directory with the install files and dependencies
