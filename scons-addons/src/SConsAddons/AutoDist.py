@@ -182,23 +182,26 @@ class _Library(_Assembly):
    meant to be private.
    """
 
-   def __init__(self, filename, baseEnv, builderName):
+   def __init__(self, filename, baseEnv, builderNames):
       """
       Creates a new library builder for a library of the given name.
       """
       _Assembly.__init__(self, filename, baseEnv)
-      self.builder_name = builderName
+      
+      if type(builderNames) is types.StringType:
+         self.builder_names = [ builderNames ]
+      else:
+         self.builder_names = builderNames
 
    def _buildImpl(self):
       """
       Sets up the build dependencies and the install.
       """
 
-      # Build rule
-      lib = self.data['env'].__dict__[self.builder_name](str(self.fileNode), self.data['sources'])
-
-      # Install the binary
-      self.data['env'].Install(path.join(Prefix(), 'lib'), lib)
+      # Setup build and install for each built library
+      for lib_builder in self.builder_names:
+         lib = self.data['env'].__dict__[lib_builder](str(self.fileNode), self.data['sources'])
+         self.data['env'].Install(path.join(Prefix(), 'lib'), lib)
 
       # Install the headers in the source list
       for h in self.data['headers']:
@@ -212,31 +215,26 @@ class _Library(_Assembly):
 
 
 class SharedLibrary(_Library):
-   """
-   This object knows how to build (and install) a shared library from a given
-   set of sources.
-   """
+   """ This object knows how to build & install a shared library from a set of sources. """
 
    def __init__(self, libname, baseEnv = None):
-      """
-      Creates a new shared library builder for a library of the given name.
-      """
+      """ Creates a new shared library builder for a library of the given name. """
       _Library.__init__(self, libname, baseEnv, 'SharedLibrary')
 
 
 class StaticLibrary(_Library):
-   """
-   This object knows how to build (and install) a static library from a given
-   set of sources.
-   """
+   """ This object knows how to build & install a static library from a set of sources """
 
    def __init__(self, libname, baseEnv = None):
-      """
-      Creates a new static library builder for a library of the given name.
-      """
-      #lib_name = path.join(path.dirname(str(name)),
-      #                     baseEnv.subst('${LIBPREFIX}') + path.basename(str(name)) + baseEnv.subst('${LIBSUFFIX}'))
+      """ Creates a new static library builder for a library of the given name. """
       _Library.__init__(self, libname, baseEnv, 'StaticLibrary')
+
+class StaticAndSharedLibrary(_Library):
+   """ This object knows how to build & install a static and shared libraries from a set of sources """
+
+   def __init__(self, libname, baseEnv = None):
+      """ Creates a new static and shared library builder for a library of the given name. """
+      _Library.__init__(self, libname, baseEnv, ['StaticLibrary', 'SharedLibrary'])
 
 
 class Program(_Assembly):
@@ -300,6 +298,15 @@ class Package:
       The library will be built within the given environment.
       """
       lib = StaticLibrary(name, baseEnv)
+      self.assemblies.append(lib)
+      return lib
+   
+   def createStaticAndSharedLibrary(self, name, baseEnv = None):
+      """
+      Creates new static and shared library of the given name as a part of this package.
+      The library will be built within the given environment.
+      """
+      lib = StaticAndSharedLibrary(name, baseEnv)
       self.assemblies.append(lib)
       return lib
 
