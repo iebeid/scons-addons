@@ -37,6 +37,9 @@ import string;
 from SCons.Util import WhereIs
 pj = os.path.join;
 
+import SCons.SConf
+Configure = SCons.SConf.SConf     # Use same alias as SConsctruct sees
+
 
 class CppDom(SConsAddons.Options.LocalUpdateOption):
    def __init__(self, name, requiredVersion, required=True):
@@ -128,30 +131,44 @@ class CppDom(SConsAddons.Options.LocalUpdateOption):
       if not os.path.isfile(cppdom_header_file):
          passed = False;
          self.checkRequired("cppdom.h not found:%s"%cppdom_header_file);
+
+      # Read the options from the cppdom-config command
+      # Get output from vpr-config
+      # Res that when matched against vpr-config output should match the options we want
+      # In future could try to use INCPREFIX and other platform neutral stuff
+      inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
+      lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
+      lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
          
-      self.found_incs = None;
-      self.found_libs = None;
-      self.found_lib_paths = None;
+      # Returns lists of the options we want
+      self.found_incs = inc_re.findall(os.popen(self.cppdomconfig_cmd + " --cxxflags").read().strip());
+      self.found_libs = lib_re.findall(os.popen(self.cppdomconfig_cmd + " --libs").read().strip());
+      self.found_lib_paths = lib_path_re.findall(os.popen(self.cppdomconfig_cmd + " --libs").read().strip());
+      
+      # Try to build against the library
+      conf_env = env.Copy();                     # Make a copy of the env
+      self.updateEnv(conf_env);                  # Update it with the guessed values
+      conf_ctxt = Configure(conf_env);
+      if not conf_ctxt.CheckCXXHeader(pj("cppdom", "cppdom.h")):
+         passed = False;
+         self.checkRequired("Can't compile with cppdom.h");
+      if not conf_ctxt.CheckLibWithHeader(library=None, header="cppdom/cppdom.h", language="c++",
+                                          call = "cppdom::ContextPtr ctx( new cppdom::Context );", autoadd=0):
+         passed = False;
+         self.checkRequired("Can't compile with cppdom.");
          
+      conf_ctxt.Finish();
+     
+      # If we don't pass, then clear everything out
       if not passed:
-         # Clear everything
          self.baseDir = None;
          self.cppdom_cfg_cmd = None;
          edict = env.Dictionary();
          if edict.has_key(self.baseDirKey):
             del edict[self.baseDirKey];
-      else:
-         # Get output from vpr-config
-         # Res that when matched against vpr-config output should match the options we want
-         # In future could try to use INCPREFIX and other platform neutral stuff
-         inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
-         lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
-         lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
-         
-         # Returns lists of the options we want
-         self.found_incs = inc_re.findall(os.popen(self.cppdomconfig_cmd + " --cxxflags").read().strip());
-         self.found_libs = lib_re.findall(os.popen(self.cppdomconfig_cmd + " --libs").read().strip());
-         self.found_lib_paths = lib_path_re.findall(os.popen(self.cppdomconfig_cmd + " --libs").read().strip());
+         self.found_incs = None;
+         self.found_libs = None;
+         self.found_lib_paths = None;
              
    def updateEnv(self, env):
       """ Add environment options for building against vapor"""
