@@ -64,7 +64,7 @@ class Option:
         Create an option
         name - Name of the option
         keys - the name (or names) of the commandline option
-        help - Help text about the option object
+        help - Help text about the option object. If different help per key, put help in a list.
         """
         self.name = name
         if not SCons.Util.is_List(keys):
@@ -355,11 +355,16 @@ class Options:
         for o in options:
             key_list.extend(o.keys)
                 
-        max_key_len = max([len(k) for k in key_list])
+        max_key_len = max([len(k) for k in key_list])             # Get max key for spacing
         
         for option in options:
-            for k in option.keys:
-                help_text = help_text + '   %*s: %s' % (max_key_len, k, option.help)
+            for ki in range(len(option.keys)):
+                k = option.keys[ki]
+                k_help = option.help
+                if SCons.Util.is_List(option.help):
+                    k_help = option.help[ki]    
+                help_text = help_text + '   %*s: %s' % (max_key_len, k, k_help)
+
                 if env.has_key(k):
                     help_text = help_text + '  val: [%s]\n'%env.subst('${%s}'%k)
                 else:
