@@ -30,10 +30,12 @@ Configure = SCons.SConf.SConf
 # Options
 # ##############################################
 class Boost(SConsAddons.Options.PackageOption):
-   def __init__(self, name, requiredVersion, libs=[], required=True):
+   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], required=True):
       """
          name - The name to use for this option
          requiredVersion - The version of Boost required (ex: "1.30.0")
+         useDebug - Should we use debug boost libraries [default: False]
+         useMt - Should we use multi-threaded boost libraries [default: True]
          libs - Boost libraries needed that are actually compiled (base library names. ex: python)
          required - Is the dependency required?  (if so we exit on errors)
       """
@@ -58,8 +60,8 @@ class Boost(SConsAddons.Options.PackageOption):
       
       # Options for which libraries to use
       self.toolset = "gcc"     # XXX: This is currently a hack
-      self.use_mt = False
-      self.use_debug = False 
+      self.use_mt = useMt
+      self.use_debug = useDebug 
 
    def setToolset(self, toolset):
       self.toolset = toolset
