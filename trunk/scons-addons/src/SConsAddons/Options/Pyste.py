@@ -50,6 +50,14 @@ def PysteScan(fs = SCons.Node.FS.default_fs):
                                """["'](\S*?\.h)["']""",
                                fs = fs)
     return ps
+    
+def PysteMainEmitter(target, source, env):
+    """Produces a list of outputs from the MIDL compiler"""
+    d = os.path.dirname(str(target[0]))
+    main_file = pj(d, '_main.cpp')
+    t = [main_file,]
+    return (t,source)
+
  
 def PysteRecursiveScanFunction(node,env,path):
    """ Custom scanner that can handle recursive case when we need to 
@@ -63,14 +71,30 @@ def PysteRecursiveScanFunction(node,env,path):
       other_scanner = env.get_scanner(scanner_key)
       return other_scanner(node,env,path)      
   
-def PysteBuildGenerator(source, target, env, for_signature):
+def PysteBuildGenerator(source, target, env, for_signature, multi):
     cmd = "$PYSTE_CMD "
+    out_string = "${TARGET}"
+    src_string = "${SOURCE}"
+    
     if env.Dictionary().has_key("PYSTE_MODULE"):
        cmd += "--module=$PYSTE_MODULE "
+    if multi:                                # generate for multiple output files
+       cmd += "--multiple "
+       out_string = "${TARGET.dir}"
+       src_string = "${SOURCE}"                   # Multi build does all sources at once
 
-    cmd += "$_CPPINCFLAGS $_CPPDEFFLAGS --out=${TARGET} ${SOURCE}"
+    cmd += "$_CPPINCFLAGS $_CPPDEFFLAGS --out=%s %s" % (out_string,src_string)
     return cmd
 
+def PysteMainBuildGenerator(source, target, env, for_signature):
+    """ Builder for generating a main file given a bunch of pyste files """
+    
+    cmd = "$PYSTE_CMD $_CPPINCFLAGS $_CPPDEFFLAGS --multiple --generate-main --out=${TARGET.dir}"
+    if env.Dictionary().has_key("PYSTE_MODULE"):
+       cmd += " --module=$PYSTE_MODULE "
+    cmd += "${SOURCES}"
+    return cmd
+    
 
 class Pyste(SConsAddons.Options.PackageOption):
    def __init__(self, name, requiredVersion, required=True):
@@ -177,16 +201,19 @@ class Pyste(SConsAddons.Options.PackageOption):
                                skeys=[".pyste",".Pyste"],
                                path_function=_path,
                                recursive=1)
-#       pyste_builder = SCons.Builder.Builder(action = "$PYSTE_CMD --module=$PYSTE_MODULE $_CPPINCFLAGS $_CPPDEFFLAGS --out=${TARGET} ${SOURCE}",
-#                               suffix=".cpp", src_suffix=".pyste",
-#                               );
-       pyste_builder = SCons.Builder.Builder(generator = PysteBuildGenerator,
+       pyste_builder = SCons.Builder.Builder(generator = lambda source, target, env, for_signature: PysteBuildGenerator(source,target,env,for_signature,False),
                                              suffix=".cpp", src_suffix=".pyste",
                                              );
-
-       
-       
+       pyste_multi_builder = SCons.Builder.Builder(generator = lambda source, target, env, for_signature: PysteBuildGenerator(source,target,env,for_signature,True),
+                                             suffix=".cpp", src_suffix=".pyste",
+                                             );
+       pyste_main_builder = SCons.Builder.Builder(generator = PysteMainBuildGenerator,
+                                                  suffix=".cpp", src_suffix=".pyste"
+                                                  )
+                                                  
        env.Append(BUILDERS = {'PysteBuilder' : pyste_builder})
+       env.Append(BUILDERS = {'PysteMultiBuilder' : pyste_multi_builder})
+       env.Append(BUILDERS = {'PysteMainBuilder' : pyste_main_builder})
        env.Append(SCANNERS = pyste_scanner)
              
    def updateEnv(self, env):
