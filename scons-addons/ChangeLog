@@ -1,5 +1,15 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2003-09-09 allenb       Added isBuilt interface.
+                        Fixed bug that prevented libraries from building in
+                        build directories
+                        NEW VERSION 0.0.7
+           allenb       major refactoring of system
+                        NEW VERSION 0.0.6
+                        NEW VERSION 0.0.5
+                        NEW VERSION 0.0.4
+                        NEW VERSION 0.0.3
+                        NEW VERSION 0.0.2
 2003-08-22 allenb       Initial version
                         NEW VERSION 0.0.1
 2003-08-22 allenb       Added initial implementation of Options addon.

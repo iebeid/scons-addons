@@ -107,6 +107,7 @@ class _Assembly:
       self.data['libs']          = []
       self.data['libpaths']      = []
       self.data['headers']       = []
+      self.built = False;                  # Flag set once we have been built
 
       # Clone the base environment if we have one
       if baseEnv:
@@ -162,9 +163,15 @@ class _Assembly:
    def getSources(self):
       return self.data['sources']
 
+   def isBuilt(self):
+      return self.built;
+   
    def build(self):
       """
       Sets up the build and install targets for this assembly.
+      May only be called once.
+      NOTE: Whatever the current directly is when this is called is the directory
+      used for the builder command associated with this assembly.
       """
       # Setup the environment for the build
       self.data['env'].Append(CPPPATH = self.data['includes'],
@@ -173,6 +180,7 @@ class _Assembly:
 
       # Now actually do the build
       self._buildImpl()
+      self.built = True;
 
 
 class _Library(_Assembly):
@@ -182,11 +190,11 @@ class _Library(_Assembly):
    meant to be private.
    """
 
-   def __init__(self, filename, baseEnv, builderNames):
+   def __init__(self, libname, baseEnv, builderNames):
       """
       Creates a new library builder for a library of the given name.
       """
-      _Assembly.__init__(self, filename, baseEnv)
+      _Assembly.__init__(self, libname, baseEnv)
       
       if type(builderNames) is types.StringType:
          self.builder_names = [ builderNames ]
@@ -199,8 +207,9 @@ class _Library(_Assembly):
       """
 
       # Setup build and install for each built library
+      # Use get_abspath() with fileNode so we get the path into the build_dir and not src dir
       for lib_builder in self.builder_names:
-         lib = self.data['env'].__dict__[lib_builder](str(self.fileNode), self.data['sources'])
+         lib = self.data['env'].__dict__[lib_builder](self.fileNode.get_abspath(), self.data['sources'])
          self.data['env'].Install(path.join(Prefix(), 'lib'), lib)
 
       # Install the headers in the source list
@@ -356,11 +365,13 @@ class Package:
    def build(self):
       """
       Sets up the build and install for this package. This will build all
-      assemblies contained therein and set them up to be installed.
+      assemblies contained therein that have not already been built and set 
+      them up to be installed.
       """
       Environment().Alias('install', Prefix())
       for assembly in self.assemblies:
-         assembly.build()
+         if not assembly.isBuilt():
+            assembly.build()
 
 
 def MakeSourceDist(package, baseEnv = None):
