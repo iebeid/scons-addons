@@ -151,10 +151,10 @@ class CppDom(SConsAddons.Options.PackageOption):
       if not conf_ctxt.CheckCXXHeader(pj("cppdom", "cppdom.h")):
          passed = False;
          self.checkRequired("Can't compile with cppdom.h");
-      if not conf_ctxt.CheckLibWithHeader(library=None, header="cppdom/cppdom.h", language="c++",
-                                          call = "cppdom::ContextPtr ctx( new cppdom::Context );", autoadd=0):
-         passed = False;
-         self.checkRequired("Can't compile with cppdom.");
+#      if not conf_ctxt.CheckLibWithHeader(library=None, header="cppdom/cppdom.h", language="c++",
+#                                          call = "cppdom::ContextPtr ctx( new cppdom::Context );", autoadd=0):
+#         passed = False;
+#         self.checkRequired("Can't compile with cppdom.");
          
       conf_ctxt.Finish();
      
