@@ -63,7 +63,7 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
       """ Called when there is config problem.  If required, then exit with error message """
       print msg;
       if self.required:
-         Exit();
+         sys.exit(1);
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
@@ -72,7 +72,7 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
          self.baseDir = optDict[self.baseDirKey];
          self.vprconfig_cmd = pj(self.baseDir, 'bin', 'vpr-config')
          sys.stdout.write("specified or cached. [%s].\n"% self.baseDir);
-         assert os.path.isfile(self.vprconfig_cmd), "vpr-config does not exist"
+         #assert os.path.isfile(self.vprconfig_cmd), "vpr-config does not exist"
         
    def find(self, env):
       # Quick exit if nothing to find
