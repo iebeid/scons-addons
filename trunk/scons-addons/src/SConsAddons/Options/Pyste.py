@@ -110,7 +110,7 @@ class Pyste(SConsAddons.Options.PackageOption):
             self.pysteScriptCommand = "python " + self.pysteScriptPath
             print "   found: %s" % self.pysteScriptPath
          else:
-            self.checkRequire("   could not find pyste.py script.\n");
+            self.checkRequired("   could not find pyste.py script.\n");
             return
  
       assert self.pysteScriptPath
@@ -129,22 +129,25 @@ class Pyste(SConsAddons.Options.PackageOption):
       # Check version is correct
       # Check that an include file: include/vpr/vprConfig.h  exists
       # Update the temps for later usage
-      passed = True;
-      if not os.path.isfile(self.pysteScriptPath):
-         passed = False;
-         self.checkRequired("   pyste files does not exist:%s" % self.pysteScriptPath);
+      passed = True
+      if not self.pysteScriptPath:
+          passed = False
+      else:
+          if not os.path.isfile(self.pysteScriptPath):
+             passed = False;
+             self.checkRequired("   pyste files does not exist:%s" % self.pysteScriptPath);
 
-      # Check for version information
-      print "   Checking version:",
-      found_ver_str = os.popen(self.pysteScriptCommand + " --version").read().strip().split(" ")[-1];
-      print found_ver_str
+             # Check for version information
+             print "   Checking version:",
+             found_ver_str = os.popen(self.pysteScriptCommand + " --version").read().strip().split(" ")[-1];
+             print found_ver_str
       
-      # Check version requirement
-      req_ver = [int(n) for n in self.requiredVersion.split(".")];
-      found_ver = [int(n) for n in found_ver_str.split(".")];
-      if found_ver < req_ver:
-         passed = False;
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));             
+             # Check version requirement
+             req_ver = [int(n) for n in self.requiredVersion.split(".")];
+             found_ver = [int(n) for n in found_ver_str.split(".")];
+             if found_ver < req_ver:
+                 passed = False;
+                 self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));             
       
       # If we don't pass, then clear everything out
       if not passed:
