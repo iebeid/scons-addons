@@ -68,14 +68,19 @@ class CppDom(SConsAddons.Options.PackageOption):
          
    def isAvailable(self):
       return self.available
-      
+
+   def startUpdate(self):
+      print "Checking for cppdom...",
+
    def setInitial(self, optDict):
       " Set initial values from given dict "
-      print "loading initial settings for cppdom..."
+      if self.verbose:
+         print "   Loading initial cppdom settings."
       if optDict.has_key(self.baseDirKey):
          self.baseDir = optDict[self.baseDirKey];
          self.cppdomconfig_cmd = pj(self.baseDir, 'bin', 'cppdom-config')
-         print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir);
+         if self.verbose:
+            print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir);
         
    def find(self, env):
       # Quick exit if nothing to find because it is already specified
@@ -170,6 +175,7 @@ class CppDom(SConsAddons.Options.PackageOption):
          self.found_lib_paths = None;
       else:
          self.available = True
+         print "[OK]"
       
              
    def updateEnv(self, env):
