@@ -29,12 +29,12 @@ import SCons.Environment;   # Get the environment crap
 import SCons;
 import SConsAddons.Options;   # Get the modular options stuff
 import SCons.Util
-from SCons.Util import WhereIs
 import sys;
 import os;
 import re;
 import string;
 
+from SCons.Util import WhereIs
 pj = os.path.join;
 
 
