@@ -238,9 +238,18 @@ class Boost(SConsAddons.Options.PackageOption):
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
                             LIBS = [full_libname,] + self.python_extra_libs + ["dl",])
-            
-         conf_ctxt = Configure(conf_env)            
-         if not conf_ctxt.CheckLibWithHeader(full_libname, header_to_check, "c++"):
+         if "thread" == libname:
+            conf_env.Append(LIBS = [full_libname,] + ["pthread",] + ["dl",])
+            conf_ctxt = Configure(conf_env)
+#            result = conf_ctxt.CheckLib(full_libname, "join", header_to_check, "c++")
+            result = True
+
+         else:
+            conf_ctxt =Configure(conf_env)
+            result = conf_ctxt.CheckLibWithHeader(full_libname, header_to_check, "c++")
+
+           
+         if not result:
             passed = False
             self.checkRequired("Can't compile test program: lib: %s full_lib: %s header:%s"%(libname,full_libname,header_to_check))
             
