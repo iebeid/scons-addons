@@ -37,13 +37,15 @@ class Boost(SConsAddons.Options.PackageOption):
          libs - Boost libraries needed that are actually compiled (base library names. ex: python)
          required - Is the dependency required?  (if so we exit on errors)
       """
-      help_text = """Base directory for Boost. include, and lib should be under this directory"""
+      help_text = ["Base directory for Boost. include, and lib should be under this directory.",
+                   "Include directory for boost (if not under base)."]
       self.baseDirKey = "BoostBaseDir"
+      self.incDirKey = "BoostIncludeDir"
       self.requiredVersion = requiredVersion
       self.lib_names = libs
       self.required = required
-      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text)
-      self.available = False
+      SConsAddons.Options.PackageOption.__init__(self, name, [self.baseDirKey, self.incDirKey], help_text)
+      self.available = False            # Track availability
       
       self.found_incs = []
       self.found_incs_as_flags = ""     # The includes as flags to add on command line
@@ -51,7 +53,7 @@ class Boost(SConsAddons.Options.PackageOption):
 
       # configurable options
       self.baseDir = None
-      self.includePath = None
+      self.incDir = None
       self.setupLibrarySettings()
       
       # Options for which libraries to use
@@ -102,14 +104,18 @@ class Boost(SConsAddons.Options.PackageOption):
          sys.exit(0)
 
    def isAvailable(self):
+      " If true, then validation passed and we should be able to use boost. "
       return self.available
 
    def setInitial(self, optDict):
       " Set initial values from given dict "
-      print "loading initial settings for boost"
+      print "Loading initial settings for boost"
       if optDict.has_key(self.baseDirKey):
          self.baseDir = optDict[self.baseDirKey]
          print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir)
+      if optDict.has_key(self.incDirKey):
+         self.incDir = optDict[self.incDirKey]
+         print "   %s specified or cached. [%s]."% (self.incDirKey, self.incDir)
 
    def find(self, env):
       # Quick exit if nothing to find
@@ -147,44 +153,50 @@ class Boost(SConsAddons.Options.PackageOption):
    def set(self, env):
       if self.baseDir:
          env[self.baseDirKey] = self.baseDir
+      if self.incDir:
+         env[self.incDirKey] = self.incDir
 
    def validate(self, env):
       # Check that path exist
       # Check that an include file: boost/version.hpp  exists
       passed = True
+      self.available = False
       
       if not self.baseDir:
-         passed = False
          self.checkRequired("Boost base dir not set")
          return
       
       if not os.path.isdir(self.baseDir):    # If we don't have a directory
-         passed = False
          self.checkRequired("Boost base dir is not a directory: %s" % self.baseDir)
          return
-      
-      if not os.path.isdir(pj(self.baseDir, 'include')):    # If we don't have a directory
-         passed = False
-         self.checkRequired("Boost include dir is not a directory: %s" % pj(self.baseDir, 'include'))
-         return
 
+      if not self.incDir:
+         self.incDir = pj(self.baseDir, 'include')
+         
+      if self.incDir and (not os.path.isdir(self.incDir)):
+         self.checkRequired("Boost inc dir is not a valid directory: %s" % self.incDir)
+         return
+      
       # --- Find include path --- #
-      self.includePath = pj(self.baseDir, 'include', 'boost')
-      if not os.path.isdir(self.includePath):
-         potential_paths = [d for d in os.listdir(pj(self.baseDir, 'include')) 
-                              if os.path.isdir(pj(self.baseDir, 'include', d))]
-         if len(potential_paths) == 0:
-            self.checkRequired("No include paths found for boost.")
-            return
-         potential_paths.sort()
-         self.includePath = pj(self.baseDir, 'include', potential_paths[-1])
+      full_inc_path = pj(self.incDir, 'boost')
+      if not os.path.isdir(full_inc_path):
+         self.checkRequired("No include path found for boost. tried: [%s]"%(self.incDir,))
+         return
+      # AB: I don't know what this code was for. 02-25-04
+      #   potential_paths = [d for d in os.listdir(pj(self.baseDir, 'include')) 
+      #                        if os.path.isdir(pj(self.baseDir, 'include', d))]
+      #   if len(potential_paths) == 0:
+      #      self.checkRequired("No include paths found for boost.")
+      #      return
+      #   potential_paths.sort()
+      #   self.includePath = pj(self.baseDir, 'include', potential_paths[-1])
          
-      version_header = pj(self.includePath, 'boost', 'version.hpp')         
+      version_header = pj(self.incDir, 'boost', 'version.hpp')         
       if not os.path.isfile(version_header):
-         passed = False
          self.checkRequired("Boost version.hpp header does not exist:%s"%version_header)
+         return
          
-      print "   boost header path: ", self.includePath
+      print "   boost header path: ", self.incDir
       
       # --- Check version requirement --- #
       ver_file = file(version_header)
@@ -194,11 +206,11 @@ class Boost(SConsAddons.Options.PackageOption):
       found_ver = [int(n) for n in found_ver_str.split('.')]
       print "   boost version:", ".".join([str(x) for x in found_ver])
       if found_ver < req_ver:
-         passed = False
          self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str))
+         return
 
       # Set lists of the options we want
-      self.found_incs = [self.includePath]
+      self.found_incs = [self.incDir]
       self.found_incs_as_flags = "";
       for p in self.found_incs:
          self.found_incs_as_flags = self.found_incs_as_flags + " " + env["INCPREFIX"] + p
@@ -235,9 +247,11 @@ class Boost(SConsAddons.Options.PackageOption):
       if not passed:
          # Clear everything
          self.baseDir = None
+         self.incDir = None
          edict = env.Dictionary()
-         if edict.has_key(self.baseDirKey):
-            del edict[self.baseDirKey]
+         for k in (self.baseDirKey, self.incDirKey):
+            if edict.has_key(k):
+               del edict[k]
          self.found_incs = None
          self.found_lib_paths = None
       else:
@@ -281,6 +295,7 @@ class Boost(SConsAddons.Options.PackageOption):
    def dumpSettings(self):
       "Write out the settings"
       print "BoostBaseDir:", self.baseDir
+      print "BoostIncludeDir:", self.incDir
       print "CPPPATH (as flags):", self.found_incs_as_flags
       print "LIBS:", self.lib_names
       print "LIBS: (full):", [self.buildFullLibName(l) for l in self.lib_names]
