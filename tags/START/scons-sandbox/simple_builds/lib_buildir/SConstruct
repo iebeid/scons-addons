@@ -1,0 +1,10 @@
+#!python
+#
+env = Environment()
+Export('env')
+
+SConscript('libA/SConscript', build_dir='build.dir/libA', duplicate=0)
+SConscript('app/SConscript', build_dir='build.dir/app', duplicate=0)
+
+#BuildDir('build.dir2', 'libA')
+#SConscript('build.dir2/SConscript')
