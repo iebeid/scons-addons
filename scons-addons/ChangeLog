@@ -1,5 +1,6 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-03-09 allenb       Updated pyste builder to scons 0.95
 2004-03-06 allenb       Updated the autodist factory methods for libs and
                         programs to use the package environment by default.
 2004-03-06 allenb       Add smarter search for boost include path.
