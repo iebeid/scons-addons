@@ -68,19 +68,19 @@ def Prefix(prefix = None):
    return _prefix
 
 class Header:
-   def __init__(self, name, prefix=None):
-      self.name = name
+   def __init__(self, fileNode, prefix=None):
+      self.fileNode = fileNode
       self.prefix = prefix
 
    def __str__(self):
       """A Header's string representation is its prefix/name."""
       if prefix:
-         return path.join(prefix, name)
+         return path.join(prefix, str(fileNode))
       else:
-         return name
+         return str(fileNode)
 
-   def getName(self):
-      return self.name
+   def getFileNode(self):
+      return self.fileNode
 
    def getPrefix(self):
       return self.prefix
@@ -125,11 +125,13 @@ class _Assembly:
    def addHeaders(self, headers, prefix = None):
       """
       Adds the given list of distribution header files into this assembly. These
-      headers will be installed to Prefix()/include/prefix. The list must come
+      headers will be installed to Prefix()/include/prefix/file_prefix. The list must come
       in as strings as they are processed through File().
       """
-      hdrs = map(lambda n,prefix=prefix: Header(n,prefix), map(File, headers))
-      self.data['headers'].extend(hdrs)
+      for fn in headers:                                     # For all filenames in headers
+         fn_dir = os.path.dirname(fn)                        # Find out if there is a local dir prefix
+         hdr = Header( File(fn), path.join(prefix,fn_dir))   # Create new header rep
+         self.data['headers'].append(hdr)                    # Append it on
 
    def addIncludes(self, includes):
       """
@@ -199,12 +201,12 @@ class _Library(_Assembly):
       # Install the headers in the source list
       for h in self.data['headers']:
          prefix = h.getPrefix()
-         filename = h.getName()
+         headerNode = h.getFileNode()
          target = path.join(Prefix(), 'include')
          # Add on the prefix if this header has one
          if prefix:
             target = path.join(target, prefix)
-         self.data['env'].Install(target, filename)
+         self.data['env'].Install(target, headerNode)
 
 
 class SharedLibrary(_Library):
@@ -386,7 +388,7 @@ def MakeSourceDist(package, baseEnv = None):
    # Get a list of the sources that will be included in the distribution
    dist_files = []
    for a in package.getAssemblies():
-      dist_files.extend(map(lambda n: n.getName(), a.getHeaders()))
+      dist_files.extend(map(lambda n: n.getFileNode(), a.getHeaders()))
       dist_files.extend(a.getSources())
    dist_files.extend(package.getExtraDist())
 
