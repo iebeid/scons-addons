@@ -1,5 +1,8 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-04-16 allenb       Removed auto-creation of install alias in AutoDist.
+                        This was causing problems when multiple packages
+                        install to the same prefix.
 2004-04-14 allenb       Added RPM packager.
 2004-04-14 allenb       Added support for packagers.
 2004-04-13 allenb       Refactor AutoDist to make it handle files and prefixes
