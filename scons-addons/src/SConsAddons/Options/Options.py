@@ -59,15 +59,17 @@ class Option:
     """
     Base class for all options.
     """
-    def __init__(self, name, key, help):
+    def __init__(self, name, keys, help):
         """
         Create an option
         name - Name of the option
-        key - the name of the commandline option
+        keys - the name (or names) of the commandline option
         help - Help text about the option object
         """
         self.name = name
-        self.key = key
+        if not SCons.Util.is_List(keys):
+           keys = [keys]        
+        self.keys = keys
         self.help = help
         self.verbose = False      # If verbose, then output more information
         
@@ -108,8 +110,8 @@ class Option:
 
 class LocalUpdateOption(Option):
     """ Extends the base option to have another method that allows updating of environment locally """
-    def __init__(self, name, key, help):
-        Option.__init__(self, name, key, help)
+    def __init__(self, name, keys, help):
+        Option.__init__(self, name, keys, help)
         
     def updateEnv(self, env):
         """ Update the passed environment with full settings for the option """
@@ -117,8 +119,8 @@ class LocalUpdateOption(Option):
 
 class PackageOption(LocalUpdateOption):
     """ Base class for options that are used for specifying options for installed software packages. """
-    def __init__(self, name, key, help):
-        LocalUpdateOption.__init__(self,name,key,help)
+    def __init__(self, name, keys, help):
+        LocalUpdateOption.__init__(self,name,keys,help)
         
     def isAvailable(self):
         " Return true if the package is available "
@@ -130,7 +132,7 @@ class SimpleOption(Option):
     Implementation of a simple option wrapper.  This is used by Options.Add()
     This Option works for a single option value with a single key (stored internally)
     """
-    def __init__(self, name, key, help, finder, converter, setter, validator):
+    def __init__(self, name, keys, help, finder, converter, setter, validator):
         """
         Create an option
         name - Name of the option
@@ -144,7 +146,7 @@ class SimpleOption(Option):
         validator - Function called to validate the option value
                     called with (key, value, environment)
         """
-        Option.__init__(self, name, key, help);
+        Option.__init__(self, name, keys, help);
         if None == finder:
             self.finder_cb = None
         elif type(bogus_func) == type(finder):
@@ -157,13 +159,13 @@ class SimpleOption(Option):
         self.value = None
         
     def setInitial(self, optDict):
-        if optDict.has_key(self.key):
-            self.value = optDict[self.key]
+        if optDict.has_key(self.keys[0]):
+            self.value = optDict[self.keys[0]]
 
     def find(self, env):
         if None == self.value:     # If not already set by setInitial()
             if self.finder_cb:
-                self.value = self.finder_cb(self.key, env)
+                self.value = self.finder_cb(self.keys[0], env)
             else:
                 self.value = None
     
@@ -173,17 +175,17 @@ class SimpleOption(Option):
             try:
                 self.value = self.converter_cb(self.value)
             except ValueError, x:
-                raise SCons.Errors.UserError, 'Error converting option: %s value:%s\n%s'%(self.key, self.value, x)
+                raise SCons.Errors.UserError, 'Error converting option: %s value:%s\n%s'%(self.keys[0], self.value, x)
     
     def set(self, env):
         """ Set the value(s) in the environment """
         if self.value:
-            env[self.key] = self.value
+            env[self.keys[0]] = self.value
     
     def validate(self, env):
         """ Validate the option settings """
         if self.validator_cb and self.value:
-            self.validator_cb(self.key, self.value, env)
+            self.validator_cb(self.keys[0], self.value, env)
         
     
 
@@ -239,8 +241,9 @@ class Options:
         
     def AddOption(self, option):
         """ Add a single option object"""
-        if not SCons.Util.is_valid_construction_var(option.key):
-            raise SCons.Errors.UserError, "Illegal Options.AddOption(): opt: '%s' -- key `%s'" % (options.name, option.key)
+        for k in option.keys:
+            if not SCons.Util.is_valid_construction_var(k):
+                raise SCons.Errors.UserError, "Illegal Options.AddOption(): opt: '%s' -- key `%s'" % (options.name, option.key)
 
         self.options.append(option)
      
@@ -310,16 +313,20 @@ class Options:
             try:
                 # Make an assignment in the file for each option within the environment
                 # that was assigned a value other than the default.
-                for option in self.options:
+                # For each option and each key
+                key_list = []
+                for o in self.options:
+                    key_list.extend(o.keys)
+                for key in key_list:
                     try:
-                        value = env[option.key]
+                        value = env[key]
                         try:
                             eval(repr(value))
                         except:
                             # Convert stuff that has a repr that cannon be evaled to string
                             value = SCons.Util.to_string(value)
-                        
-                        fh.write('%s = %s\n' % (option.key, repr(value)))
+                            
+                        fh.write('%s = %s\n' % (key, repr(value)))
                     except KeyError:
                         pass
             finally:
@@ -340,18 +347,23 @@ class Options:
 
         if sort:
             options = self.options[:]
-            options.sort(lambda x,y,func=sort: func(x.key,y.key))
+            options.sort(lambda x,y,func=sort: func(x.key[0],y.key[0]))
         else:
             options = self.options
-            
-        max_key_len = max([len(o.key) for o in options])
+
+        key_list = []
+        for o in options:
+            key_list.extend(o.keys)
+                
+        max_key_len = max([len(k) for k in key_list])
         
         for option in options:
-            help_text = help_text + '   %*s: %s' % (max_key_len, option.key, option.help)
-            if env.has_key(option.key):
-                help_text = help_text + '  val: [%s]\n'%env.subst('${%s}'%option.key)
-            else:
-                help_text = help_text + '  val: [None]\n'
+            for k in option.keys:
+                help_text = help_text + '   %*s: %s' % (max_key_len, k, option.help)
+                if env.has_key(k):
+                    help_text = help_text + '  val: [%s]\n'%env.subst('${%s}'%k)
+                else:
+                    help_text = help_text + '  val: [None]\n'
 
         return help_text
 
