@@ -169,10 +169,10 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
          
          print "[OK]"
              
-   def updateEnv(self, env):
+   def updateEnv(self, env, useCppPath=False):
       """ Add environment options for building against vapor"""
       if self.found_incs:
-         if self.useCppPath:
+         if self.useCppPath or useCppPath:
             env.Append(CPPPATH = self.found_incs)
          else:
             env.Append(CXXFLAGS = self.found_incs_as_flags)

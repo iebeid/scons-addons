@@ -273,11 +273,11 @@ class Boost(SConsAddons.Options.PackageOption):
          self.available = True
 
          
-   def updateEnv(self, env, libs=None):
+   def updateEnv(self, env, libs=None, useCppPath=False):
       """ Add environment options for building against Boost libraries """
       if self.found_incs:
-         if self.useCppPath:
-            env.Append(CPPATH, self.found_incs)
+         if self.useCppPath or useCppPath:
+            env.Append(CPPPATH = self.found_incs)
          else:
             env.Append(CXXFLAGS = self.found_incs_as_flags)
       if self.found_lib_paths:
