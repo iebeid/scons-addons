@@ -126,7 +126,7 @@ class _Assembly:
       headers will be installed to Prefix()/include/prefix. The list must come
       in as strings as they are processed through File().
       """
-      hdrs = map(lambda n: Header(n,prefix), map(File, headers))
+      hdrs = map(lambda n,prefix=prefix: Header(n,prefix), map(File, headers))
       self.data['headers'].extend(hdrs)
 
    def addIncludes(self, includes):
