@@ -1,5 +1,6 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-04-14 allenb       Added RPM packager.
 2004-04-14 allenb       Added support for packagers.
 2004-04-13 allenb       Refactor AutoDist to make it handle files and prefixes
                         better.
