@@ -264,6 +264,9 @@ class Boost(SConsAddons.Options.PackageOption):
       for l in self.lib_names:
          if 'python' != l:               # Don't add python by default
             env.Append(LIBS = [self.buildFullLibName(l)])
+      if 'python' in self.lib_names:
+         env.Append(LIBS = [self.buildFullLibName('python')],
+                    CPPPATH = [self.python_inc_dir,])
             
    def updatePythonModEnv(self, env):
       """ Update the environment for building python modules """
