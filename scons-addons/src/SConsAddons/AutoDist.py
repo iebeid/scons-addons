@@ -376,19 +376,9 @@ def _CreateSourceTarGzBuilder(env):
          # Copy the file over
          shutil.copy2(src_file, path.join(dest_dir, src_file))
 
-      # Change CWD to the temp directory
-      old_dir = os.getcwd()
-      os.chdir(temp_dir)
-
       # Make the tar.gz
-      targz = Action('tar cf - $SOURCES | gzip -f > $TARGET')
+      targz = Action('tar -c -C '+temp_dir+' -f - $SOURCES | gzip -f > $TARGET')
       targz.execute(target, [dist_name], env)
-
-      # Copy the tar.gz back into the old directory
-      shutil.copy2(str(target[0]), path.join(old_dir, str(target[0])))
-
-      # Change CWD back
-      os.chdir(old_dir)
 
       # Remove the temporary directory
       shutil.rmtree(temp_dir)
