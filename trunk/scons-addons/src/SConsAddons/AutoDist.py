@@ -66,6 +66,7 @@ config_script_contents = ""
 class InstallableFile:
    """ Class to wrap any installable file.  ex. progs, libs, headers, docs, etc """
    def __init__(self, fileNode, prefix=""):
+      assert isinstance(fileNode, SCons.Node.Node), "Installable file called with non file node: [%s]"%str(fileNode)
       self.fileNode = fileNode         # The scons node for the file
       self.prefix = prefix             # The prefix to use for the file (minus the package/bundle prefix)
 
@@ -288,6 +289,7 @@ class _CodeAssembly(_Assembly):
       """
       _Assembly.__init__(self, pkg, baseEnv, prefix)
       
+      assert isinstance(filename, str), "Passed a filename that is not a string. %s"%filename
       self.fileNode      = File(filename)
       self.sources       = []
       self.includes      = []
@@ -694,6 +696,7 @@ class Package:
       whose names are in the exclude list are not added to the list.
       """
       for file in files:
+         assert isinstance(file, str), "file was not of correct type."
          # Make sure to skip files in the exclude list
          if not file in exclude:
             # If the file is a directory, recurse on it
