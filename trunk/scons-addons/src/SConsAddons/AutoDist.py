@@ -55,6 +55,24 @@ def Prefix(prefix = None):
    # Return the current prefix
    return _prefix
 
+class Header:
+   def __init__(self, name, prefix=None):
+      self.name = name
+      self.prefix = prefix
+
+   def __str__(self):
+      """A Header's string representation is its prefix/name."""
+      if prefix:
+         return path.join(prefix, name)
+      else:
+         return name
+
+   def getName(self):
+      return self.name
+
+   def getPrefix(self):
+      return self.prefix
+
 
 class _Assembly:
    """
@@ -88,9 +106,10 @@ class _Assembly:
       headers will be installed to Prefix()/include/prefix. The list must come
       in as strings as they are processed through File().
       """
-      hdrs = map(File, headers)
-      for h in hdrs:
-         self.data['headers'].extend([[prefix, h]])
+      hdrs = map(lambda n: Header(n,prefix), map(File, headers))
+      self.data['headers'].extend(hdrs)
+#      for h in hdrs:
+#         self.data['headers'].extend([[prefix, h]])
 
    def addIncludes(self, includes):
       """
@@ -164,8 +183,8 @@ class Library(_Assembly):
 
       # Install the headers in the source list
       for h in self.data['headers']:
-         prefix = h[0]
-         filename = h[1]
+         prefix = h.getPrefix()
+         filename = h.getName()
          target = path.join(Prefix(), 'include')
          # Add on the prefix if this header has one
          if prefix:
@@ -199,7 +218,7 @@ class Package:
    """
    A package defines a collection of distributables including programs and
    libraries. The Package class provides the ability to build, install, and
-   package up distributions of your project. 
+   package up distributions of your project.
    """
 
    def __init__(self, name, version):
@@ -272,23 +291,24 @@ class Package:
          env = baseEnv.Copy()
       else:
          env = Environment()
-      
+
       env.Alias('install', Prefix())
       for assembly in self.getAssemblies():
          assembly.build(env.Copy())
 
 
-class SourceTarGZBuilder:
+class SourceTarGzBuilder:
    def __init__(self, package):
+      import tempfile
       self.data = {
          'package'      : package,
       }
 
       # Create the distribution filename
-      dist_filename = '%s-src-%d.%d.%d' % (self.data['package'].getName(),
-                                           self.data['package'].getVersionMajor(),
-                                           self.data['package'].getVersionMinor(),
-                                           self.data['package'].getVersionPatch())
+      dist_filename = '%s-%d.%d.%d.tar.gz' % (self.data['package'].getName(),
+                                              self.data['package'].getVersionMajor(),
+                                              self.data['package'].getVersionMinor(),
+                                              self.data['package'].getVersionPatch())
       self.data['dist_filename'] = dist_filename
 
    def build(self, baseEnv = None):
@@ -307,28 +327,17 @@ class SourceTarGZBuilder:
       env.Alias('dist', self.getDistFile())
 
       # Add the tar.gz builder to the environment
-      targz_action = Action([
-                             'tar cvf ${TARGET.base}.tar $SOURCES',
-                             'gzip ${TARGET.base}.tar'])
-      targz_builder = Builder(name = 'TarGZ',
-                              action = targz_action,
-                              suffix = '.tar.gz')
-
-      env['BUILDERS'] = {'TarGz' : targz_builder}
+      _CreateSourceTarGzBuilder(env)
 
       # Get a list of the sources that will be included in the distribution
       dist_files = []
       for a in self.getPackage().getAssemblies():
-         dist_files.extend(a.getHeaders())
+         dist_files.extend(map(lambda n: n.getName(), a.getHeaders()))
          dist_files.extend(a.getSources())
       dist_files.extend(self.getPackage().getExtraDist())
 
-      print 'Source GZ contains: '
-      for f in dist_files:
-         print '\t' + str(f)
-
       # Setup the build of the distribution
-      env.TarGz(self.getDistFile(), dist_files)
+      env.SourceTarGz(self.getDistFile(), dist_files)
 
       # Mark implicit dependencies on all the files that will be distributed
       env.Depends(self.getDistFile(), dist_files)
@@ -338,3 +347,55 @@ class SourceTarGZBuilder:
 
    def getDistFile(self):
       return self.data['dist_filename']
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+def _CreateSourceTarGzBuilder(env):
+   import tempfile
+
+   def makeSourceTarGz(target = None, source = None, env = None):
+      import os, shutil, tempfile
+
+      # Create the temporary directory
+      dist_name = str(target[0])[:-len('.tar.gz')]
+      temp_dir = tempfile.mktemp()
+      target_dir = path.join(temp_dir, dist_name)
+
+      os.makedirs(target_dir)
+
+      # Copy the sources to the target directory
+      for s in source:
+         src_file = str(s)
+         dest_dir = path.join(target_dir, path.dirname(src_file))
+
+         # Make sure the target directory exists
+         if not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+
+         # Copy the file over
+         shutil.copy2(src_file, path.join(dest_dir, src_file))
+
+      # Change CWD to the temp directory
+      old_dir = os.getcwd()
+      os.chdir(temp_dir)
+
+      # Make the tar.gz
+      targz = Action('tar cf - $SOURCES | gzip -f > $TARGET')
+      targz.execute(target, [dist_name], env)
+
+      # Copy the tar.gz back into the old directory
+      shutil.copy2(str(target[0]), path.join(old_dir, str(target[0])))
+
+      # Change CWD back
+      os.chdir(old_dir)
+
+      # Remove the temporary directory
+      shutil.rmtree(temp_dir)
+
+      return None
+
+   # Create the builder and add it to the environment
+   source_targz_builder = Builder(action = makeSourceTarGz,
+                                  suffix = '.tar.gz')
+   env['BUILDERS']['SourceTarGz'] = source_targz_builder
