@@ -142,7 +142,7 @@ class _Assembly:
    def build(self, env):
       """
       Sets up the build and install targets for this assembly. The environment
-      is modified as appropriate and then buildImpl() of the derived class is
+      is modified as appropriate and then _buildImpl() of the derived class is
       called.
       """
       # Setup the environment for the build
@@ -151,7 +151,7 @@ class _Assembly:
                  LIBS    = self.data['libs'])
 
       # Now actually do the build
-      self.buildImpl(env)
+      self._buildImpl(env)
 
 
 class _Library(_Assembly):
@@ -168,7 +168,7 @@ class _Library(_Assembly):
       _Assembly.__init__(self, name)
       self.data['builder'] = builder
 
-   def buildImpl(self, env):
+   def _buildImpl(self, env):
       """
       Sets up the build dependencies and the install.
       """
@@ -230,7 +230,7 @@ class Program(_Assembly):
       """
       _Assembly.__init__(self, name)
 
-   def buildImpl(self, env = None):
+   def _buildImpl(self, env = None):
       """
       Sets up the build dependencies and the install.
       """
@@ -266,7 +266,7 @@ class Package:
       self.data['version_minor'] = int(re_matches.group(2))
       self.data['version_patch'] = int(re_matches.group(3))
 
-   def CreateSharedLibrary(self, name):
+   def createSharedLibrary(self, name):
       """
       Creates a new shared library of the given name as a part of this package.
       """
@@ -274,7 +274,7 @@ class Package:
       self.data['assemblies'].extend([lib])
       return lib
 
-   def CreateStaticLibrary(self, name):
+   def createStaticLibrary(self, name):
       """
       Creates a new static library of the given name as a part of this package.
       """
@@ -282,7 +282,7 @@ class Package:
       self.data['assemblies'].extend([lib])
       return lib
 
-   def CreateProgram(self, name):
+   def createProgram(self, name):
       """
       Creates a new executable program of the given name as a part of this
       package.
