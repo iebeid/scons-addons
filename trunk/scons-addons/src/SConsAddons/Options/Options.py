@@ -122,10 +122,14 @@ class PackageOption(LocalUpdateOption):
     """ Base class for options that are used for specifying options for installed software packages. """
     def __init__(self, name, keys, help):
         LocalUpdateOption.__init__(self,name,keys,help)
+        self.available = False
         
     def isAvailable(self):
         " Return true if the package is available "
-        return False
+        return self.available
+    
+    def setAvailable(self, val):
+        self.available = val
 
         
 class SimpleOption(Option):
