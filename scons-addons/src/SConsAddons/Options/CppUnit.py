@@ -43,17 +43,19 @@ Configure = SCons.SConf.SConf     # Use same alias as SConsctruct sees
 
 
 class CppUnit(SConsAddons.Options.PackageOption):
-   def __init__(self, name, requiredVersion, required=True):
+   def __init__(self, name, requiredVersion, required=True, useCppPath=False):
       """
          name - The name to use for this option
          requiredVersion - The version of cppunit required (ex: "0.1.0")
          required - Is the dependency required?  (if so we exit on errors)
+         useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
       """
       help_text = """Base directory for cppunit. bin, include, and lib should be under this directory""";
       self.baseDirKey = "CppUnitBaseDir";
       self.requiredVersion = requiredVersion;
       self.required = required;
       self.available = False
+      self.useCppPath = useCppPath
       SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text);
       
       # configurable options
@@ -152,6 +154,9 @@ class CppUnit(SConsAddons.Options.PackageOption):
       self.found_incs = cfg_cmd_parser.findIncludes(" --cflags")
       self.found_libs = cfg_cmd_parser.findLibs()
       self.found_lib_paths = cfg_cmd_parser.findLibPaths()
+
+      # Create list of flags that may be needed later
+      self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
       
       platform = SConsAddons.Util.GetPlatform()
       if platform == "linux":
@@ -182,11 +187,15 @@ class CppUnit(SConsAddons.Options.PackageOption):
          self.found_lib_paths = None;
       else:
          self.available = True
+
              
    def updateEnv(self, env):
       """ Add environment options for building against us"""
       if self.found_incs:
-         env.Append(CPPPATH = self.found_incs);
+         if self.useCppPath:
+            env.Append(CPPPATH = self.found_incs)
+         else:
+            env.Append(CXXFLAGS = self.found_incs_as_flags)
       if self.found_libs:
          env.Append(LIBS = self.found_libs);
       if self.found_lib_paths:

@@ -30,7 +30,7 @@ Configure = SCons.SConf.SConf
 # Options
 # ##############################################
 class Boost(SConsAddons.Options.PackageOption):
-   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], required=True):
+   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], required=True, useCppPath=False):
       """
          name - The name to use for this option
          requiredVersion - The version of Boost required (ex: "1.30.0")
@@ -38,6 +38,7 @@ class Boost(SConsAddons.Options.PackageOption):
          useMt - Should we use multi-threaded boost libraries [default: True]
          libs - Boost libraries needed that are actually compiled (base library names. ex: python)
          required - Is the dependency required?  (if so we exit on errors)
+         useCppPath - If true, then include path is added to CPPPATH if not, then added to CPPFLAGS directly
       """
       help_text = ["Base directory for Boost. include, and lib should be under this directory.",
                    "Include directory for boost (if not under base)."]
@@ -46,6 +47,7 @@ class Boost(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion
       self.lib_names = libs
       self.required = required
+      self.useCppPath = useCppPath
       SConsAddons.Options.PackageOption.__init__(self, name, [self.baseDirKey, self.incDirKey], help_text)
       self.available = False            # Track availability
       
@@ -74,7 +76,8 @@ class Boost(SConsAddons.Options.PackageOption):
 
    def setupLibrarySettings(self):
       # Map from library name to header to check for       
-      self.headerMap = { 'python':'boost/python.hpp',
+      self.headerMap = { 'program_options':'boost/program_options.hpp',
+                         'python':'boost/python.hpp',
                          'thread':'boost/thread.hpp',
                          'filesystem':'boost/filesystem/path.hpp' }
       
@@ -273,7 +276,10 @@ class Boost(SConsAddons.Options.PackageOption):
    def updateEnv(self, env, libs=None):
       """ Add environment options for building against Boost libraries """
       if self.found_incs:
-         env.Append(CXXFLAGS = self.found_incs_as_flags)
+         if self.useCppPath:
+            env.Append(CPPATH, self.found_incs)
+         else:
+            env.Append(CXXFLAGS = self.found_incs_as_flags)
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths)
       for l in self.lib_names:

@@ -43,16 +43,18 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
    Options object for capturing vapor options and dependencies.
    """
 
-   def __init__(self, name, requiredVersion, required=True):
+   def __init__(self, name, requiredVersion, required=True, useCppPath=False):
       """
          name - The name to use for this option
          requiredVersion - The version of vapor required (ex: "0.16.7")
          required - Is the dependency required?  (if so we exit on errors)
+         useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
       """
       help_text = """Base directory for vapor. bin, include, and lib should be under this directory""";
-      self.baseDirKey = "VprBaseDir";
-      self.requiredVersion = requiredVersion;
-      self.required = required;
+      self.baseDirKey = "VprBaseDir"
+      self.requiredVersion = requiredVersion
+      self.required = required
+      self.useCppPath = useCppPath
       SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text);
       
       # configurable options
@@ -160,14 +162,20 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
          self.found_incs = inc_re.findall(os.popen(self.vprconfig_cmd + " --includes").read().strip());
          self.found_libs = lib_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());
          self.found_lib_paths = lib_path_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());
-         self.found_link_from_libs = link_from_lib_re.findall(os.popen(self.vprconfig_cmd + " --extra-libs").read().strip());         
+         self.found_link_from_libs = link_from_lib_re.findall(os.popen(self.vprconfig_cmd + " --extra-libs").read().strip());
+
+         # Create list of flags that may be needed later
+         self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
          
          print "[OK]"
              
    def updateEnv(self, env):
       """ Add environment options for building against vapor"""
       if self.found_incs:
-         env.Append(CPPPATH = self.found_incs);
+         if self.useCppPath:
+            env.Append(CPPPATH = self.found_incs)
+         else:
+            env.Append(CXXFLAGS = self.found_incs_as_flags)
       if self.found_libs:
          env.Append(LIBS = self.found_libs);
       if self.found_lib_paths:
