@@ -33,8 +33,10 @@ import SCons.Environment
 import SCons.Node.FS
 
 # SCons shorthand mappings
-Environment    = SCons.Environment.Environment
-File           = SCons.Node.FS.default_fs.File
+Action          = SCons.Action.Action
+Builder         = SCons.Builder.Builder
+Environment     = SCons.Environment.Environment
+File            = SCons.Node.FS.default_fs.File
 
 # The currently defined prefix
 _prefix = '/usr/local'
@@ -110,6 +112,12 @@ class _Assembly:
       to find libraries while linking.
       """
       self.data['libpaths'].extend(libpaths)
+
+   def getHeaders(self):
+      return self.data['headers']
+
+   def getSources(self):
+      return self.data['sources']
 
    def build(self, env):
       """
@@ -208,9 +216,9 @@ class Package:
       # Extract the version parameters
       import re
       re_matches = re.match(r'^(\d+)\.(\d+)\.(\d+)$', version)
-      self.data['version_major'] = re_matches.group(1)
-      self.data['version_minor'] = re_matches.group(2)
-      self.data['version_patch'] = re_matches.group(3)
+      self.data['version_major'] = int(re_matches.group(1))
+      self.data['version_minor'] = int(re_matches.group(2))
+      self.data['version_patch'] = int(re_matches.group(3))
 
    def CreateLibrary(self, name, shared):
       """
@@ -235,6 +243,24 @@ class Package:
       """
       self.data['extra_dist'].extend(files)
 
+   def getName(self):
+      return self.data['name']
+
+   def getVersionMajor(self):
+      return self.data['version_major']
+
+   def getVersionMinor(self):
+      return self.data['version_minor']
+
+   def getVersionPatch(self):
+      return self.data['version_patch']
+
+   def getAssemblies(self):
+      return self.data['assemblies']
+
+   def getExtraDist(self):
+      return self.data['extra_dist']
+
    def build(self, baseEnv = None):
       """
       Sets up the build and install for this package. This will build all
@@ -248,5 +274,67 @@ class Package:
          env = Environment()
       
       env.Alias('install', Prefix())
-      for assembly in self.data['assemblies']:
+      for assembly in self.getAssemblies():
          assembly.build(env.Copy())
+
+
+class SourceTarGZBuilder:
+   def __init__(self, package):
+      self.data = {
+         'package'      : package,
+      }
+
+      # Create the distribution filename
+      dist_filename = '%s-src-%d.%d.%d' % (self.data['package'].getName(),
+                                           self.data['package'].getVersionMajor(),
+                                           self.data['package'].getVersionMinor(),
+                                           self.data['package'].getVersionPatch())
+      self.data['dist_filename'] = dist_filename
+
+   def build(self, baseEnv = None):
+      """
+      Sets up the distribution build of a source tar.gz for the given package.
+      This will put all the required source and extra distribution files into a
+      compressed tarball. If an environment is specified, it is copied and the
+      copy is used.
+      """
+      # Clone the base environment if we have one
+      if baseEnv:
+         env = baseEnv.Copy()
+      else:
+         env = Environment()
+
+      env.Alias('dist', self.getDistFile())
+
+      # Add the tar.gz builder to the environment
+      targz_action = Action([
+                             'tar cvf ${TARGET.base}.tar $SOURCES',
+                             'gzip ${TARGET.base}.tar'])
+      targz_builder = Builder(name = 'TarGZ',
+                              action = targz_action,
+                              suffix = '.tar.gz')
+
+      env['BUILDERS'] = {'TarGz' : targz_builder}
+
+      # Get a list of the sources that will be included in the distribution
+      dist_files = []
+      for a in self.getPackage().getAssemblies():
+         dist_files.extend(a.getHeaders())
+         dist_files.extend(a.getSources())
+      dist_files.extend(self.getPackage().getExtraDist())
+
+      print 'Source GZ contains: '
+      for f in dist_files:
+         print '\t' + str(f)
+
+      # Setup the build of the distribution
+      env.TarGz(self.getDistFile(), dist_files)
+
+      # Mark implicit dependencies on all the files that will be distributed
+      env.Depends(self.getDistFile(), dist_files)
+
+   def getPackage(self):
+      return self.data['package']
+
+   def getDistFile(self):
+      return self.data['dist_filename']
