@@ -1,5 +1,6 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2003-11-19 allenb       Fixed bug in pyste option when script does not exist.
 2003-11-10 allenb       Added builder for package config scripts.
 2003-11-10 allenb       Removed global Prefix() method replacing it with 
                         storing the prefix in the autodist package instead.
