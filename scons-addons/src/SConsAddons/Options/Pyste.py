@@ -63,7 +63,14 @@ def PysteRecursiveScanFunction(node,env,path):
       other_scanner = env.get_scanner(scanner_key)
       return other_scanner(node,env,path)      
   
-  
+def PysteBuildGenerator(source, target, env, for_signature):
+    cmd = "$PYSTE_CMD "
+    if env.Dictionary().has_key("PYSTE_MODULE"):
+       cmd += "--module=$PYSTE_MODULE "
+
+    cmd += "$_CPPINCFLAGS $_CPPDEFFLAGS --out=${TARGET} ${SOURCE}"
+    return cmd
+
 
 class Pyste(SConsAddons.Options.PackageOption):
    def __init__(self, name, requiredVersion, required=True):
@@ -94,11 +101,11 @@ class Pyste(SConsAddons.Options.PackageOption):
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
-      sys.stdout.write("loading pyste settings...");
+      print "loading pyste settings..."
       if optDict.has_key(self.pysteScriptKey):
          self.pysteScriptPath = optDict[self.pysteScriptKey];
          self.pysteScriptCommand = "python " + self.pysteScriptPath
-         sys.stdout.write("   pyste specified or cached. [%s].\n"% self.pysteScriptPath);
+         print "   %s specified or cached. [%s]."% (self.pysteScriptKey,self.pysteScriptPath);
         
    def find(self, env):
       # Only search for it if not specified already
@@ -170,11 +177,16 @@ class Pyste(SConsAddons.Options.PackageOption):
                                skeys=[".pyste",".Pyste"],
                                path_function=_path,
                                recursive=1)
-       pyste_builder = SCons.Builder.Builder(action = "$PYSTE_CMD ${_concat('-I', CPPPATH, '', __env__)} --out=${TARGET} ${SOURCE}",
-                               suffix=".cpp", src_suffix=".pyste",
-                               );
+#       pyste_builder = SCons.Builder.Builder(action = "$PYSTE_CMD --module=$PYSTE_MODULE $_CPPINCFLAGS $_CPPDEFFLAGS --out=${TARGET} ${SOURCE}",
+#                               suffix=".cpp", src_suffix=".pyste",
+#                               );
+       pyste_builder = SCons.Builder.Builder(generator = PysteBuildGenerator,
+                                             suffix=".cpp", src_suffix=".pyste",
+                                             );
 
-       env.Append(BUILDERS = {'PysteModule' : pyste_builder})
+       
+       
+       env.Append(BUILDERS = {'PysteBuilder' : pyste_builder})
        env.Append(SCANNERS = pyste_scanner)
              
    def updateEnv(self, env):

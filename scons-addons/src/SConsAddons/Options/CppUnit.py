@@ -73,11 +73,11 @@ class CppUnit(SConsAddons.Options.PackageOption):
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
-      sys.stdout.write("setting initial settings for for cppunit...");
+      print "Checking for cppunit..."
       if optDict.has_key(self.baseDirKey):
          self.baseDir = optDict[self.baseDirKey];
          self.cppunitconfig_cmd = pj(self.baseDir, 'bin', 'cppunit-config')
-         sys.stdout.write("specified or cached. [%s].\n"% self.baseDir);
+         print "   %s specified or cached. [%s]." % (self.baseDirKey,self.baseDir);
         
    def find(self, env):
       # Quick exit if nothing to find because it is already specified
@@ -161,9 +161,9 @@ class CppUnit(SConsAddons.Options.PackageOption):
       conf_env = env.Copy();                     # Make a copy of the env
       self.updateEnv(conf_env);                  # Update it with the guessed values
       conf_ctxt = Configure(conf_env);
-#      if not conf_ctxt.CheckCXXHeader(pj("cppunit", "Test.h")):
-#         passed = False;
-#         self.checkRequired("Can't compile with cppunit/Test.h");
+      if not conf_ctxt.CheckCXXHeader(pj("cppunit", "Test.h")):
+         passed = False;
+         self.checkRequired("Can't compile with cppunit/Test.h");
       if not conf_ctxt.CheckLib(self.found_libs[0], autoadd=0):
          passed = False;
          self.checkRequired("Can't compile with cppunit.");

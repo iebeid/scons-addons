@@ -67,11 +67,11 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
-      sys.stdout.write("checking for vapor...");
+      print "checking for vapor..."
       if optDict.has_key(self.baseDirKey):
          self.baseDir = optDict[self.baseDirKey];
          self.vprconfig_cmd = pj(self.baseDir, 'bin', 'vpr-config')
-         sys.stdout.write("specified or cached. [%s].\n"% self.baseDir);
+         print "   %s specified or cached. [%s]."% (self.baseDirKey,self.baseDir);
          #assert os.path.isfile(self.vprconfig_cmd), "vpr-config does not exist"
         
    def find(self, env):
