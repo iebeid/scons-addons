@@ -32,8 +32,8 @@ Automatic distribution builder and packager for SCons.
 # -----------------------------------------------------------------
 ############################################################## autodist-cpr end
 
-__version__    = '0.1.5'
-__author__     = 'Ben Scott'
+__version__    = '0.2.1'
+__author__     = 'Ben Scott and Allen Bierbaum'
 
 
 import os
@@ -62,11 +62,10 @@ Value           = SCons.Node.Python.Value
 config_script_contents = ""
 
 class InstallableFile:
-   """ Class to wrap any installable (non-derived) file.  ex. headers, docs, etc """
-   def __init__(self, fileNode, prefix="", newname=None):
-      self.fileNode = fileNode
-      self.prefix = prefix
-      self.newname = newname
+   """ Class to wrap any installable file.  ex. progs, libs, headers, docs, etc """
+   def __init__(self, fileNode, prefix=""):
+      self.fileNode = fileNode         # The scons node for the file
+      self.prefix = prefix             # The prefix to use for the file (minus the package/bundle prefix)
 
    def __str__(self):
       """ an installable file's string representation is its prefix/name."""
@@ -123,6 +122,7 @@ class FileBundle:
       Add these files to the list of installable files.  They will be installed as:
       self.package.prefix/self.prefix/prefix/file_prefix. The list must come
       in as strings as they are processed through File().
+      files - List of filenames (file nodes should also work)
       """
       for fn in files:                                # For all filenames
          fn_dir = os.path.dirname(fn)                 # Find out if there is a local dir prefix
@@ -149,10 +149,53 @@ class FileBundle:
          self.env.Install(target_dir, fnode)        
 
       self.built = True;      
+
       
 class _Assembly:
+   """ Base class for all assembly types that can be managed by a package. 
+       This is an abstract type that provides common functionality and interface for all assemblies.
    """
-   Base type for objects that are managed by Package.
+   def __init__(self, pkg, baseEnv, prefix=None):
+      """
+      Constructs a new Assembly object with the given name within the given
+      environment.
+      """
+      self.package = pkg                   # The package object we belong to
+      self.built = False;                  # Flag set once we have been built
+      self.installPrefix = prefix;         # Default install prefix
+
+      # Clone the base environment if we have one
+      if baseEnv:
+         self.env = baseEnv.Copy()
+      else:
+         self.env = Environment()
+
+   def setInstallPrefix(self, prefix):
+      self.installPrefix = prefix
+
+   def getInstallPrefix(self):
+      return self.installPrefix
+   
+   def isBuilt(self):
+      return self.built
+   
+   def build(self):
+      """
+      Sets up the build targets for this assembly.
+      May only be called once.
+      NOTE: Whatever the current directly is when this is called is the directory
+      used for the builder command associated with this assembly.
+      """      
+
+      # Now actually do the build
+      self._buildImpl()
+      self.built = True;
+
+   
+      
+class _CodeAssembly(_Assembly):
+   """
+   Base type for assemblys that are based on "code".
 
    This "abstract" class provides common functionality for Program,
    StaticLibrary, and SharedLibrary. You don't want to instantiate this class
@@ -164,22 +207,14 @@ class _Assembly:
       Constructs a new Assembly object with the given name within the given
       environment.
       """
-      self.data = {}
-      self.package = pkg                                   # The package object we belong to
+      _Assembly.__init__(self, pkg, baseEnv, prefix)
+      
       self.fileNode      = File(filename)
       self.sources       = []
       self.includes      = []
       self.libs          = []
       self.libpaths      = []
       self.headers       = []
-      self.built = False;                  # Flag set once we have been built
-      self.installPrefix = prefix;           # Default install prefix
-
-      # Clone the base environment if we have one
-      if baseEnv:
-         self.env = baseEnv.Copy()
-      else:
-         self.env = Environment()
 
    def addSources(self, sources):
       """
@@ -238,12 +273,6 @@ class _Assembly:
    def getAbsFilePath(self):
       return self.fileNode.get_abspath()
 
-   def setInstallPrefix(self, prefix):
-      self.installPrefix = prefix
-
-   def getInstallPrefix(self):
-      return self.installPrefix
-   
    def build(self):
       """
       Sets up the build and install targets for this assembly.
@@ -253,15 +282,15 @@ class _Assembly:
       """
       # Setup the environment for the build
       self.env.Append(CPPPATH = self.includes,
-                              LIBPATH = self.libpaths,
-                              LIBS    = self.libs)
+                      LIBPATH = self.libpaths,
+                      LIBS    = self.libs)
 
       # Now actually do the build
       self._buildImpl()
       self.built = True;
 
 
-class Library(_Assembly):
+class Library(_CodeAssembly):
    """
    This "abstract" class provides common functionality for StaticLibrary and
    SharedLibrary. You don't want to instantiate this class directly. It is
@@ -276,7 +305,7 @@ class Library(_Assembly):
       builderNames - The names of the builders to use for building the libary: ex. 'SharedLibrary'
       installPrefix - Prefix (relative to the standard install path) to install this library
       """
-      _Assembly.__init__(self, libname, pkg, baseEnv, installPrefix)
+      _CodeAssembly.__init__(self, libname, pkg, baseEnv, installPrefix)
       
       if type(builderNames) is types.StringType:
          self.builder_names = [ builderNames ]
@@ -324,7 +353,7 @@ class StaticAndSharedLibrary(Library):
       Library.__init__(self, libname, pkg, baseEnv, ['StaticLibrary', 'SharedLibrary'], installPrefix)
 
 
-class Program(_Assembly):
+class Program(_CodeAssembly):
    """
    This object knows how to build (and install) an executable program from a
    given set of sources.
@@ -333,7 +362,7 @@ class Program(_Assembly):
       """
       Creates a new program builder for a program of the given name.
       """
-      _Assembly.__init__(self, progname, pkg, baseEnv, installPrefix)      
+      _CodeAssembly.__init__(self, progname, pkg, baseEnv, installPrefix)      
 
    def _buildImpl(self):
       """
