@@ -38,7 +38,7 @@ from SCons.Util import WhereIs
 pj = os.path.join;
 
 
-class OpenSG(SConsAddons.Options.LocalUpdateOption):
+class OpenSG(SConsAddons.Options.PackageOption):
    """ 
    Options object for capturing vapor options and dependencies.
    """
@@ -151,6 +151,7 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
          if edict.has_key(self.baseDirKey):
             del edict[self.baseDirKey];
       else:
+         self.available = True
          # Get output from osg-config
          # Res that when matched against osg-config output should match the options we want
          # In future could try to use INCPREFIX and other platform neutral stuff
