@@ -1,5 +1,8 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-02-25 allenb       Updated Options code so options with multiple keys
+                        could have help text per option.
+                        Fixed boost option to work with the new boost build.
 2003-12-30 allenb       Fixed problem with boost/filesystem/operations.hpp in
                         Boost options class.
 2003-12-22 allenb       Added FileBundle object for installing sets of files
