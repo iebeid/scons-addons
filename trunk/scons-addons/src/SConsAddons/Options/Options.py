@@ -318,7 +318,7 @@ class Options:
         sort - A sort method to use
         """
 
-        help_text = ""
+        help_text = "\nOption Modules\n"
 
         if sort:
             options = self.options[:]
@@ -326,12 +326,14 @@ class Options:
         else:
             options = self.options
             
+        max_key_len = max([len(o.key) for o in options])
+        
         for option in options:
-            help_text = help_text + '\n%s: %s\n'%(option.key, option.help)
+            help_text = help_text + '   %*s: %s' % (max_key_len, option.key, option.help)
             if env.has_key(option.key):
-                help_text = help_text + '    actual: %s\n'%env.subst('${%s}'%option.key)
+                help_text = help_text + '  val: [%s]\n'%env.subst('${%s}'%option.key)
             else:
-                help_text = help_text + '    actual: None\n'
+                help_text = help_text + '  val: [None]\n'
 
         return help_text
 
