@@ -1,5 +1,6 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-02-27 allenb       Added OpenSG option set.
 2004-02-25 allenb       Updated Options code so options with multiple keys
                         could have help text per option.
                         Fixed boost option to work with the new boost build.
