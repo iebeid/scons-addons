@@ -64,14 +64,19 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
       print msg;
       if self.required:
          sys.exit(1);
+
+   def startUpdate(self):
+      print "Checking for vapor...",
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
-      print "checking for vapor..."
+      if self.verbose:
+         print "   Setting initial vapor settings."
       if optDict.has_key(self.baseDirKey):
          self.baseDir = optDict[self.baseDirKey];
          self.vprconfig_cmd = pj(self.baseDir, 'bin', 'vpr-config')
-         print "   %s specified or cached. [%s]."% (self.baseDirKey,self.baseDir);
+         if self.verbose:
+            print "   %s specified or cached. [%s]."% (self.baseDirKey,self.baseDir);
          #assert os.path.isfile(self.vprconfig_cmd), "vpr-config does not exist"
         
    def find(self, env):
@@ -156,6 +161,8 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
          self.found_libs = lib_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());
          self.found_lib_paths = lib_path_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());
          self.found_link_from_libs = link_from_lib_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());         
+         
+         print "[OK]"
              
    def updateEnv(self, env):
       """ Add environment options for building against vapor"""

@@ -69,6 +69,12 @@ class Option:
         self.name = name
         self.key = key
         self.help = help
+        self.verbose = False      # If verbose, then output more information
+        
+    def startUpdate(self):
+        """ Called at beginning of update.  Perform any intialization or notification here. """
+        print "Updating ", self.name
+        pass
         
     def setInitial(self, optDict):
         """ Given an initial option Dictionary (probably from option file) initialize our data """
@@ -94,6 +100,10 @@ class Option:
         """ Validate the option settings.  This checks to see if there are problems
             with the configured settings.
         """
+        pass
+    
+    def completeUpdate(self,env):
+        """ Complete the update process. """
         pass
 
 class LocalUpdateOption(Option):
@@ -193,6 +203,7 @@ class Options:
         self.options = []           # List of option objects managed
         self.files = []             # Options files to load
         self.args = args            # Set the default args from command line
+        self.verbose = False        # If true, then we will set all contained options to verbose before processing
         
         if SCons.Util.is_String(files):
            self.files = [ files, ];
@@ -250,6 +261,11 @@ class Options:
         """
 
         values = {}
+        
+        # Setup verbosity
+        if self.verbose:
+            for option in self.options:
+                option.verbose = True
 
         # first load previous values from file
         for filename in self.files:
@@ -268,11 +284,13 @@ class Options:
         # - Set the environment
         # - Validate the setting
         for option in self.options:
+            option.startUpdate()
             option.setInitial(values)
             option.find(env)
             option.convert()
             option.set(env)
             option.validate(env)
+            option.completeUpdate(env)
     
 
     def Save(self, filename, env):
