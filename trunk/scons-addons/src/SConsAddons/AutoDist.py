@@ -407,13 +407,14 @@ def _CreateSourceTarGzBuilder(env):
       for s in source:
          src_file = str(s)
          dest_dir = path.join(target_dir, path.dirname(src_file))
+         dest_file = path.basename(src_file)
 
          # Make sure the target directory exists
          if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
 
          # Copy the file over
-         shutil.copy2(src_file, path.join(dest_dir, src_file))
+         shutil.copy2(src_file, path.join(dest_dir, dest_file))
 
       # Make the tar.gz
       targz = Action('tar cf - -C '+temp_dir+' $SOURCES | gzip -f > $TARGET')
