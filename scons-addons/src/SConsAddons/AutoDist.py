@@ -61,10 +61,12 @@ Value           = SCons.Node.Python.Value
 
 config_script_contents = ""
 
-class Header:
-   def __init__(self, fileNode, prefix=None):
+class InstallableFile:
+   """ Class to wrap any installable (non-derived) file.  ex. headers, docs, etc """
+   def __init__(self, fileNode, prefix="", newname=None):
       self.fileNode = fileNode
       self.prefix = prefix
+      self.newname = newname
 
    def __str__(self):
       """A Header's string representation is its prefix/name."""
@@ -79,7 +81,66 @@ class Header:
    def getPrefix(self):
       return self.prefix
 
+   
+class Header(InstallableFile):
+   """ This class is meant to wrap a header file to install. """
+   def __init__(self, fileNode, prefix=None):
+      InstallableFile.__init__(self, fileNode, prefix)
+      
 
+class FileBundle:
+   """ Wrapper class for a group of installable files to bundle together to install in a similar area. """
+
+   def __init__(self, prefix, pkg, baseEnv=None):
+      """
+      Construct file bundle object.
+      prefix - Prefix to install the files (relative to package)
+      pkg - The package this bundle is a part of
+      baseEnv - The environment that this bundle should be included in
+      """
+      self.prefix = prefix
+      self.package = pkg                   # The package object we belong to
+      self.files = []                      # Installable files
+      self.built = False;                  # Flag set once we have been built
+
+      # Clone the base environment if we have one
+      if baseEnv:
+         self.env = baseEnv.Copy()
+      else:
+         self.env = Environment()
+
+   def addFiles(self, files, prefix = None):
+      """
+      Add these files to the list of installable files.  They will be installed as:
+      self.package.prefix/self.prefix/prefix/file_prefix. The list must come
+      in as strings as they are processed through File().
+      """
+      for fn in files:                                # For all filenames
+         fn_dir = os.path.dirname(fn)                 # Find out if there is a local dir prefix
+         hdr = InstallableFile( File(fn), pj(self.prefix, prefix, fn_dir))   # Create new header rep
+         self.files.append(hdr)                       # Append it on
+
+   def getInstallableFiles(self):
+      return self.files
+
+   def isBuilt(self):
+      return self.built;
+   
+   def build(self):
+      """
+      Sets up the build and install targets for this file bundle.
+      May only be called once.
+      NOTE: Whatever the current directly is when this is called is the directory
+      used for the builder command associated with this assembly.
+      """
+      # Install the headers in the source list
+      for f in self.files:
+         fnode = f.getFileNode()
+         target_dir = path.join(self.package.prefix, f.getPrefix())
+         self.env.Install(target_dir, fnode)        
+
+      self.built = True;      
+      
 class _Assembly:
    """
    This "abstract" class provides common functionality for Program,
@@ -209,23 +270,22 @@ class _Library(_Assembly):
 
       # Setup build and install for each built library
       # Use get_abspath() with fileNode so we get the path into the build_dir and not src dir
-      for lib_builder in self.builder_names:
-         lib_filepath = self.fileNode.get_abspath()
-         lib = self.data['env'].__dict__[lib_builder](lib_filepath, self.data['sources'])
-         inst_prefix = pj(self.package.prefix, self.installDir)
-         if self.installPrefix:
-            inst_prefix = pj(inst_prefix,self.installPrefix)
-         self.data['env'].Install(inst_prefix, lib)
+      # Only build libraries if we have sources
+      if len(self.data['sources']) > 0:
+         for lib_builder in self.builder_names:
+            lib_filepath = self.fileNode.get_abspath()
+            lib = self.data['env'].__dict__[lib_builder](lib_filepath, self.data['sources'])
+            inst_prefix = pj(self.package.prefix, self.installDir)
+            if self.installPrefix:
+               inst_prefix = pj(inst_prefix,self.installPrefix)
+            self.data['env'].Install(inst_prefix, lib)
 
       # Install the headers in the source list
       for h in self.data['headers']:
-         prefix = h.getPrefix()
          headerNode = h.getFileNode()
-         target = path.join(self.package.prefix, 'include')
+         target = path.join(self.package.prefix, 'include', h.getPrefix())
          # Add on the prefix if this header has one
-         if prefix:
-            target = path.join(target, prefix)
-         self.data['env'].Install(target, headerNode)
+         self.data['env'].Install(target, headerNode)        
 
 
 class SharedLibrary(_Library):
@@ -275,7 +335,7 @@ class Program(_Assembly):
          inst_prefix = pj(inst_prefix,self.installPrefix)
       self.data['env'].Install(inst_prefix, prog)
 
-
+      
 class Package:
    """
    A package defines a collection of distributables including programs and
@@ -344,6 +404,12 @@ class Package:
       prog = Program(name, self, baseEnv)
       self.assemblies.append(prog)
       return prog
+   
+   def createFileBundle(self, prefix, baseEnv = None): 
+      """ Creates a new FileBundle object as part of this package. """
+      bundle = FileBundle(prefix=prefix, pkg = self, baseEnv = baseEnv)
+      self.assemblies.append(bundle)
+      return bundle
    
    def createConfigAction(self, target, source, env):
       """ Called as action of config script builder """
