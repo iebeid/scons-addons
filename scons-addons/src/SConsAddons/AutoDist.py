@@ -134,10 +134,10 @@ class _Assembly:
       headers will be installed to Prefix()/include/prefix/file_prefix. The list must come
       in as strings as they are processed through File().
       """
-      for fn in headers:                                     # For all filenames in headers
-         fn_dir = os.path.dirname(fn)                        # Find out if there is a local dir prefix
+      for fn in headers:                              # For all filenames in headers
+         fn_dir = os.path.dirname(fn)                 # Find out if there is a local dir prefix
          hdr = Header( File(fn), pj(prefix,fn_dir))   # Create new header rep
-         self.data['headers'].append(hdr)                    # Append it on
+         self.data['headers'].append(hdr)             # Append it on
 
    def addIncludes(self, includes):
       """
