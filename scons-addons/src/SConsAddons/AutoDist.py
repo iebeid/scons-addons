@@ -117,7 +117,10 @@ class FileBundle:
       in as strings as they are processed through File().
       files - List of filenames (file nodes should also work)
       """
-      for fn in files:                                     # For all files
+      if not SCons.Util.is_List(files):
+         files = [files]
+         
+      for fn in files:                                    # For all files
          local_dir_prefix = ""
          if not isinstance(fn, SCons.Node.FS.Base):        # If we are a string filename, then get our local prefix
             local_dir_prefix = os.path.dirname(fn)
@@ -235,6 +238,9 @@ class FileBundleAssembly(_Assembly):
       in as strings as they are processed through File().
       files - List of filenames (file nodes should also work)
       """
+      if not SCons.Util.is_List(files):
+         files = [files]
+      
       for fn in files:                                # For all filenames
          local_dir_prefix = ""
          if not isinstance(fn, SCons.Node.FS.Base):        # If we are a string filename, then get our local prefix
@@ -260,7 +266,7 @@ class FileBundleAssembly(_Assembly):
 
       for f in self.files:
          fnode = f.getFileNode()
-         fb.addFiles([fnode], f.getPrefix())        
+         fb.addFiles(fnode, f.getPrefix())        
 
       self.built = True;         
       
@@ -401,12 +407,12 @@ class Library(_CodeAssembly):
             lib = self.env.__dict__[lib_builder](lib_filepath, self.sources)
 
             # Lib to file bundle
-            fb.addFiles([lib], self.installPrefix)
+            fb.addFiles(lib, self.installPrefix)
 
       # Install the headers in the source list
       for h in self.headers:
          headerNode = h.getFileNode()
-         fb.addFiles([headerNode], pj('include', h.getPrefix()))
+         fb.addFiles(headerNode, pj('include', h.getPrefix()))
          
          #target = path.join(self.package.prefix, 'include', h.getPrefix())
          # Add on the prefix if this header has one
@@ -449,7 +455,7 @@ class Program(_CodeAssembly):
 
       # Add executable to file bundle
       fb = self.package.getFileBundle()
-      fb.addFiles([prog], self.installPrefix)
+      fb.addFiles(prog, self.installPrefix)
       
       # Install the binary
       #inst_prefix = self.package.prefix
