@@ -1,5 +1,8 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-05-31 allenb       Added option to updateEnv for boost and vapor options
+                        to explicitly tell it to update CPPPATH with include
+                        paths.
 2004-04-16 allenb       Removed auto-creation of install alias in AutoDist.
                         This was causing problems when multiple packages
                         install to the same prefix.
