@@ -341,6 +341,10 @@ class Package:
    A package defines a collection of distributables including programs and
    libraries. The Package class provides the ability to build, install, and
    package up distributions of your project.
+   
+   A package object provides an interface to add libraries, programs, headers,
+   and support files to a single unit that can be installed.  It also shares
+   an environment across all these different units to build.
    """
 
    def __init__(self, name, version, prefix='/usr/local', baseEnv = None, description= None):
@@ -374,6 +378,8 @@ class Package:
       Creates a new shared library of the given name as a part of this package.
       The library will be built within the given environment.
       """
+      if not baseEnv:
+         baseEnv = self.env
       lib = SharedLibrary(name, self, baseEnv, installDir)
       self.assemblies.append(lib)
       return lib
@@ -383,6 +389,8 @@ class Package:
       Creates a new static library of the given name as a part of this package.
       The library will be built within the given environment.
       """
+      if not baseEnv:
+         baseEnv = self.env
       lib = StaticLibrary(name, self, baseEnv, installDir)
       self.assemblies.append(lib)
       return lib
@@ -392,6 +400,8 @@ class Package:
       Creates new static and shared library of the given name as a part of this package.
       The library will be built within the given environment.
       """
+      if not baseEnv:
+         baseEnv = self.env
       lib = StaticAndSharedLibrary(name, self, baseEnv, installDir)
       self.assemblies.append(lib)
       return lib
@@ -401,6 +411,8 @@ class Package:
       Creates a new executable program of the given name as a part of this
       package. The program will be built within the given environment.
       """
+      if not baseEnv:
+         baseEnv = self.env
       prog = Program(name, self, baseEnv)
       self.assemblies.append(prog)
       return prog

@@ -1,5 +1,7 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-03-06 allenb       Updated the autodist factory methods for libs and
+                        programs to use the package environment by default.
 2004-03-06 allenb       Add smarter search for boost include path.
 2004-02-27 allenb       Added OpenSG option set.
 2004-02-25 allenb       Updated Options code so options with multiple keys
