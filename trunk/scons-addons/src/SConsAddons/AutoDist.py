@@ -45,6 +45,8 @@ import SCons.Node.FS
 import types
 import re
 
+pj = os.path.join
+
 
 # SCons shorthand mappings
 Action          = SCons.Action.Action
@@ -108,6 +110,7 @@ class _Assembly:
       self.data['libpaths']      = []
       self.data['headers']       = []
       self.built = False;                  # Flag set once we have been built
+      self.installPrefix = None;           # Default install prefix
 
       # Clone the base environment if we have one
       if baseEnv:
@@ -133,7 +136,7 @@ class _Assembly:
       """
       for fn in headers:                                     # For all filenames in headers
          fn_dir = os.path.dirname(fn)                        # Find out if there is a local dir prefix
-         hdr = Header( File(fn), path.join(prefix,fn_dir))   # Create new header rep
+         hdr = Header( File(fn), pj(prefix,fn_dir))   # Create new header rep
          self.data['headers'].append(hdr)                    # Append it on
 
    def addIncludes(self, includes):
@@ -210,7 +213,10 @@ class _Library(_Assembly):
       # Use get_abspath() with fileNode so we get the path into the build_dir and not src dir
       for lib_builder in self.builder_names:
          lib = self.data['env'].__dict__[lib_builder](self.fileNode.get_abspath(), self.data['sources'])
-         self.data['env'].Install(path.join(Prefix(), 'lib'), lib)
+         inst_prefix = pj(Prefix(), 'lib')
+         if self.installPrefix:
+            inst_prefix = pj(inst_prefix,self.installPrefix)
+         self.data['env'].Install(inst_prefix, lib)
 
       # Install the headers in the source list
       for h in self.data['headers']:
@@ -265,7 +271,10 @@ class Program(_Assembly):
       prog = self.data['env'].Program(self.fileNode, source = self.data['sources'])
 
       # Install the binary
-      self.data['env'].Install(path.join(Prefix(), 'bin'), prog)
+      inst_prefix = pj(Prefix(), 'bin')
+      if self.installPrefix:
+         inst_prefix = pj(inst_prefix,self.installPrefix)
+      self.data['env'].Install(inst_prefix, prog)
 
 
 class Package:
