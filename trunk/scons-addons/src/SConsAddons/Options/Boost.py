@@ -30,7 +30,7 @@ Configure = SCons.SConf.SConf
 # Options
 # ##############################################
 class Boost(SConsAddons.Options.PackageOption):
-   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], required=True, useCppPath=False):
+   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], required=True, useCppPath=False, toolset="gcc"):
       """
          name - The name to use for this option
          requiredVersion - The version of Boost required (ex: "1.30.0")
@@ -39,6 +39,7 @@ class Boost(SConsAddons.Options.PackageOption):
          libs - Boost libraries needed that are actually compiled (base library names. ex: python)
          required - Is the dependency required?  (if so we exit on errors)
          useCppPath - If true, then include path is added to CPPPATH if not, then added to CPPFLAGS directly
+	 toolset - The toolset name to use (ex: "gcc", "il")
       """
       help_text = ["Base directory for Boost. include, and lib should be under this directory.",
                    "Include directory for boost (if not under base)."]
@@ -48,6 +49,7 @@ class Boost(SConsAddons.Options.PackageOption):
       self.lib_names = libs
       self.required = required
       self.useCppPath = useCppPath
+      self.toolset = toolset
       SConsAddons.Options.PackageOption.__init__(self, name, [self.baseDirKey, self.incDirKey], help_text)
       self.available = False            # Track availability
       
@@ -61,7 +63,6 @@ class Boost(SConsAddons.Options.PackageOption):
       self.setupLibrarySettings()
       
       # Options for which libraries to use
-      self.toolset = "gcc"     # XXX: This is currently a hack
       self.use_mt = useMt
       self.use_debug = useDebug 
       print "Use debug set to:", self.use_debug
@@ -87,7 +88,8 @@ class Boost(SConsAddons.Options.PackageOption):
 
       # --- Build up settings using distutils.sysconfig to get Python build options --- #
       # distutils.sysconfig.get_config_vars()
-      self.python_version = distutils.sysconfig.get_python_version()    # ex: '2.3'
+      #self.python_version = distutils.sysconfig.get_python_version()    # ex: '2.3'
+      self.python_version = distutils.sysconfig.get_config_var("VERSION")    # ex: '2.3'
       self.python_inc_dir = distutils.sysconfig.get_python_inc()
       #python_link_share_flags = distutils.sysconfig.get_config_var('LINKFORSHARED')
       self.python_link_share_flags = "-Wl,-export-dynamic"
