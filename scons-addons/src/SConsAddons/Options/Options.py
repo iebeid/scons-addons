@@ -76,7 +76,7 @@ class Option:
         
     def find(self, env):
         """ 
-        Find the option setting (find default).  Only called if the user does not specify option.
+        Find the option setting (find default).  Called even if option already set.
         env - The current environment
         post: Should store internal rep of the value to use
         """
@@ -91,7 +91,9 @@ class Option:
         pass
     
     def validate(self, env):
-        """ Validate the option settings """
+        """ Validate the option settings.  This checks to see if there are problems
+            with the configured settings.
+        """
         pass
 
 class LocalUpdateOption(Option):
@@ -118,7 +120,7 @@ class SimpleOption(Option):
     Implementation of a simple option wrapper.  This is used by Options.Add()
     This Option works for a single option value with a single key (stored internally)
     """
-    def __init__(self, name, key, help, finder, converter, setter, validater):
+    def __init__(self, name, key, help, finder, converter, setter, validator):
         """
         Create an option
         name - Name of the option
@@ -129,7 +131,7 @@ class SimpleOption(Option):
         converter - option function that is called to convert the options's value before
                     putting in the environment
         setter - Method called to set/generate the environment
-        validater - Function called to validate the option value
+        validator - Function called to validate the option value
                     called with (key, value, environment)
         """
         Option.__init__(self, name, key, help);
@@ -141,7 +143,7 @@ class SimpleOption(Option):
             self.finder_cb = lambda key, env: finder
         self.converter_cb = converter
         self.setter_cb = setter
-        self.validater_cb = validater
+        self.validator_cb = validator
         self.value = None
         
     def setInitial(self, optDict):
@@ -170,8 +172,8 @@ class SimpleOption(Option):
     
     def validate(self, env):
         """ Validate the option settings """
-        if self.validater_cb and self.value:
-            self.validater_cb(self.key, self.value, env)
+        if self.validator_cb and self.value:
+            self.validator_cb(self.key, self.value, env)
         
     
 
@@ -198,7 +200,7 @@ class Options:
            self.files = files;
 
 
-    def Add(self, key, help="", finder=None, validater=None, converter=None, name=None):
+    def Add(self, key, help="", default=None, validator=None, converter=None, name=None):
         """
         Add an option.
 
@@ -220,7 +222,7 @@ class Options:
             self.unique_id = self.unique_id + 1
             name = "Unamed_" + str(self.unique_id)
             
-        option = SimpleOption(name, key, help, finder, converter, None, validater)
+        option = SimpleOption(name, key, help, default, converter, None, validator)
 
         self.options.append(option)
         
