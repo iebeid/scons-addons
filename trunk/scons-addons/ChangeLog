@@ -1,5 +1,7 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-11-17 allenb       Added utility method to get a relative path
+                        from a known path and base directory.
 2004-11-10 allenb       Refactored AutoDist to make better use of FileBundles.
                         Now packages can have multiple file bundles and
                         files bundles can have their own install prefix.
