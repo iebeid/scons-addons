@@ -3,6 +3,7 @@ DATE       AUTHOR       CHANGE
 2004-11-10 allenb       Refactored AutoDist to make better use of FileBundles.
                         Now packages can have multiple file bundles and
                         files bundles can have their own install prefix.
+                        Fix relative path handling with FileBundles.
 2004-09-24 allenb       Updated Boost python to get more info from python
                         about current version, libs, etc.  This allows building
                         with 2.2 or 2.3 (or future versions hopefully).

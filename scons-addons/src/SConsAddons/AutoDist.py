@@ -119,24 +119,25 @@ class FileBundle:
       self.bundlePrefix = bundlePrefix
       self.built = False
 
-   def addFiles(self, files, prefix = ""):
+   def addFiles(self, files, prefix = "", useRelPath=True):
       """
       Add these files to the list of installable files.
       The list can either be string file names or File() nodes.
       files - List of files to add to bundle.
+      prefix - A common prefix to use for all installed files (beyond the bundle prefix)
+      useRelPath - If true, append the relative path in the file to
+                   the prefix to get the real full install path.
       """
       if not SCons.Util.is_List(files):
          files = [files]
          
       for f in files:                              # For all files
          local_dir_prefix = ""
-         
-         # If we are a string filename:
-         # - get our local prefix
-         # - Create a file object to use
+         # If we are a string filename create file object
          if not isinstance(f, SCons.Node.FS.Base):
-            local_dir_prefix = os.path.dirname(f)
             f = File(f)
+         if useRelPath:
+            local_dir_prefix = str(f.dir)
          install_file = InstallableFile(f, pj(prefix, local_dir_prefix))
          self.files.append(install_file)                       # Append it on
 
@@ -335,8 +336,7 @@ class _CodeAssembly(_Assembly):
       in as strings as they are processed through File().
       """
       for fn in headers:                              # For all filenames in headers
-         fn_dir = os.path.dirname(fn)                 # Find out if there is a local dir prefix
-         hdr = Header( File(fn), pj(prefix,fn_dir))   # Create new header rep
+         hdr = Header( File(fn), prefix)              # Create new header rep
          self.headers.append(hdr)                     # Append it on
 
    def addIncludes(self, includes):
@@ -430,16 +430,12 @@ class Library(_CodeAssembly):
             lib = self.env.__dict__[lib_builder](lib_filepath, self.sources)
 
             # Lib to file bundle
-            fb.addFiles(lib, self.installPrefix)
+            fb.addFiles(lib, self.installPrefix, False)
 
       # Install the headers in the source list
       for h in self.headers:
          headerNode = h.getFileNode()
-         fb.addFiles(headerNode, pj('include', h.getPrefix()))
-         
-         #target = path.join(self.package.prefix, 'include', h.getPrefix())
-         # Add on the prefix if this header has one
-         #self.env.Install(target, headerNode)        
+         fb.addFiles(headerNode, pj('include', h.getPrefix()) )
 
 
 class SharedLibrary(Library):
@@ -478,7 +474,7 @@ class Program(_CodeAssembly):
 
       # Add executable to file bundle
       fb = self.package.createFileBundle()
-      fb.addFiles(prog, self.installPrefix)
+      fb.addFiles(prog, self.installPrefix, False)
       
       # Install the binary
       #inst_prefix = self.package.prefix
