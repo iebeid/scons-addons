@@ -29,6 +29,7 @@ import SCons.Environment;   # Get the environment crap
 import SCons;
 import SCons.Util
 import SConsAddons.Options;   # Get the modular options stuff
+import SConsAddons.Util
 import sys;
 import os;
 import re;
@@ -41,7 +42,7 @@ import SCons.SConf
 Configure = SCons.SConf.SConf     # Use same alias as SConsctruct sees
 
 
-class CppDom(SConsAddons.Options.LocalUpdateOption):
+class CppDom(SConsAddons.Options.PackageOption):
    def __init__(self, name, requiredVersion, required=True):
       """
          name - The name to use for this option
@@ -52,6 +53,7 @@ class CppDom(SConsAddons.Options.LocalUpdateOption):
       self.baseDirKey = "CppDomBaseDir";
       self.requiredVersion = requiredVersion;
       self.required = required;
+      self.available = False
       SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text);
       
       # configurable options
@@ -63,6 +65,9 @@ class CppDom(SConsAddons.Options.LocalUpdateOption):
       print msg;
       if self.required:
          sys.exit(0);
+         
+   def isAvailable():
+      return self.available
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
@@ -117,9 +122,11 @@ class CppDom(SConsAddons.Options.LocalUpdateOption):
       if not os.path.isfile(self.cppdomconfig_cmd):
          passed = False;
          self.checkRequired("cppdom-config does not exist:%s"%self.cppdomconfig_cmd);
-         
+
+      cfg_cmd_parser = SConsAddons.Util.ConfigCmdParser(self.cppdomconfig_cmd)
+      
       # Check version requirement
-      found_ver_str = os.popen(self.cppdomconfig_cmd + " --version").read().strip();
+      found_ver_str = cfg_cmd_parser.getVersion()
       req_ver = [int(n) for n in self.requiredVersion.split(".")];
       found_ver = [int(n) for n in found_ver_str.split(".")];
       if found_ver < req_ver:
@@ -131,19 +138,11 @@ class CppDom(SConsAddons.Options.LocalUpdateOption):
       if not os.path.isfile(cppdom_header_file):
          passed = False;
          self.checkRequired("cppdom.h not found:%s"%cppdom_header_file);
-
-      # Read the options from the cppdom-config command
-      # Get output from vpr-config
-      # Res that when matched against vpr-config output should match the options we want
-      # In future could try to use INCPREFIX and other platform neutral stuff
-      inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
-      lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
-      lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
          
       # Returns lists of the options we want
-      self.found_incs = inc_re.findall(os.popen(self.cppdomconfig_cmd + " --cxxflags").read().strip());
-      self.found_libs = lib_re.findall(os.popen(self.cppdomconfig_cmd + " --libs").read().strip());
-      self.found_lib_paths = lib_path_re.findall(os.popen(self.cppdomconfig_cmd + " --libs").read().strip());
+      self.found_incs = cfg_cmd_parser.findIncludes(" --cxxflags")
+      self.found_libs = cfg_cmd_parser.findLibs()
+      self.found_lib_paths = cfg_cmd_parser.findLibPaths()
       
       # Try to build against the library
       conf_env = env.Copy();                     # Make a copy of the env
@@ -169,6 +168,9 @@ class CppDom(SConsAddons.Options.LocalUpdateOption):
          self.found_incs = None;
          self.found_libs = None;
          self.found_lib_paths = None;
+      else:
+         self.available = True
+      
              
    def updateEnv(self, env):
       """ Add environment options for building against vapor"""
