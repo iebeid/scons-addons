@@ -377,7 +377,7 @@ def _CreateSourceTarGzBuilder(env):
          shutil.copy2(src_file, path.join(dest_dir, src_file))
 
       # Make the tar.gz
-      targz = Action('tar -c -C '+temp_dir+' -f - $SOURCES | gzip -f > $TARGET')
+      targz = Action('tar cf - -C '+temp_dir+' $SOURCES | gzip -f > $TARGET')
       targz.execute(target, [dist_name], env)
 
       # Remove the temporary directory
