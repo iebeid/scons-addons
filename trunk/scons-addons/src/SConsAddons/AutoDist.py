@@ -58,11 +58,12 @@ def Prefix(prefix = None):
 class Assembly:
    def __init__(self, name):
       self.data = {}
-      self.data['name']     = name
-      self.data['sources']  = []
-      self.data['includes'] = []
-      self.data['libs']     = []
-      self.data['libpaths'] = []
+      self.data['name']          = name
+      self.data['sources']       = []
+      self.data['includes']      = []
+      self.data['libs']          = []
+      self.data['libpaths']      = []
+      self.data['headers']       = []
 
    def addSources(self, sources):
       # Use File() to figure out the absolute path to the file
@@ -75,6 +76,9 @@ class Assembly:
 
    def addLibPaths(self, libpaths):
       self.data['libpaths'].extend(libpaths)
+
+   def addHeaders(self, headers):
+      self.data['headers'].extend(headers)
 
 
 class Library(Assembly):
@@ -91,8 +95,15 @@ class Library(Assembly):
       # Build rule
       lib = makeLib(self.data['name'], self.data['sources'])
 
-      # Install rule
+      # Install the binary
       env.Install(path.join(Prefix(), 'lib'), lib)
+
+      # Install the headers in the source list
+      headers = filter(lambda n: str(n)[-2:] == '.h',
+                       map(str, self.data['headers']))
+
+      for h in headers:
+         env.Install(path.join(Prefix(), 'include'), h)
 
 class Program(Assembly):
    def __init__(self, name):
@@ -102,8 +113,9 @@ class Program(Assembly):
       # Build rule
       prog = env.Program(self.data['name'], source  = self.data['sources'])
 
-      # Install rule
+      # Install the binary
       env.Install(path.join(Prefix(), 'bin'), prog)
+
 
 class Package:
    def __init__(self, name, version):
@@ -132,7 +144,6 @@ class Package:
 
    def addExtraDist(self, files):
       self.data['extra_dist'].extend(files)
-
 
    def build(self, baseEnv = None):
       # Clone the base environment if we have one
