@@ -76,8 +76,9 @@ class Header:
 
 class _Assembly:
    """
-   This "abstract" class provides common functionality for Program and Library.
-   You don't want to instantiate this class directly. It is meant to be private.
+   This "abstract" class provides common functionality for Program,
+   StaticLibrary, and SharedLibrary. You don't want to instantiate this class
+   directly. It is meant to be private.
    """
 
    def __init__(self, name):
@@ -153,30 +154,30 @@ class _Assembly:
       self.buildImpl(env)
 
 
-class Library(_Assembly):
+class _Library(_Assembly):
    """
-   This object knows how to build (and install) a static library from a given
-   set of sources.
+   This "abstract" class provides common functionality for StaticLibrary and
+   SharedLibrary. You don't want to instantiate this class directly. It is
+   meant to be private.
    """
 
-   def __init__(self, name, shared = 0):
+   def __init__(self, name, builder):
       """
-      Creates a new static library builder for a library of the given name.
+      Creates a new library builder for a library of the given name.
       """
       _Assembly.__init__(self, name)
-      self.data['shared'] = shared
+      self.data['builder'] = builder
 
    def buildImpl(self, env):
       """
       Sets up the build dependencies and the install.
       """
-      if self.data['shared']:
-         makeLib = env.SharedLibrary
-      else:
-         makeLib = env.StaticLibrary
+
+      # Get the function that is used to build the library
+      makeLib = self.data['builder']
 
       # Build rule
-      lib = makeLib(self.data['name'], self.data['sources'])
+      lib = makeLib(env, self.data['name'], self.data['sources'])
 
       # Install the binary
       env.Install(path.join(Prefix(), 'lib'), lib)
@@ -190,6 +191,32 @@ class Library(_Assembly):
          if prefix:
             target = path.join(target, prefix)
          env.Install(target, filename)
+
+
+class SharedLibrary(_Library):
+   """
+   This object knows how to build (and install) a shared library from a given
+   set of sources.
+   """
+
+   def __init__(self, name):
+      """
+      Creates a new shared library builder for a library of the given name.
+      """
+      _Library.__init__(self, name, SCons.Defaults.SharedLibrary)
+
+
+class StaticLibrary(_Library):
+   """
+   This object knows how to build (and install) a static library from a given
+   set of sources.
+   """
+
+   def __init__(self, name):
+      """
+      Creates a new static library builder for a library of the given name.
+      """
+      _Library.__init__(self, name, SCons.Defaults.StaticLibrary)
 
 
 class Program(_Assembly):
@@ -239,11 +266,19 @@ class Package:
       self.data['version_minor'] = int(re_matches.group(2))
       self.data['version_patch'] = int(re_matches.group(3))
 
-   def CreateLibrary(self, name, shared):
+   def CreateSharedLibrary(self, name):
       """
-      Creates a new library of the given name as a part of this package.
+      Creates a new shared library of the given name as a part of this package.
       """
-      lib = Library(name, shared)
+      lib = SharedLibrary(name)
+      self.data['assemblies'].extend([lib])
+      return lib
+
+   def CreateStaticLibrary(self, name):
+      """
+      Creates a new static library of the given name as a part of this package.
+      """
+      lib = StaticLibrary(name)
       self.data['assemblies'].extend([lib])
       return lib
 
@@ -297,56 +332,41 @@ class Package:
          assembly.build(env.Copy())
 
 
-class SourceTarGzBuilder:
-   def __init__(self, package):
-      import tempfile
-      self.data = {
-         'package'      : package,
-      }
+def MakeSourceDist(package, baseEnv = None):
+   """
+   Sets up the distribution build of a source tar.gz for the given package.
+   This will put all the required source and extra distribution files into a
+   compressed tarball. If an environment is specified, it is copied and the
+   copy is used.
+   """
+   # Clone the base environment if we have one
+   if baseEnv:
+      env = baseEnv.Copy()
+   else:
+      env = Environment()
 
-      # Create the distribution filename
-      dist_filename = '%s-%d.%d.%d.tar.gz' % (self.data['package'].getName(),
-                                              self.data['package'].getVersionMajor(),
-                                              self.data['package'].getVersionMinor(),
-                                              self.data['package'].getVersionPatch())
-      self.data['dist_filename'] = dist_filename
 
-   def build(self, baseEnv = None):
-      """
-      Sets up the distribution build of a source tar.gz for the given package.
-      This will put all the required source and extra distribution files into a
-      compressed tarball. If an environment is specified, it is copied and the
-      copy is used.
-      """
-      # Clone the base environment if we have one
-      if baseEnv:
-         env = baseEnv.Copy()
-      else:
-         env = Environment()
+   # Create the distribution filename
+   dist_filename = '%s-%d.%d.%d.tar.gz' % (package.getName(),
+                                           package.getVersionMajor(),
+                                           package.getVersionMinor(),
+                                           package.getVersionPatch())
 
-      env.Alias('dist', self.getDistFile())
+   # Add the tar.gz builder to the environment
+   _CreateSourceTarGzBuilder(env)
 
-      # Add the tar.gz builder to the environment
-      _CreateSourceTarGzBuilder(env)
+   # Get a list of the sources that will be included in the distribution
+   dist_files = []
+   for a in package.getAssemblies():
+      dist_files.extend(map(lambda n: n.getName(), a.getHeaders()))
+      dist_files.extend(a.getSources())
+   dist_files.extend(package.getExtraDist())
 
-      # Get a list of the sources that will be included in the distribution
-      dist_files = []
-      for a in self.getPackage().getAssemblies():
-         dist_files.extend(map(lambda n: n.getName(), a.getHeaders()))
-         dist_files.extend(a.getSources())
-      dist_files.extend(self.getPackage().getExtraDist())
+   # Setup the build of the distribution
+   env.SourceTarGz(dist_filename, dist_files)
 
-      # Setup the build of the distribution
-      env.SourceTarGz(self.getDistFile(), dist_files)
-
-      # Mark implicit dependencies on all the files that will be distributed
-      env.Depends(self.getDistFile(), dist_files)
-
-   def getPackage(self):
-      return self.data['package']
-
-   def getDistFile(self):
-      return self.data['dist_filename']
+   # Mark implicit dependencies on all the files that will be distributed
+   env.Depends(dist_filename, dist_files)
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
