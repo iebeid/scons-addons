@@ -69,7 +69,10 @@ def PysteRecursiveScanFunction(node,env,path):
       return ps(node,env,path)
    else:
       other_scanner = env.get_scanner(scanner_key)
-      return other_scanner(node,env,path)      
+      if other_scanner:
+         return other_scanner(node,env,path)
+      else:
+         return []
   
 def PysteBuildGenerator(source, target, env, for_signature, multi):
     cmd = "$PYSTE_CMD "
