@@ -126,8 +126,8 @@ class FileBundle:
       """
       for fn in files:                                # For all filenames
          fn_dir = os.path.dirname(fn)                 # Find out if there is a local dir prefix
-         hdr = InstallableFile( File(fn), pj(self.prefix, prefix, fn_dir))   # Create new header rep
-         self.files.append(hdr)                       # Append it on
+         f = InstallableFile( File(fn), pj(self.prefix, prefix, fn_dir))   # Create new installable file
+         self.files.append(f)                       # Append it on
 
    def getInstallableFiles(self):
       return self.files
@@ -159,7 +159,7 @@ class _Assembly:
    directly. It is meant to be private.
    """
 
-   def __init__(self, filename, pkg, baseEnv):
+   def __init__(self, filename, pkg, baseEnv, prefix=None):
       """
       Constructs a new Assembly object with the given name within the given
       environment.
@@ -173,13 +173,13 @@ class _Assembly:
       self.libpaths      = []
       self.headers       = []
       self.built = False;                  # Flag set once we have been built
-      self.installPrefix = None;           # Default install prefix
+      self.installPrefix = prefix;           # Default install prefix
 
       # Clone the base environment if we have one
       if baseEnv:
-         self.data['env'] = baseEnv.Copy()
+         self.env = baseEnv.Copy()
       else:
-         self.data['env'] = Environment()
+         self.env = Environment()
 
    def addSources(self, sources):
       """
@@ -252,7 +252,7 @@ class _Assembly:
       used for the builder command associated with this assembly.
       """
       # Setup the environment for the build
-      self.data['env'].Append(CPPPATH = self.includes,
+      self.env.Append(CPPPATH = self.includes,
                               LIBPATH = self.libpaths,
                               LIBS    = self.libs)
 
@@ -268,20 +268,20 @@ class Library(_Assembly):
    meant to be private.
    """
 
-   def __init__(self, libname, pkg, baseEnv, builderNames, installDir):
+   def __init__(self, libname, pkg, baseEnv, builderNames, installPrefix):
       """
       Creates a new library builder for a library of the given name.
       pkg - The package we are a part of
       baseEnv - The base environemnt to use
       builderNames - The names of the builders to use for building the libary: ex. 'SharedLibrary'
+      installPrefix - Prefix (relative to the standard install path) to install this library
       """
-      _Assembly.__init__(self, libname, pkg, baseEnv)
+      _Assembly.__init__(self, libname, pkg, baseEnv, installPrefix)
       
       if type(builderNames) is types.StringType:
          self.builder_names = [ builderNames ]
       else:
-         self.builder_names = builderNames
-      self.installDir = installDir
+         self.builder_names = builderNames      
 
    def _buildImpl(self):
       """
@@ -294,34 +294,34 @@ class Library(_Assembly):
       if len(self.sources) > 0:
          for lib_builder in self.builder_names:
             lib_filepath = self.fileNode.get_abspath()
-            lib = self.data['env'].__dict__[lib_builder](lib_filepath, self.sources)
-            inst_prefix = pj(self.package.prefix, self.installDir)
+            lib = self.env.__dict__[lib_builder](lib_filepath, self.sources)
+            inst_prefix = self.package.prefix
             if self.installPrefix:
-               inst_prefix = pj(inst_prefix,self.installPrefix)
-            self.data['env'].Install(inst_prefix, lib)
+               inst_prefix = pj(inst_prefix, self.installPrefix)
+            self.env.Install(inst_prefix, lib)
 
       # Install the headers in the source list
       for h in self.headers:
          headerNode = h.getFileNode()
          target = path.join(self.package.prefix, 'include', h.getPrefix())
          # Add on the prefix if this header has one
-         self.data['env'].Install(target, headerNode)        
+         self.env.Install(target, headerNode)        
 
 
 class SharedLibrary(Library):
    """ Sets up Library assembly with 'SharedLibrary' builder."""
-   def __init__(self, libname, pkg, baseEnv = None, installDir='lib'):
-      Library.__init__(self, libname, pkg, baseEnv, 'SharedLibrary', installDir)
+   def __init__(self, libname, pkg, baseEnv = None, installPrefix='lib'):
+      Library.__init__(self, libname, pkg, baseEnv, 'SharedLibrary', installPrefix)
 
 class StaticLibrary(Library):
    """ Sets up Library assembly with 'StaticLibrary' builder """
-   def __init__(self, libname, pkg, baseEnv = None, installDir='lib'):
-      Library.__init__(self, libname, pkg, baseEnv, 'StaticLibrary', installDir)
+   def __init__(self, libname, pkg, baseEnv = None, installPrefix='lib'):
+      Library.__init__(self, libname, pkg, baseEnv, 'StaticLibrary', installPrefix)
 
 class StaticAndSharedLibrary(Library):
    """ Sets up Library assembly with both 'StaticLibrary' and 'SharedLibrary' builders. """
-   def __init__(self, libname, pkg, baseEnv = None, installDir='lib'):
-      Library.__init__(self, libname, pkg, baseEnv, ['StaticLibrary', 'SharedLibrary'], installDir)
+   def __init__(self, libname, pkg, baseEnv = None, installPrefix='lib'):
+      Library.__init__(self, libname, pkg, baseEnv, ['StaticLibrary', 'SharedLibrary'], installPrefix)
 
 
 class Program(_Assembly):
@@ -329,25 +329,24 @@ class Program(_Assembly):
    This object knows how to build (and install) an executable program from a
    given set of sources.
    """
-   def __init__(self, progname, pkg, baseEnv = None, installDir='bin'):
+   def __init__(self, progname, pkg, baseEnv = None, installPrefix='bin'):
       """
       Creates a new program builder for a program of the given name.
       """
-      _Assembly.__init__(self, progname, pkg, baseEnv)
-      self.installDir = installDir
+      _Assembly.__init__(self, progname, pkg, baseEnv, installPrefix)      
 
    def _buildImpl(self):
       """
       Sets up the build dependencies and the install.
       """
       # Build rule
-      prog = self.data['env'].Program(self.fileNode, source = self.sources)
+      prog = self.env.Program(self.fileNode, source = self.sources)
 
       # Install the binary
-      inst_prefix = pj(self.package.prefix, 'bin')
+      inst_prefix = self.package.prefix
       if self.installPrefix:
-         inst_prefix = pj(inst_prefix,self.installPrefix)
-      self.data['env'].Install(inst_prefix, prog)
+         inst_prefix = pj(inst_prefix, self.installPrefix)
+      self.env.Install(inst_prefix, prog)
 
       
 class Package:
@@ -387,47 +386,47 @@ class Package:
          self.version_minor = int(re_matches.group(2))
          self.version_patch = int(re_matches.group(3))
 
-   def createSharedLibrary(self, name, baseEnv = None, installDir='lib'):
+   def createSharedLibrary(self, name, baseEnv = None, installPrefix='lib'):
       """
       Creates a new shared library of the given name as a part of this package.
       The library will be built within the given environment.
       """
       if not baseEnv:
          baseEnv = self.env
-      lib = SharedLibrary(name, self, baseEnv, installDir)
+      lib = SharedLibrary(name, self, baseEnv, installPrefix)
       self.assemblies.append(lib)
       return lib
 
-   def createStaticLibrary(self, name, baseEnv = None, installDir='lib'):
+   def createStaticLibrary(self, name, baseEnv = None, installPrefix='lib'):
       """
       Creates a new static library of the given name as a part of this package.
       The library will be built within the given environment.
       """
       if not baseEnv:
          baseEnv = self.env
-      lib = StaticLibrary(name, self, baseEnv, installDir)
+      lib = StaticLibrary(name, self, baseEnv, installPrefix)
       self.assemblies.append(lib)
       return lib
    
-   def createStaticAndSharedLibrary(self, name, baseEnv = None, installDir='lib'):
+   def createStaticAndSharedLibrary(self, name, baseEnv = None, installPrefix='lib'):
       """
       Creates new static and shared library of the given name as a part of this package.
       The library will be built within the given environment.
       """
       if not baseEnv:
          baseEnv = self.env
-      lib = StaticAndSharedLibrary(name, self, baseEnv, installDir)
+      lib = StaticAndSharedLibrary(name, self, baseEnv, installPrefix)
       self.assemblies.append(lib)
       return lib
 
-   def createProgram(self, name, baseEnv = None, installDir='bin'):
+   def createProgram(self, name, baseEnv = None, installPrefix='bin'):
       """
       Creates a new executable program of the given name as a part of this
       package. The program will be built within the given environment.
       """
       if not baseEnv:
          baseEnv = self.env
-      prog = Program(name, self, baseEnv, installDir)
+      prog = Program(name, self, baseEnv, installPrefix)
       self.assemblies.append(prog)
       return prog
    
