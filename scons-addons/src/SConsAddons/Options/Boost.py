@@ -264,27 +264,29 @@ class Boost(SConsAddons.Options.PackageOption):
       for l in self.lib_names:
          if 'python' != l:               # Don't add python by default
             env.Append(LIBS = [self.buildFullLibName(l)])
-      if 'python' in self.lib_names:
-         env.Append(LIBS = [self.buildFullLibName('python')],
-                    CPPPATH = [self.python_inc_dir,])
-            
+
+   def updatePythonEmbeddedEnv(self,env):
+      """ Update the environment for building python embedded """
+      self.updateEnv(env)
+      env.Append(LIBS = [self.buildFullLibName('python')])
+      env.Append(CPPPATH = [self.python_inc_dir,],
+                 LINKFLAGS = self.python_link_share_flags,
+                 LIBPATH = self.python_lib_path,
+                 LIBS = self.python_extra_libs)
+
+                  
    def updatePythonModEnv(self, env):
       """ Update the environment for building python modules """
       if not "python" in self.lib_names:
          print "Tried to updatePythonModEnv with boost option object not configured with python library.\n"
          sys.exit(0)
          
-      if self.found_incs:
-         env.Append(CXXFLAGS = self.found_incs_as_flags)
-      if self.found_lib_paths:
-         env.Append(LIBPATH = self.found_lib_paths)
-      
+      self.updateEnv(env)
+      env.Append(LIBS = self.buildFullLibName("python") )    # Add on the boost python library
       env.Append(CPPPATH = [self.python_inc_dir,],
-                 LINKFLAGS = self.python_link_share_flags,
                  LIBPATH = self.python_lib_path,
                  LIBS = self.python_extra_libs)
 
-      env.Append(LIBS = self.buildFullLibName("python") )    # Add on the boost python library
             
       env["SHLIBPREFIX"] = ""                    # Clear the library prefix settings
       if(SConsAddons.Util.GetPlatform() == "linux"):
