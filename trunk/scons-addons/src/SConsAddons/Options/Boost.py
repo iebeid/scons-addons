@@ -213,7 +213,7 @@ class Boost(SConsAddons.Options.PackageOption):
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths)
       for l in self.lib_names:
-         if 'python' != l:               # Don't add python by default
+         if 'python' != self.canonName(l):               # Don't add python by default
             env.Append(LIBS = ["boost_" + l])
             
    def updatePythonModEnv(self, env):
@@ -231,7 +231,11 @@ class Boost(SConsAddons.Options.PackageOption):
                  LINKFLAGS = self.python_link_share_flags,
                  LIBPATH = self.python_lib_path,
                  LIBS = self.python_extra_libs)
-      env["SHLIBPREFIX"] = ""              # Clear the library prefix settings
+      for l in self.lib_names:
+         if "python" == self.canonName(l):
+            env.Append(LIBS = ["boost_" + l] )    # Add on the boost python library
+            
+      env["SHLIBPREFIX"] = ""                    # Clear the library prefix settings
       if(SConsAddons.Util.GetPlatform() == "linux"):
          env['CXXCOM'] += " ; objcopy --set-section-flags .debug_str=contents,debug $TARGET"
          env['SHCXXCOM'] += " ; objcopy -v --set-section-flags .debug_str=contents,debug $TARGET $TARGET"
