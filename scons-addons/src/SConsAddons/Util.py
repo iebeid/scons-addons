@@ -67,3 +67,47 @@ def getSourcesRecursive(tree_root):
 def getHeadersRecursive(tree_root):
    """ Return list of headers recursively """
    return getFilesRecursiveByExt(tree_root, ['.h','.hpp'])
+
+
+class ConfigCmdParser:
+   """  
+   Helper class for calling a given *-config command and extracting
+   various paths and other information from it.
+   """
+   
+   def __init__(self, config_cmd):
+      " config_cmd: The config command to call "
+      self.config_cmd = config_cmd
+      self.valid = True
+      if not os.path.isfile(config_cmd):
+         self.valid = False
+
+      # Initialize regular expressions
+      # Res that when matched against config output should match the options we want
+      # In future could try to use INCPREFIX and other platform neutral stuff
+      self.inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
+      self.lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
+      self.lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
+      
+   def findLibs(self, arg="--libs"):
+      if not self.valid:
+         return ""
+      return self.lib_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+   
+   def findLibPaths(self, arg="--libs"):
+      if not self.valid:
+         return ""
+      return self.lib_path_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+
+   def findIncludes(self, arg="--cflags"):
+      if not self.valid:
+         return ""
+      return self.inc_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+
+   def getVersion(self, arg="--version"):
+      if not self.valid:
+         return ""
+      return os.popen(self.config_cmd + " " + arg).read().strip()
+   
+   
+   
