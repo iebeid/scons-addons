@@ -1,5 +1,7 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-04-13 allenb       Refactor AutoDist to make it handle files and prefixes
+                        better.
 2004-03-25 allenb       Require param to boost option stating wether to use
                         debug and multi-threaded libraries.  This should help
                         avoid problems that occur if you just let the defaults

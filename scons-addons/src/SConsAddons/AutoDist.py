@@ -69,7 +69,7 @@ class InstallableFile:
       self.newname = newname
 
    def __str__(self):
-      """A Header's string representation is its prefix/name."""
+      """ an installable file's string representation is its prefix/name."""
       if prefix:
          return path.join(prefix, str(fileNode))
       else:
@@ -89,7 +89,16 @@ class Header(InstallableFile):
       
 
 class FileBundle:
-   """ Wrapper class for a group of installable files to bundle together to install in a similar area. """
+   """ Wrapper class for a group of installable files to bundle together to install in a similar area. 
+
+       One area of note is prefix handling.  To allow maximum flexibility there are several used prefixes.
+       
+       The file bundle has a prefix (this is relative to the package prefix).
+       Each bundled file has a prefix (added when files is added).
+       If path to the added file has a prefix it is added on as well.
+       
+       Final file location: self.package.prefix/self.prefix/added.prefix/file_prefix/file_name
+   """
 
    def __init__(self, prefix, pkg, baseEnv=None):
       """
@@ -100,7 +109,7 @@ class FileBundle:
       """
       self.prefix = prefix
       self.package = pkg                   # The package object we belong to
-      self.files = []                      # Installable files
+      self.files = []                      # Installable files of class InstallableFile
       self.built = False;                  # Flag set once we have been built
 
       # Clone the base environment if we have one
@@ -143,6 +152,8 @@ class FileBundle:
       
 class _Assembly:
    """
+   Base type for objects that are managed by Package.
+
    This "abstract" class provides common functionality for Program,
    StaticLibrary, and SharedLibrary. You don't want to instantiate this class
    directly. It is meant to be private.
@@ -155,12 +166,12 @@ class _Assembly:
       """
       self.data = {}
       self.package = pkg                                   # The package object we belong to
-      self.fileNode              = File(filename)
-      self.data['sources']       = []
-      self.data['includes']      = []
-      self.data['libs']          = []
-      self.data['libpaths']      = []
-      self.data['headers']       = []
+      self.fileNode      = File(filename)
+      self.sources       = []
+      self.includes      = []
+      self.libs          = []
+      self.libpaths      = []
+      self.headers       = []
       self.built = False;                  # Flag set once we have been built
       self.installPrefix = None;           # Default install prefix
 
@@ -178,7 +189,7 @@ class _Assembly:
       # Use File() to figure out the absolute path to the file
       srcs = map(File, sources)
       # Add these sources into the mix
-      self.data['sources'].extend(srcs)
+      self.sources.extend(srcs)
 
    def addHeaders(self, headers, prefix = None):
       """
@@ -189,34 +200,34 @@ class _Assembly:
       for fn in headers:                              # For all filenames in headers
          fn_dir = os.path.dirname(fn)                 # Find out if there is a local dir prefix
          hdr = Header( File(fn), pj(prefix,fn_dir))   # Create new header rep
-         self.data['headers'].append(hdr)             # Append it on
+         self.headers.append(hdr)                     # Append it on
 
    def addIncludes(self, includes):
       """
       Adds in the given list of include directories that this assembly will use
       while compiling.
       """
-      self.data['includes'].extend(includes)
+      self.includes.extend(includes)
 
    def addLibs(self, libs):
       """
       Adds in the given list of libraries directories that this assembly will
       link with.
       """
-      self.data['libs'].extend(libs)
+      self.libs.extend(libs)
 
    def addLibPaths(self, libpaths):
       """
       Adds in the given list of library directories that this assembly will use
       to find libraries while linking.
       """
-      self.data['libpaths'].extend(libpaths)
+      self.libpaths.extend(libpaths)
 
    def getHeaders(self):
-      return self.data['headers']
+      return self.headers
 
    def getSources(self):
-      return self.data['sources']
+      return self.sources
 
    def isBuilt(self):
       return self.built;
@@ -226,6 +237,12 @@ class _Assembly:
    
    def getAbsFilePath(self):
       return self.fileNode.get_abspath()
+
+   def setInstallPrefix(self, prefix):
+      self.installPrefix = prefix
+
+   def getInstallPrefix(self):
+      return self.installPrefix
    
    def build(self):
       """
@@ -235,16 +252,16 @@ class _Assembly:
       used for the builder command associated with this assembly.
       """
       # Setup the environment for the build
-      self.data['env'].Append(CPPPATH = self.data['includes'],
-                              LIBPATH = self.data['libpaths'],
-                              LIBS    = self.data['libs'])
+      self.data['env'].Append(CPPPATH = self.includes,
+                              LIBPATH = self.libpaths,
+                              LIBS    = self.libs)
 
       # Now actually do the build
       self._buildImpl()
       self.built = True;
 
 
-class _Library(_Assembly):
+class Library(_Assembly):
    """
    This "abstract" class provides common functionality for StaticLibrary and
    SharedLibrary. You don't want to instantiate this class directly. It is
@@ -254,6 +271,9 @@ class _Library(_Assembly):
    def __init__(self, libname, pkg, baseEnv, builderNames, installDir):
       """
       Creates a new library builder for a library of the given name.
+      pkg - The package we are a part of
+      baseEnv - The base environemnt to use
+      builderNames - The names of the builders to use for building the libary: ex. 'SharedLibrary'
       """
       _Assembly.__init__(self, libname, pkg, baseEnv)
       
@@ -271,44 +291,37 @@ class _Library(_Assembly):
       # Setup build and install for each built library
       # Use get_abspath() with fileNode so we get the path into the build_dir and not src dir
       # Only build libraries if we have sources
-      if len(self.data['sources']) > 0:
+      if len(self.sources) > 0:
          for lib_builder in self.builder_names:
             lib_filepath = self.fileNode.get_abspath()
-            lib = self.data['env'].__dict__[lib_builder](lib_filepath, self.data['sources'])
+            lib = self.data['env'].__dict__[lib_builder](lib_filepath, self.sources)
             inst_prefix = pj(self.package.prefix, self.installDir)
             if self.installPrefix:
                inst_prefix = pj(inst_prefix,self.installPrefix)
             self.data['env'].Install(inst_prefix, lib)
 
       # Install the headers in the source list
-      for h in self.data['headers']:
+      for h in self.headers:
          headerNode = h.getFileNode()
          target = path.join(self.package.prefix, 'include', h.getPrefix())
          # Add on the prefix if this header has one
          self.data['env'].Install(target, headerNode)        
 
 
-class SharedLibrary(_Library):
-   """ This object knows how to build & install a shared library from a set of sources. """
-
+class SharedLibrary(Library):
+   """ Sets up Library assembly with 'SharedLibrary' builder."""
    def __init__(self, libname, pkg, baseEnv = None, installDir='lib'):
-      """ Creates a new shared library builder for a library of the given name. """
-      _Library.__init__(self, libname, pkg, baseEnv, 'SharedLibrary', installDir)
+      Library.__init__(self, libname, pkg, baseEnv, 'SharedLibrary', installDir)
 
-
-class StaticLibrary(_Library):
-   """ This object knows how to build & install a static library from a set of sources """
-
+class StaticLibrary(Library):
+   """ Sets up Library assembly with 'StaticLibrary' builder """
    def __init__(self, libname, pkg, baseEnv = None, installDir='lib'):
-      """ Creates a new static library builder for a library of the given name. """
-      _Library.__init__(self, libname, pkg, baseEnv, 'StaticLibrary', installDir)
+      Library.__init__(self, libname, pkg, baseEnv, 'StaticLibrary', installDir)
 
-class StaticAndSharedLibrary(_Library):
-   """ This object knows how to build & install a static and shared libraries from a set of sources """
-
+class StaticAndSharedLibrary(Library):
+   """ Sets up Library assembly with both 'StaticLibrary' and 'SharedLibrary' builders. """
    def __init__(self, libname, pkg, baseEnv = None, installDir='lib'):
-      """ Creates a new static and shared library builder for a library of the given name. """
-      _Library.__init__(self, libname, pkg, baseEnv, ['StaticLibrary', 'SharedLibrary'], installDir)
+      Library.__init__(self, libname, pkg, baseEnv, ['StaticLibrary', 'SharedLibrary'], installDir)
 
 
 class Program(_Assembly):
@@ -328,7 +341,7 @@ class Program(_Assembly):
       Sets up the build dependencies and the install.
       """
       # Build rule
-      prog = self.data['env'].Program(self.fileNode, source = self.data['sources'])
+      prog = self.data['env'].Program(self.fileNode, source = self.sources)
 
       # Install the binary
       inst_prefix = pj(self.package.prefix, 'bin')
@@ -431,7 +444,7 @@ class Package:
       new_contents = config_script_contents
       value_dict = source[0].value                  # Get dictionary from the value node
       
-      all_lib_names = [os.path.basename(l.getAbsFilePath()) for l in self.assemblies if isinstance(l,_Library)]
+      all_lib_names = [os.path.basename(l.getAbsFilePath()) for l in self.assemblies if isinstance(l,Library)]
       lib_names = []
       for l in all_lib_names:
          if not lib_names.count(l):
