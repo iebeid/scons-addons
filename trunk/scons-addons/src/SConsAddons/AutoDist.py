@@ -32,7 +32,7 @@ Automatic distribution builder and packager for SCons.
 # -----------------------------------------------------------------
 ############################################################## autodist-cpr end
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 from os import path
