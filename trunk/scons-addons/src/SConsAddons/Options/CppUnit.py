@@ -68,7 +68,7 @@ class CppUnit(SConsAddons.Options.PackageOption):
       else:
          sys.stdout.write("CppUnit not available. Skipping it...\n");
          
-   def isAvailable():
+   def isAvailable(self):
       return self.available
       
    def setInitial(self, optDict):
@@ -88,7 +88,7 @@ class CppUnit(SConsAddons.Options.PackageOption):
       
       # Find cppunit-config and call it to get the other arguments
       sys.stdout.write("searching...\n");
-      self.cppunitconfig_cmd = WhereIs('cppdom-config');
+      self.cppunitconfig_cmd = WhereIs('cppunit-config');
       if None == self.cppunitconfig_cmd:
          self.checkRequired("   could not find cppunit-config. Use %s to specify it: Ex: %s=/usr/local"% 
                            (self.baseDirKey, self.baseDirKey) );
@@ -149,9 +149,13 @@ class CppUnit(SConsAddons.Options.PackageOption):
          self.checkRequired("Header not found:%s"%header_file);
 
       # Returns lists of the options we want
-      self.found_incs = cfg_cmd_parser.findIncludes(" --cxxflags")
+      self.found_incs = cfg_cmd_parser.findIncludes(" --cflags")
       self.found_libs = cfg_cmd_parser.findLibs()
       self.found_lib_paths = cfg_cmd_parser.findLibPaths()
+      
+      platform = SConsAddons.Util.GetPlatform()
+      if platform == "linux":
+         self.found_libs.append('dl')
       
       # Try to build against the library
       conf_env = env.Copy();                     # Make a copy of the env
