@@ -91,8 +91,11 @@ class _Assembly:
    directly. It is meant to be private.
    """
 
-   def __init__(self, name):
-      """Constructs a new Assembly object with the given name"""
+   def __init__(self, name, baseEnv):
+      """
+      Constructs a new Assembly object with the given name within the given
+      environment.
+      """
       self.data = {}
       self.data['name']          = name
       self.data['sources']       = []
@@ -100,6 +103,12 @@ class _Assembly:
       self.data['libs']          = []
       self.data['libpaths']      = []
       self.data['headers']       = []
+
+      # Clone the base environment if we have one
+      if baseEnv:
+         self.data['env'] = baseEnv.Copy()
+      else:
+         self.data['env'] = Environment()
 
    def addSources(self, sources):
       """
@@ -149,19 +158,17 @@ class _Assembly:
    def getSources(self):
       return self.data['sources']
 
-   def build(self, env):
+   def build(self):
       """
-      Sets up the build and install targets for this assembly. The environment
-      is modified as appropriate and then _buildImpl() of the derived class is
-      called.
+      Sets up the build and install targets for this assembly.
       """
       # Setup the environment for the build
-      env.Append(CPPPATH = self.data['includes'],
-                 LIBPATH = self.data['libpaths'],
-                 LIBS    = self.data['libs'])
+      self.data['env'].Append(CPPPATH = self.data['includes'],
+                              LIBPATH = self.data['libpaths'],
+                              LIBS    = self.data['libs'])
 
       # Now actually do the build
-      self._buildImpl(env)
+      self._buildImpl()
 
 
 class _Library(_Assembly):
@@ -171,14 +178,14 @@ class _Library(_Assembly):
    meant to be private.
    """
 
-   def __init__(self, name, builder):
+   def __init__(self, name, baseEnv, builder):
       """
       Creates a new library builder for a library of the given name.
       """
-      _Assembly.__init__(self, name)
+      _Assembly.__init__(self, name, baseEnv)
       self.data['builder'] = builder
 
-   def _buildImpl(self, env):
+   def _buildImpl(self):
       """
       Sets up the build dependencies and the install.
       """
@@ -187,10 +194,10 @@ class _Library(_Assembly):
       makeLib = self.data['builder']
 
       # Build rule
-      lib = makeLib(env, self.data['name'], self.data['sources'])
+      lib = makeLib(self.data['env'], self.data['name'], self.data['sources'])
 
       # Install the binary
-      env.Install(path.join(Prefix(), 'lib'), lib)
+      self.data['env'].Install(path.join(Prefix(), 'lib'), lib)
 
       # Install the headers in the source list
       for h in self.data['headers']:
@@ -200,7 +207,7 @@ class _Library(_Assembly):
          # Add on the prefix if this header has one
          if prefix:
             target = path.join(target, prefix)
-         env.Install(target, filename)
+         self.data['env'].Install(target, filename)
 
 
 class SharedLibrary(_Library):
@@ -209,11 +216,11 @@ class SharedLibrary(_Library):
    set of sources.
    """
 
-   def __init__(self, name):
+   def __init__(self, name, baseEnv = None):
       """
       Creates a new shared library builder for a library of the given name.
       """
-      _Library.__init__(self, name, SCons.Defaults.SharedLibrary)
+      _Library.__init__(self, name, baseEnv, SCons.Defaults.SharedLibrary)
 
 
 class StaticLibrary(_Library):
@@ -222,11 +229,11 @@ class StaticLibrary(_Library):
    set of sources.
    """
 
-   def __init__(self, name):
+   def __init__(self, name, baseEnv = None):
       """
       Creates a new static library builder for a library of the given name.
       """
-      _Library.__init__(self, name, SCons.Defaults.StaticLibrary)
+      _Library.__init__(self, name, baseEnv, SCons.Defaults.StaticLibrary)
 
 
 class Program(_Assembly):
@@ -234,21 +241,21 @@ class Program(_Assembly):
    This object knows how to build (and install) an executable program from a
    given set of sources.
    """
-   def __init__(self, name):
+   def __init__(self, name, baseEnv = None):
       """
       Creates a new program builder for a program of the given name.
       """
-      _Assembly.__init__(self, name)
+      _Assembly.__init__(self, name, baseEnv)
 
-   def _buildImpl(self, env = None):
+   def _buildImpl(self):
       """
       Sets up the build dependencies and the install.
       """
       # Build rule
-      prog = env.Program(self.data['name'], source  = self.data['sources'])
+      prog = self.data['env'].Program(self.data['name'], source  = self.data['sources'])
 
       # Install the binary
-      env.Install(path.join(Prefix(), 'bin'), prog)
+      self.data['env'].Install(path.join(Prefix(), 'bin'), prog)
 
 
 class Package:
@@ -276,28 +283,30 @@ class Package:
       self.data['version_minor'] = int(re_matches.group(2))
       self.data['version_patch'] = int(re_matches.group(3))
 
-   def createSharedLibrary(self, name):
+   def createSharedLibrary(self, name, baseEnv = None):
       """
       Creates a new shared library of the given name as a part of this package.
+      The library will be built within the given environment.
       """
-      lib = SharedLibrary(name)
+      lib = SharedLibrary(name, baseEnv)
       self.data['assemblies'].extend([lib])
       return lib
 
-   def createStaticLibrary(self, name):
+   def createStaticLibrary(self, name, baseEnv = None):
       """
       Creates a new static library of the given name as a part of this package.
+      The library will be built within the given environment.
       """
-      lib = StaticLibrary(name)
+      lib = StaticLibrary(name, baseEnv)
       self.data['assemblies'].extend([lib])
       return lib
 
-   def createProgram(self, name):
+   def createProgram(self, name, baseEnv = None):
       """
       Creates a new executable program of the given name as a part of this
-      package.
+      package. The program will be built within the given environment.
       """
-      prog = Program(name)
+      prog = Program(name, baseEnv)
       self.data['assemblies'].extend([prog])
       return prog
 
@@ -325,21 +334,14 @@ class Package:
    def getExtraDist(self):
       return self.data['extra_dist']
 
-   def build(self, baseEnv = None):
+   def build(self):
       """
       Sets up the build and install for this package. This will build all
-      assemblies contained therein and set them up to be installed. If an
-      environment is specified, it is copied and the copy is used.
+      assemblies contained therein and set them up to be installed.
       """
-      # Clone the base environment if we have one
-      if baseEnv:
-         env = baseEnv.Copy()
-      else:
-         env = Environment()
-
-      env.Alias('install', Prefix())
+      Environment().Alias('install', Prefix())
       for assembly in self.getAssemblies():
-         assembly.build(env.Copy())
+         assembly.build()
 
 
 def MakeSourceDist(package, baseEnv = None):
