@@ -166,7 +166,12 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
          self.found_libs["glut"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs GLUT").read().strip());
          self.found_libs["x"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs X").read().strip());
          self.found_libs["qt"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs QT").read().strip());         
-         self.found_lib_paths = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs").read().strip());         
+         self.found_lib_paths = {}
+         self.found_lib_paths["base"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs Base").read().strip());
+         self.found_lib_paths["system"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs System").read().strip());
+         self.found_lib_paths["glut"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs GLUT").read().strip());
+         self.found_lib_paths["x"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs X").read().strip());
+         self.found_lib_paths["qt"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs QT").read().strip());
          
          print "[OK]"
              
@@ -182,7 +187,10 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
          else:
             print "ERROR: Could not find OpenSG libs for lib=", lib
       if self.found_lib_paths:
-         env.Append(LIBPATH = self.found_lib_paths);
+         if self.found_lib_paths.has_key(lib):
+            env.Append(LIBPATH = self.found_lib_paths[lib]);
+         else:
+            print "ERROR: Could not find OpenSG lib paths for lib=", lib
          
    def dumpSettings(self):
       "Write out the settings"
@@ -192,5 +200,5 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
       if self.found_libs:
          for lib_name in self.found_libs.keys():
             print "LIBS (%s):"%lib_name, self.found_libs[lib_name]
-      print "LIBPATH:", self.found_lib_paths;
+            print "LIBPATH (%s):"%lib_name, self.found_lib_paths[lib_name]
 
