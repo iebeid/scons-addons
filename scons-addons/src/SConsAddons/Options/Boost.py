@@ -57,17 +57,17 @@ class Boost(SConsAddons.Options.PackageOption):
       self.setupLibrarySettings()
       
       # Options for which libraries to use
-      self.toolset = "gcc"
+      self.toolset = "gcc"     # XXX: This is currently a hack
       self.use_mt = False
       self.use_debug = False 
 
    def setToolset(self, toolset):
       self.toolset = toolset
    
-   def setUseMt(self, bval):
+   def setUseMt(self, bval=True):
       self.use_mt = bval
       
-   def setUseDebug(self, bval):
+   def setUseDebug(self, bval=True):
       self.use_debug = bval
 
    def setupLibrarySettings(self):
