@@ -167,7 +167,7 @@ class Pyste(SConsAddons.Options.PackageOption):
           if not os.path.isfile(self.pysteScriptPath):
              passed = False;
              self.checkRequired("   pyste files does not exist:%s" % self.pysteScriptPath);
-
+          else:
              # Check for version information
              print "   Checking version:",
              found_ver_str = os.popen(self.pysteScriptCommand + " --version").read().strip().split(" ")[-1];
