@@ -35,16 +35,15 @@ import SCons.Node.FS
 # SCons shorthand mappings
 Environment    = SCons.Environment.Environment
 File           = SCons.Node.FS.default_fs.File
-Program        = SCons.Defaults.Program
-SharedLibrary  = SCons.Defaults.SharedLibrary
-StaticLibrary  = SCons.Defaults.StaticLibrary
 
 # The currently defined prefix
 _prefix = '/usr/local'
 
-# Returns the current installation prefix. If an argument is supplied, the
-# prefix is changed to the supplied value and then returned.
 def Prefix(prefix = None):
+   """
+   Returns the current installation prefix. If an argument is supplied, the
+   prefix is changed to the supplied value and then returned.
+   """
    global _prefix
 
    # Change the prefix if requested
@@ -55,8 +54,14 @@ def Prefix(prefix = None):
    return _prefix
 
 
-class Assembly:
+class _Assembly:
+   """
+   This "abstract" class provides common functionality for Program and Library.
+   You don't want to instantiate this class directly. It is meant to be private.
+   """
+
    def __init__(self, name):
+      """Constructs a new Assembly object with the given name"""
       self.data = {}
       self.data['name']          = name
       self.data['sources']       = []
@@ -66,26 +71,52 @@ class Assembly:
       self.data['headers']       = []
 
    def addSources(self, sources):
+      """
+      Adds the given list of source files into this assembly. The list must come
+      in as strings as they are processed through File().
+      """
       # Use File() to figure out the absolute path to the file
       srcs = map(File, sources)
       # Add these sources into the mix
       self.data['sources'].extend(srcs)
 
    def addHeaders(self, headers, prefix = None):
+      """
+      Adds the given list of distribution header files into this assembly. These
+      headers will be installed to Prefix()/include/prefix. The list must come
+      in as strings as they are processed through File().
+      """
       hdrs = map(File, headers)
       for h in hdrs:
          self.data['headers'].extend([[prefix, h]])
 
    def addIncludes(self, includes):
+      """
+      Adds in the given list of include directories that this assembly will use
+      while compiling.
+      """
       self.data['includes'].extend(includes)
 
    def addLibs(self, libs):
+      """
+      Adds in the given list of libraries directories that this assembly will
+      link with.
+      """
       self.data['libs'].extend(libs)
 
    def addLibPaths(self, libpaths):
+      """
+      Adds in the given list of library directories that this assembly will use
+      to find libraries while linking.
+      """
       self.data['libpaths'].extend(libpaths)
 
    def build(self, env):
+      """
+      Sets up the build and install targets for this assembly. The environment
+      is modified as appropriate and then buildImpl() of the derived class is
+      called.
+      """
       # Setup the environment for the build
       env.Append(CPPPATH = self.data['includes'],
                  LIBPATH = self.data['libpaths'],
@@ -95,12 +126,23 @@ class Assembly:
       self.buildImpl(env)
 
 
-class Library(Assembly):
+class Library(_Assembly):
+   """
+   This object knows how to build (and install) a static library from a given
+   set of sources.
+   """
+
    def __init__(self, name, shared = 0):
-      Assembly.__init__(self, name)
+      """
+      Creates a new static library builder for a library of the given name.
+      """
+      _Assembly.__init__(self, name)
       self.data['shared'] = shared
 
    def buildImpl(self, env):
+      """
+      Sets up the build dependencies and the install.
+      """
       if self.data['shared']:
          makeLib = env.SharedLibrary
       else:
@@ -122,11 +164,22 @@ class Library(Assembly):
             target = path.join(target, prefix)
          env.Install(target, filename)
 
-class Program(Assembly):
+
+class Program(_Assembly):
+   """
+   This object knows how to build (and install) an executable program from a
+   given set of sources.
+   """
    def __init__(self, name):
-      Assembly.__init__(self, name)
+      """
+      Creates a new program builder for a program of the given name.
+      """
+      _Assembly.__init__(self, name)
 
    def buildImpl(self, env = None):
+      """
+      Sets up the build dependencies and the install.
+      """
       # Build rule
       prog = env.Program(self.data['name'], source  = self.data['sources'])
 
@@ -135,7 +188,17 @@ class Program(Assembly):
 
 
 class Package:
+   """
+   A package defines a collection of distributables including programs and
+   libraries. The Package class provides the ability to build, install, and
+   package up distributions of your project. 
+   """
+
    def __init__(self, name, version):
+      """
+      Creates a new package with the given name and version, where version is in
+      the form of <major>.<minor>.<patch> (e.g 1.12.0)
+      """
       self.data = {
          'name'         : name,
          'assemblies'   : [],
@@ -150,19 +213,34 @@ class Package:
       self.data['version_patch'] = re_matches.group(3)
 
    def CreateLibrary(self, name, shared):
+      """
+      Creates a new library of the given name as a part of this package.
+      """
       lib = Library(name, shared)
       self.data['assemblies'].extend([lib])
       return lib
 
    def CreateProgram(self, name):
+      """
+      Creates a new executable program of the given name as a part of this
+      package.
+      """
       prog = Program(name)
       self.data['assemblies'].extend([prog])
       return prog
 
    def addExtraDist(self, files):
+      """
+      Adds in the given files to the distribution of this package.
+      """
       self.data['extra_dist'].extend(files)
 
    def build(self, baseEnv = None):
+      """
+      Sets up the build and install for this package. This will build all
+      assemblies contained therein and set them up to be installed. If an
+      environment is specified, it is copied and the copy is used.
+      """
       # Clone the base environment if we have one
       if baseEnv:
          env = baseEnv.Copy()
