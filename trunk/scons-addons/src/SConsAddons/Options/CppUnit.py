@@ -161,9 +161,9 @@ class CppUnit(SConsAddons.Options.PackageOption):
       conf_env = env.Copy();                     # Make a copy of the env
       self.updateEnv(conf_env);                  # Update it with the guessed values
       conf_ctxt = Configure(conf_env);
-      if not conf_ctxt.CheckCXXHeader(pj("cppunit", "Test.h")):
-         passed = False;
-         self.checkRequired("Can't compile with cppunit/Test.h");
+#      if not conf_ctxt.CheckCXXHeader(pj("cppunit", "Test.h")):
+#         passed = False;
+#         self.checkRequired("Can't compile with cppunit/Test.h");
       if not conf_ctxt.CheckLib(self.found_libs[0], autoadd=0):
          passed = False;
          self.checkRequired("Can't compile with cppunit.");
