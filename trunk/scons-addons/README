@@ -9,12 +9,14 @@ o------------------------------------------------------------------------------o
 
 This project is a collection of addons for the scons build system.  
 
+See: www.scons.org
+
 
 o------------------------------------------------------------------------------o
 | Requirements
 o------------------------------------------------------------------------------o
 
-We generally require the latest released version of scons.
+We generally require the latest released version of scons.  Some addons may require the CVS version though.
 
 o------------------------------------------------------------------------------o
 | Installation
