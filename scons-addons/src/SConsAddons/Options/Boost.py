@@ -44,10 +44,16 @@ class Boost(SConsAddons.Options.PackageOption):
       self.required = required
       SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text)
       self.available = False
+      
+      self.found_incs = []
+      self.found_incs_as_flags = ""     # The includes as flags to add on command line
+      self.found_lib_paths = []
 
       # configurable options
       self.baseDir = None
       self.setupLibrarySettings()
+      
+      
 
    def setupLibrarySettings(self):
       # Map from non-standard library names to the standard equivalent
@@ -165,6 +171,10 @@ class Boost(SConsAddons.Options.PackageOption):
 
       # Returns lists of the options we want
       self.found_incs = [pj(self.baseDir, 'include')]
+      self.found_incs_as_flags = "";
+      for p in self.found_incs:
+         self.found_incs_as_flags = self.found_incs_as_flags + " " + env["INCPREFIX"] + p
+      self.found_incs_as_flags = self.found_incs_as_flags.strip()
       self.found_lib_paths = [pj(self.baseDir, 'lib')]
 
       ######## BUILD CHECKS ###########  
@@ -180,7 +190,7 @@ class Boost(SConsAddons.Options.PackageOption):
 
          # Create config environment
          conf_env = env.Copy()
-         conf_env.Append(CPPPATH = self.found_incs, LIBPATH = self.found_lib_paths)
+         conf_env.Append(CXXFLAGS= self.found_incs_as_flags, LIBPATH = self.found_lib_paths)
          if "python" == canonical_libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
@@ -209,7 +219,7 @@ class Boost(SConsAddons.Options.PackageOption):
    def updateEnv(self, env, libs=None):
       """ Add environment options for building against Boost libraries """
       if self.found_incs:
-         env.Append(CPPPATH = self.found_incs)
+         env.Append(CXXFLAGS = self.found_incs_as_flags)
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths)
       for l in self.lib_names:
@@ -223,7 +233,7 @@ class Boost(SConsAddons.Options.PackageOption):
          sys.exit(0)
          
       if self.found_incs:
-         env.Append(CPPPATH = self.found_incs)
+         env.Append(CXXFLAGS = self.found_incs_as_flags)
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths)
       
@@ -244,7 +254,7 @@ class Boost(SConsAddons.Options.PackageOption):
    def dumpSettings(self):
       "Write out the settings"
       print "BoostBaseDir:", self.baseDir
-      print "CPPPATH:", self.found_incs
+      print "CPPPATH (as flags):", self.found_incs_as_flags
       print "LIBS:", self.lib_names
       print "LIBPATH:", self.found_lib_paths
       print "Python settings"
