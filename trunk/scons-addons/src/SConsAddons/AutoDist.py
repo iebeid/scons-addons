@@ -627,6 +627,7 @@ class Package:
       varDict["Version"] = self.getFullVersion()
       varDict["Name"] = self.name
       varDict["Description"] = self.description
+      varDict["Prefix"] = self.prefix
       
       # Create the new content
       txt = "# config script generated for %s at %s\n" % (self.name, time.asctime())
@@ -953,6 +954,7 @@ vars["Name"] = "My Module"
 vars["Description"] = "This is my module over here"
 vars["test_var"] = "Test value"
 vars["Requires"] = "OtherPackage"
+vars["Prefix"] = "/home/users/browner/projects/old-collab/collab/build.linux/modules/plexus"
 # -- END CUT -- #
 
 def usage():
@@ -964,6 +966,7 @@ def usage():
    --modname         get the name of the module
    --moddesc         get the description of the module
    --variable=VAR    get the value of a variable
+   --prefix          get the base installation directory
 
    --help            display this help message
 """
@@ -979,7 +982,7 @@ def main():
       opts, args = getopt.getopt(sys.argv[1:], "",
                                  ["help", "libs", "cflags", "cflags-only-I",
                                   "modversion", "modname", "moddesc",
-                                  "variable="])
+                                  "variable=", "prefix"])
    except getopt.GetoptError:
       usage()
       sys.exit(2)
@@ -994,7 +997,8 @@ def main():
                        "cflags" : "Cflags",
                        "modversion" : "Version",
                        "modname" : "Name",
-                       "moddesc" : "Description" }
+                       "moddesc" : "Description",
+                       "prefix" : "Prefix"}
    for o,a in opts:
       if o == "--help":
          usage()
