@@ -1,5 +1,7 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2003-12-30 allenb       Fixed problem with boost/filesystem/operations.hpp in
+                        Boost options class.
 2003-12-22 allenb       Added FileBundle object for installing sets of files
                         within a package.
                         NEW VERSION: 0.0.10
