@@ -1,5 +1,7 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2003-09-09 allenb       Added install prefixes to all AutoDist packages.
+                        NEW VERSION 0.0.8
 2003-09-09 allenb       Added isBuilt interface.
                         Fixed bug that prevented libraries from building in
                         build directories
