@@ -106,8 +106,6 @@ class Program(Assembly):
       env.Install(path.join(Prefix(), 'bin'), prog)
 
 class Package:
-   data = {}
-
    def __init__(self, name, version):
       self.data = {
          'name'         : name,
