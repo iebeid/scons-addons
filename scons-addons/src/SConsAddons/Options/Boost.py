@@ -34,7 +34,7 @@ class Boost(SConsAddons.Options.PackageOption):
       """
          name - The name to use for this option
          requiredVersion - The version of Boost required (ex: "1.30.0")
-         libs - Boost libraries needed that are actually compiled
+         libs - Boost libraries needed that are actually compiled (base library names. ex: python)
          required - Is the dependency required?  (if so we exit on errors)
       """
       help_text = """Base directory for Boost. include, and lib should be under this directory"""
@@ -51,16 +51,24 @@ class Boost(SConsAddons.Options.PackageOption):
 
       # configurable options
       self.baseDir = None
+      self.includePath = None
       self.setupLibrarySettings()
       
+      # Options for which libraries to use
+      self.toolset = "gcc"
+      self.use_mt = False
+      self.use_debug = False 
+
+   def setToolset(self, toolset):
+      self.toolset = toolset
+   
+   def setUseMt(self, bval):
+      self.use_mt = bval
       
+   def setUseDebug(self, bval):
+      self.use_debug = bval
 
    def setupLibrarySettings(self):
-      # Map from non-standard library names to the standard equivalent
-      self.libnameMap = { 'python_debug':'python',
-                          'signalsd':'signals',
-                          'threadd':'thread' }
-
       # Map from library name to header to check for       
       self.headerMap = { 'python':'boost/python.hpp',
                          'thread':'boost/thread.hpp',
@@ -77,13 +85,15 @@ class Boost(SConsAddons.Options.PackageOption):
       self.python_extra_libs = ["python2.2", "util", "pthread"]
       
       
-   def canonName(self, libname):
-      """ Returns the canonical name of a library """
-      if self.libnameMap.has_key(libname):
-         return self.libnameMap[libname]
-      else:
-         return libname
-      
+   def buildFullLibName(self, libname):
+      """ Returns the full name of the boost library"""
+      fullname = "boost_" + libname + "-" + self.toolset
+      if self.use_mt:
+         fullname += "-mt"
+      if self.use_debug:
+         fullname += "-d"
+         
+      return fullname
       
    def checkRequired(self, msg):
       """ Called when there is config problem.  If required, then exit with error message """
@@ -152,12 +162,30 @@ class Boost(SConsAddons.Options.PackageOption):
          passed = False
          self.checkRequired("Boost base dir is not a directory: %s" % self.baseDir)
          return
+      
+      if not os.path.isdir(pj(self.baseDir, 'include')):    # If we don't have a directory
+         passed = False
+         self.checkRequired("Boost include dir is not a directory: %s" % pj(self.baseDir, 'include'))
+         return
 
-      version_header = pj(self.baseDir, 'include', 'boost', 'version.hpp')         
+      # --- Find include path --- #
+      self.includePath = pj(self.baseDir, 'include', 'boost')
+      if not os.path.isdir(self.includePath):
+         potential_paths = [d for d in os.listdir(pj(self.baseDir, 'include')) 
+                              if os.path.isdir(pj(self.baseDir, 'include', d))]
+         if len(potential_paths) == 0:
+            self.checkRequired("No include paths found for boost.")
+            return
+         potential_paths.sort()
+         self.includePath = pj(self.baseDir, 'include', potential_paths[-1])
+         
+      version_header = pj(self.includePath, 'boost', 'version.hpp')         
       if not os.path.isfile(version_header):
          passed = False
          self.checkRequired("Boost version.hpp header does not exist:%s"%version_header)
-
+         
+      print "   boost header path: ", self.includePath
+      
       # --- Check version requirement --- #
       ver_file = file(version_header)
       found_ver_str = int(re.search("define\s+?BOOST_VERSION\s+?(\d*)", ver_file.read()).group(1))
@@ -169,8 +197,8 @@ class Boost(SConsAddons.Options.PackageOption):
          passed = False
          self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str))
 
-      # Returns lists of the options we want
-      self.found_incs = [pj(self.baseDir, 'include')]
+      # Set lists of the options we want
+      self.found_incs = [self.includePath]
       self.found_incs_as_flags = "";
       for p in self.found_incs:
          self.found_incs_as_flags = self.found_incs_as_flags + " " + env["INCPREFIX"] + p
@@ -183,23 +211,23 @@ class Boost(SConsAddons.Options.PackageOption):
       # For each library, find cononical lib name and associated header to check
       # default to checking lib with config.hpp
       for libname in self.lib_names:
-         canonical_libname = self.canonName(libname)
+         full_libname = self.buildFullLibName(libname)
          header_to_check = 'boost/config.hpp'
-         if self.headerMap.has_key(canonical_libname):
-            header_to_check = self.headerMap[canonical_libname]
+         if self.headerMap.has_key(libname):
+            header_to_check = self.headerMap[libname]
 
          # Create config environment
          conf_env = env.Copy()
          conf_env.Append(CXXFLAGS= self.found_incs_as_flags, LIBPATH = self.found_lib_paths)
-         if "python" == canonical_libname:
+         if "python" == libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
-                            LIBS = self.python_extra_libs + ["dl",])
+                            LIBS = [full_libname,] + self.python_extra_libs + ["dl",])
             
          conf_ctxt = Configure(conf_env)            
-         if not conf_ctxt.CheckLibWithHeader("boost_" + libname, header_to_check, "c++"):
+         if not conf_ctxt.CheckLibWithHeader(full_libname, header_to_check, "c++"):
             passed = False
-            self.checkRequired("Can't compile test program: lib: %s header:%s"%(libname,header_to_check))
+            self.checkRequired("Can't compile test program: lib: %s full_lib: %s header:%s"%(libname,full_libname,header_to_check))
             
          conf_ctxt.Finish()
 
@@ -223,12 +251,12 @@ class Boost(SConsAddons.Options.PackageOption):
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths)
       for l in self.lib_names:
-         if 'python' != self.canonName(l):               # Don't add python by default
-            env.Append(LIBS = ["boost_" + l])
+         if 'python' != l:               # Don't add python by default
+            env.Append(LIBS = [self.buildFullLibName(l)])
             
    def updatePythonModEnv(self, env):
       """ Update the environment for building python modules """
-      if not "python" in [self.canonName(l) for l in self.lib_names]:
+      if not "python" in self.lib_names:
          print "Tried to updatePythonModEnv with boost option object not configured with python library.\n"
          sys.exit(0)
          
@@ -241,9 +269,8 @@ class Boost(SConsAddons.Options.PackageOption):
                  LINKFLAGS = self.python_link_share_flags,
                  LIBPATH = self.python_lib_path,
                  LIBS = self.python_extra_libs)
-      for l in self.lib_names:
-         if "python" == self.canonName(l):
-            env.Append(LIBS = ["boost_" + l] )    # Add on the boost python library
+
+      env.Append(LIBS = self.buildFullLibName("python") )    # Add on the boost python library
             
       env["SHLIBPREFIX"] = ""                    # Clear the library prefix settings
       if(SConsAddons.Util.GetPlatform() == "linux"):
@@ -256,6 +283,7 @@ class Boost(SConsAddons.Options.PackageOption):
       print "BoostBaseDir:", self.baseDir
       print "CPPPATH (as flags):", self.found_incs_as_flags
       print "LIBS:", self.lib_names
+      print "LIBS: (full):", [self.buildFullLibName(l) for l in self.lib_names]
       print "LIBPATH:", self.found_lib_paths
       print "Python settings"
       print "   inc:", self.python_inc_dir
