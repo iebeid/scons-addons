@@ -144,7 +144,7 @@ class FileBundle:
    def getFiles(self):
       return self.files
 
-   def buildInstall(self, env=None, installPrefix=""):
+   def buildInstall(self, env=None, installPrefix="", ignoreBuilt=False):
       """
       Calls install builder to setup the installation of the packaged files.
       Installs all files using the env environment under prefix.
@@ -154,9 +154,11 @@ class FileBundle:
       used for the builder command associated with this assembly.
       
       Returns list of the Install() targets.
+      ifgnoreBuilt - If true, just rebuild for the given environment and don't test/set the built flag.
       """
-      assert not self.built
-      self.built = True
+      if not ignoreBuilt:
+         assert not self.built
+         self.built = True
       
       # Clone the base environment if we have one
       if env:
@@ -809,7 +811,9 @@ class TarGzPackager(Packager):
 
       # Explicitly install the dist into a directory to use
       # Then create command to build dist from that directory with the install files and dependencies
-      inst_targets = self.package.getFileBundle().buildInstall(env, work_dir)
+      inst_targets = []
+      for fb in self.package.getFileBundles():
+         inst_targets += fb.buildInstall(env, work_dir, ignoreBuilt=True)
       env.Command(pj(dist_dir, dist_name+'.tar.gz'), inst_targets,
                   Action( lambda target, source, env:  self.makeDistTarGz(target, work_dir, env),
                           self.makeDistTarGz_print) 
@@ -885,7 +889,9 @@ class RpmPackager(Packager):
 
       # Explicitly install to the directory
       # Then create command to build dist from that directory with the install files and dependencies
-      inst_targets = self.package.getFileBundle().buildInstall(env, build_root_dir)
+      inst_targets = []
+      for fb in self.package.getFileBundles():
+         inst_targets += fb.buildInstall(env, build_root_dir, ignoreBuilt=True)
       env.Command(pj(dist_dir, rpm_fn_base), [spec_filename_out] + inst_targets,
                   Action( lambda target, source, env:  self.makeDistRpm(target, source, dist_dir, build_root_dir, target_rpm_dir, env),
                           self.makeDistRpm_print) 
