@@ -316,11 +316,12 @@ class Program(_Assembly):
    This object knows how to build (and install) an executable program from a
    given set of sources.
    """
-   def __init__(self, progname, pkg, baseEnv = None):
+   def __init__(self, progname, pkg, baseEnv = None, installDir='bin'):
       """
       Creates a new program builder for a program of the given name.
       """
       _Assembly.__init__(self, progname, pkg, baseEnv)
+      self.installDir = installDir
 
    def _buildImpl(self):
       """
@@ -406,14 +407,14 @@ class Package:
       self.assemblies.append(lib)
       return lib
 
-   def createProgram(self, name, baseEnv = None):
+   def createProgram(self, name, baseEnv = None, installDir='bin'):
       """
       Creates a new executable program of the given name as a part of this
       package. The program will be built within the given environment.
       """
       if not baseEnv:
          baseEnv = self.env
-      prog = Program(name, self, baseEnv)
+      prog = Program(name, self, baseEnv, installDir)
       self.assemblies.append(prog)
       return prog
    
