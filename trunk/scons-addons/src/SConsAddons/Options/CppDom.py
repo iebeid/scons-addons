@@ -71,11 +71,11 @@ class CppDom(SConsAddons.Options.PackageOption):
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
-      sys.stdout.write("checking for cppdom...");
+      sys.stdout.write("loading initial settings for cppdom...");
       if optDict.has_key(self.baseDirKey):
          self.baseDir = optDict[self.baseDirKey];
          self.cppdomconfig_cmd = pj(self.baseDir, 'bin', 'cppdom-config')
-         sys.stdout.write("specified or cached. [%s].\n"% self.baseDir);
+         sys.stdout.write("   specified or cached. [%s].\n"% self.baseDir);
         
    def find(self, env):
       # Quick exit if nothing to find because it is already specified
