@@ -32,6 +32,7 @@ import os
 import sys
 import re
 import string
+import SCons.Environment
 
 pj = os.path.join
 
@@ -127,3 +128,29 @@ def GetPlatform():
    else:
       return sys.platform   
    
+   
+# -------------------- #
+# Path utils
+# -------------------- #
+def getFullSrcPath(env=SCons.Environment.Environment()):
+   """ Return the full path to the local source directory we are in 
+       (taking into account BuildDir) """
+   # Get the local directory using Dir(.)
+   # Then return the string rep of it's src node
+   ldir_node = env.Dir('.')                                   # .
+   ldir_srcnode = ldir_node.srcnode()                     # /home/.../XXX/src/plx
+   return str(ldir_srcnode)
+   
+
+def getRelativeSourcePath(env=SCons.Environment.Environment()):
+   """ Return the local source path relative to the base build directory
+       ie. Dir('#') """
+   ldir_node = env.Dir('.')                                   # .
+   ldir_srcnode = ldir_node.srcnode()                     # /home/.../XXX/src/plx
+   root_dir_node = env.Dir('#')                               # /home/.../XXX
+   ldir_src_rpath = ldir_srcnode.get_path(root_dir_node)  # src/plx
+   return ldir_src_rpath
+
+def getFullRootPath(env=SCons.Environment.Environment()):
+   " Return the full path of the root build dir "
+   return str(env.Dir('#'))
