@@ -103,6 +103,15 @@ class LocalUpdateOption(Option):
         """ Update the passed environment with full settings for the option """
         pass
 
+class PackageOption(LocalUpdateOption):
+    """ Base class for options that are used for specifying options for installed software packages. """
+    def __init__(self, name, key, help):
+        LocalUpdateOption.__init__(self,name,key,help)
+        
+    def isAvailable():
+        " Return true if the package is available "
+        return False
+
         
 class SimpleOption(Option):
     """
