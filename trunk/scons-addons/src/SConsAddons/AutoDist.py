@@ -133,6 +133,8 @@ class FileBundle:
 
       NOTE: Whatever the current directly is when this is called is the directory
       used for the builder command associated with this assembly.
+      
+      Returns list of the Install() targets.
       """
       
       # Clone the base environment if we have one
@@ -141,14 +143,20 @@ class FileBundle:
       else:
          env = Environment()
 
+      ret_targets = []
+      
       # Install the files from the bundle
       #print "FileBundle build Install:"
       for f in self.files:
          fnode = f.getFileNode()
          target_dir = path.join(prefix, f.getPrefix())
          #print "   file:[", str(fnode), " target dir: (", prefix, ", ", f.getPrefix(), ")" # target_dir
-         env.Install(target_dir, fnode)        
+         inst_tgt = env.Install(target_dir, fnode)
+         ret_targets.append(inst_tgt)
+         
+      return ret_targets
 
+         
 # ############################################################################ #
 #           ASSEMBLIES  
 # ############################################################################ #      
@@ -472,9 +480,12 @@ class Package:
       self.name = name
       self.prefix = prefix
       self.assemblies = []
-      self.fileBundle = FileBundle()                          # File bundle for all files
+      self.fileBundle = FileBundle()         # File bundle for all files
       self.extra_dist = []
       self.description = description
+      self.packagers = []
+      self.distDir = "dist"                  # Path to the dist directory to use
+      
       if not self.description:
          self.description = self.name + " Package"
       
@@ -518,6 +529,18 @@ class Package:
    def getEnv(self):
       " Get the common pakcage environment. "
       return self.env
+   
+   def setDistDir(self, path):
+      " Set the prefix for distribution/packaged files. "
+      self.distDir = path
+      
+   def getDistDir(self):
+      return self.distDir
+      
+   def addPackager(self, packager):
+      " Add a new packager.  Sets the packager to point to this package. "
+      packager.setPackage(self)
+      self.packagers.append(packager)
 
    # ###### Assembly factory methods ####### #
    def createSharedLibrary(self, name, baseEnv = None, installPrefix='lib'):
@@ -676,7 +699,77 @@ class Package:
       # Setup standard file bundle install and add alias to it
       self.fileBundle.buildInstall(self.env, self.prefix)
       self.env.Alias('install', self.prefix)            
+      
+      # Setup all packagers
+      for p in self.packagers:
+         p.build()
 
+
+# ############################################# #
+#        PACKAGERS
+# ############################################# #
+
+class Packager:
+   """ Base class for all packagers in the system.
+       A packager is responsible for packaging a package into a distributable form (rpm, etc).
+       The packager is attached to the package and then it is the package's responsibility
+       to add the Packager to the build.
+   """
+   def __init__(self):
+      self.package = None
+   
+   def setPackage(self, pkg):
+      " Set the package that we are packaging for. "
+      self.package = pkg     # The package we are responsible for
+      
+   def build(self):
+      " Template method that is called by the package to build the packaging mechanism. "
+      pass
+
+   
+class TarGzPackager(Packager):
+   """ Packager class that uses a .tar.gz file to compress the package for distribution. """
+   def __init__(self):
+      """ Initialize the packager.
+      
+      """
+      Packager.__init__(self)      
+
+   def makeDistTarGz(self, target, distDir, env = None):
+      """ Builder for targz file.  
+          target is file name.
+          source is a list of directories for files to add.
+      """
+      import os
+   
+      # Make the tar.gz
+      # Execute in the directory above the file or directory we are adding
+      # and tar up the contents of the source directory
+      exec_dir = os.path.dirname(os.path.abspath(distDir))
+      src_dir = os.path.basename(distDir)
+
+      targz = Action('tar -C %s -czf $TARGET %s' % (exec_dir, src_dir ))
+      targz(target, None, env)
+ 
+      return None
+
+   def makeDistTarGz_print(self, target, source, env):
+      print "Building .tar.gz dist: %s"% (target[0],)
+   
+   def build(self):
+      env = self.package.getEnv().Copy()
+      dist_dir = self.package.getDistDir()
+      dist_name = "%s-%s"% (self.package.getName(), self.package.getFullVersion())
+      work_dir = pj(dist_dir, dist_name)
+
+      # Explicitly install the dist into a directory to use
+      # Then create command to build dist from that directory with the install files and dependencies
+      inst_targets = self.package.getFileBundle().buildInstall(env, work_dir)
+      env.Command(pj(dist_dir, dist_name+'.tar.gz'), inst_targets,
+                  Action( lambda target, source, env:  self.makeDistTarGz(target, work_dir, env),
+                          self.makeDistTarGz_print) 
+                 )
+      
 
 def MakeSourceDist(package, baseEnv = None):
    """
