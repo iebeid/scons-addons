@@ -290,7 +290,7 @@ class Options:
                             # Convert stuff that has a repr that cannon be evaled to string
                             value = SCons.Util.to_string(value)
                         
-                        fh.write("%s = '%s'\n" % (option.key, repr(value)))
+                        fh.write('%s = %s\n' % (option.key, repr(value)))
                     except KeyError:
                         pass
             finally:
