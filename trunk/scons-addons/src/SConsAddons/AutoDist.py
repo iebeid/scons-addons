@@ -178,23 +178,20 @@ class _Library(_Assembly):
    meant to be private.
    """
 
-   def __init__(self, name, baseEnv, builder):
+   def __init__(self, name, baseEnv, builderName):
       """
       Creates a new library builder for a library of the given name.
       """
       _Assembly.__init__(self, name, baseEnv)
-      self.data['builder'] = builder
+      self.builder_name = builderName
 
    def _buildImpl(self):
       """
       Sets up the build dependencies and the install.
       """
 
-      # Get the function that is used to build the library
-      makeLib = self.data['builder']
-
       # Build rule
-      lib = makeLib(self.data['env'], self.data['name'], self.data['sources'])
+      lib = self.data['env'].__dict__[self.builder_name](self.data['name'], self.data['sources'])
 
       # Install the binary
       self.data['env'].Install(path.join(Prefix(), 'lib'), lib)
@@ -223,7 +220,7 @@ class SharedLibrary(_Library):
       lib_name = path.join(path.dirname(str(name)),
                            baseEnv.subst('${SHLIBPREFIX}') + path.basename(str(name)) + baseEnv.subst('${SHLIBSUFFIX}'))
 
-      _Library.__init__(self, lib_name, baseEnv, SCons.Defaults.SharedLibrary)
+      _Library.__init__(self, lib_name, baseEnv, 'SharedLibrary')
 
 
 class StaticLibrary(_Library):
@@ -239,7 +236,7 @@ class StaticLibrary(_Library):
       lib_name = path.join(path.dirname(str(name)),
                            baseEnv.subst('${LIBPREFIX}') + path.basename(str(name)) + baseEnv.subst('${LIBSUFFIX}'))
 
-      _Library.__init__(self, lib_name, baseEnv, SCons.Defaults.StaticLibrary)
+      _Library.__init__(self, lib_name, baseEnv, 'StaticLibrary')
 
 
 class Program(_Assembly):
