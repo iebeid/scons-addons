@@ -115,6 +115,7 @@ class LocalUpdateOption(Option):
         
     def updateEnv(self, env):
         """ Update the passed environment with full settings for the option """
+        print "WARNING: updateEnv not defined for called option"
         pass
 
 class PackageOption(LocalUpdateOption):
