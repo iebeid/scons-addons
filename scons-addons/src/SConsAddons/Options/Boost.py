@@ -170,27 +170,27 @@ class Boost(SConsAddons.Options.PackageOption):
          self.checkRequired("Boost base dir is not a directory: %s" % self.baseDir)
          return
 
+      # --- Find include path --- #
+      # If inc dir not set, try to find it
+      # - Try just include, if not, then try subdirs in reverse sorted order
       if not self.incDir:
          self.incDir = pj(self.baseDir, 'include')
+         if not os.path.isfile(pj(self.incDir, 'boost', 'version.hpp')):
+            print "Searching for correct boost include dir...",
+            potential_dirs = os.listdir(self.incDir)
+            potential_dirs = [d for d in potential_dirs if os.path.isfile(pj(self.incDir, d, 'boost', 'version.hpp'))]
+            potential_dirs.sort()
+            if 0 == len(potential_dirs):
+               print "none found."
+            else:
+               self.incDir = pj(self.incDir, potential_dirs[-1])
+               print "found: ", self.incDir
          
-      if self.incDir and (not os.path.isdir(self.incDir)):
-         self.checkRequired("Boost inc dir is not a valid directory: %s" % self.incDir)
+      if self.incDir and (not os.path.isdir(pj(self.incDir,'boost'))):
+         self.checkRequired("Boost inc dir is not a valid directory: %s" % pj(self.incDir,'boost'))
          return
       
-      # --- Find include path --- #
-      full_inc_path = pj(self.incDir, 'boost')
-      if not os.path.isdir(full_inc_path):
-         self.checkRequired("No include path found for boost. tried: [%s]"%(self.incDir,))
-         return
-      # AB: I don't know what this code was for. 02-25-04
-      #   potential_paths = [d for d in os.listdir(pj(self.baseDir, 'include')) 
-      #                        if os.path.isdir(pj(self.baseDir, 'include', d))]
-      #   if len(potential_paths) == 0:
-      #      self.checkRequired("No include paths found for boost.")
-      #      return
-      #   potential_paths.sort()
-      #   self.includePath = pj(self.baseDir, 'include', potential_paths[-1])
-         
+      # Check the version header is there         
       version_header = pj(self.incDir, 'boost', 'version.hpp')         
       if not os.path.isfile(version_header):
          self.checkRequired("Boost version.hpp header does not exist:%s"%version_header)
@@ -200,7 +200,11 @@ class Boost(SConsAddons.Options.PackageOption):
       
       # --- Check version requirement --- #
       ver_file = file(version_header)
-      found_ver_str = int(re.search("define\s+?BOOST_VERSION\s+?(\d*)", ver_file.read()).group(1))
+      ver_match = re.search("define\s+?BOOST_VERSION\s+?(\d*)", ver_file.read())
+      if not ver_match:
+         self.checkRequired("   could not find BOOST_VERSION in file: %s"%version_header)
+         return
+      found_ver_str = int(ver_match.group(1))
       found_ver_str = str(found_ver_str / 100000) + '.' + str(found_ver_str / 100 % 1000) + '.' + str(found_ver_str % 100)
       req_ver = [int(n) for n in self.requiredVersion.split('.')]
       found_ver = [int(n) for n in found_ver_str.split('.')]
