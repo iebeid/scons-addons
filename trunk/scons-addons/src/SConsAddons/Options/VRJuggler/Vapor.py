@@ -154,13 +154,13 @@ class Vapor(SConsAddons.Options.LocalUpdateOption):
          inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
          lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
          lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
-         link_from_lib_re = re.compile(r'(-[^lL]\S*)', re.MULTILINE);
+         link_from_lib_re = re.compile(r'(( |^)-[^lL]\S*)', re.MULTILINE);
          
          # Returns lists of the options we want
          self.found_incs = inc_re.findall(os.popen(self.vprconfig_cmd + " --includes").read().strip());
          self.found_libs = lib_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());
          self.found_lib_paths = lib_path_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());
-         self.found_link_from_libs = link_from_lib_re.findall(os.popen(self.vprconfig_cmd + " --libs --extra-libs").read().strip());         
+         self.found_link_from_libs = link_from_lib_re.findall(os.popen(self.vprconfig_cmd + " --extra-libs").read().strip());         
          
          print "[OK]"
              
