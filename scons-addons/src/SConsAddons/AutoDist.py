@@ -620,7 +620,11 @@ class Package:
       if value_dict["varDict"] != None:
          varDict = value_dict["varDict"]
          
-      varDict["Libs"] = " ".join(["-L"+l for l in lib_paths]) + " " + " ".join(["-L"+l for l in value_dict["extraLibPath"]]) + " " + " ".join(["-l"+l for l in lib_names])
+      varDict["Libs"] = " ".join(["-L"+l for l in lib_paths])
+      if value_dict["extraLibPath"] != None:
+         varDict["Libs"] += " " + " ".join(["-L"+l for l in value_dict["extraLibPath"]])
+      if len(lib_names):
+         varDict["Libs"] += " " + " ".join(["-l"+l for l in lib_names])
       if value_dict["extraLibs"]!=None:
          varDict["Libs"] = varDict["Libs"] + " " + " ".join(["-l"+l for l in value_dict["extraLibs"]])
       varDict["Cflags"] = cflags
