@@ -1,0 +1,7 @@
+#!python
+#
+Import('env')
+e = env.Copy(LIBS = ['A'])
+e.Append(CPPPATH = ["#"],
+         LIBPATH = ['../libA'])
+e.Program('app', Split('app.cpp'))
