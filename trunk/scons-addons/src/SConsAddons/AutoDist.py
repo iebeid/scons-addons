@@ -38,12 +38,16 @@ __author__     = 'Ben Scott'
 
 import os
 from os import path
+import stat
+import re
 
 import SCons.Defaults
 import SCons.Environment
 import SCons.Node.FS
+import SCons.Util
 import types
 import re
+import time
 
 pj = os.path.join
 
@@ -53,6 +57,9 @@ Action          = SCons.Action.Action
 Builder         = SCons.Builder.Builder
 Environment     = SCons.Environment.Environment
 File            = SCons.Node.FS.default_fs.File
+Value           = SCons.Node.Python.Value
+
+config_script_contents = ""
 
 class Header:
    def __init__(self, fileNode, prefix=None):
@@ -152,6 +159,12 @@ class _Assembly:
 
    def isBuilt(self):
       return self.built;
+   
+   def getFilename(self):
+      return str(self.fileNode)
+   
+   def getAbsFilePath(self):
+      return self.fileNode.get_abspath()
    
    def build(self):
       """
@@ -270,7 +283,7 @@ class Package:
    package up distributions of your project.
    """
 
-   def __init__(self, name, version, prefix='/usr/local'):
+   def __init__(self, name, version, prefix='/usr/local', baseEnv = None, description= None):
       """
       Creates a new package with the given name and version, where version is in
       the form of <major>.<minor>.<patch> (e.g 1.12.0)
@@ -279,7 +292,15 @@ class Package:
       self.prefix = prefix
       self.assemblies = []
       self.extra_dist = []
+      self.description = description
+      if not self.description:
+         self.description = self.name + " Package"
       
+      if baseEnv:
+         self.env = baseEnv.Copy()
+      else:
+         self.env = Environment()
+         
       if type(version) is types.TupleType:
          (self.version_major, self.version_minor, self.version_patch) = version;
       else:
@@ -324,8 +345,81 @@ class Package:
       self.assemblies.append(prog)
       return prog
    
-   def createConfigScript(self):
-      pass
+   def createConfigAction(self, target, source, env):
+      """ Called as action of config script builder """
+      global config_script_contents
+      
+      new_contents = config_script_contents
+      value_dict = source[0].value                  # Get dictionary from the value node
+      
+      all_lib_names = [os.path.basename(l.getAbsFilePath()) for l in self.assemblies if isinstance(l,_Library)]
+      lib_names = []
+      for l in all_lib_names:
+         if not lib_names.count(l):
+            lib_names.append(l)
+      inc_paths = [pj(self.prefix,'include'),]
+      cflags = " ".join(["-I"+p for p in inc_paths])
+      if value_dict["extraCflags"] != None:
+         cflags = cflags + " " + value_dict["extraCflags"]
+      lib_paths = [pj(self.prefix,'lib'),]
+      
+      # Extend varDict with local settings
+      varDict = {}
+      if value_dict["varDict"] != None:
+         varDict = value_dict["varDict"]
+         
+      varDict["Libs"] = " ".join(["-L"+l for l in lib_paths]) + " " + " ".join(["-l"+l for l in lib_names])
+      varDict["Cflags"] = cflags
+      varDict["Version"] = self.getFullVersion()
+      varDict["Name"] = self.name
+      varDict["Description"] = self.description
+      
+      # Create the new content
+      txt = "# config script generated for %s at %s\n" % (self.name, time.asctime())
+      txt = txt + '# values: %s\n'%(source[0].get_contents(),)
+      
+      for k,v in value_dict["varDict"].items():
+         if SCons.Util.is_String(v):
+            txt = txt + 'vars["%s"] = "%s"\n' % (k,v)
+         else:
+            txt = txt + 'vars["%s"] = %s\n' % (k,v)            
+            
+      # Find and replace the replacable content
+      cut_re = re.compile(r'(?<=# -- BEGIN CUT --\n).*?(?=# -- END CUT --)', re.DOTALL)
+      new_contents = cut_re.sub(txt,config_script_contents)
+      
+      # Create and write out the new file (setting it executable)
+      fname = str(target[0])
+      f = open(str(target[0]), 'w')
+      f.write(new_contents)
+      f.close()
+      os.chmod(fname, stat.S_IREAD|stat.S_IEXEC|stat.S_IWUSR)    # Set the file options
+      
+      return 0   # Successful build
+      
+   def createConfigScript(self, name, installDir='bin', varDict = None,
+                          extraIncPaths=None, extraLibs=None, extraLibPaths=None, extraCflags=None):
+      """ Adds a config script to the given package installation.
+          varDict - Dictionary of extra variables to define.
+      """
+      if not self.env['BUILDERS'].has_key("PackageConfigScript"):
+         cfg_builder = Builder(action = Action(self.createConfigAction,
+                                        lambda t,s,e: "Create config script for %s package: %s"%(self.name, t[0])) )
+         self.env.Append(BUILDERS = {"PackageConfigScript" : cfg_builder})
+      
+      value_dict = {}
+      value_dict["prefix"] = self.prefix
+      value_dict["extraIncPaths"] = extraIncPaths
+      value_dict["extraLibs"] = extraLibs
+      value_dict["extraLibPath"] = extraLibPaths
+      value_dict["extraCflags"] = extraCflags
+                 
+      value_dict["varDict"] = varDict
+      self.env.PackageConfigScript(target = pj(installDir, name), source = Value(value_dict))
+      
+      # May need to delay doing this until a later build stage so that all libs, headers, etc are 
+      # setup and ready to go in this package.
+      
 
    def addExtraDist(self, files, exclude=[]):
       """
@@ -354,6 +448,9 @@ class Package:
 
    def getVersionPatch(self):
       return self.version_patch
+   
+   def getFullVersion(self):
+      return ".".join( (str(self.version_major), str(self.version_minor), str(self.version_patch)) )
 
    def getAssemblies(self):
       return self.assemblies
@@ -451,3 +548,83 @@ def _CreateSourceTarGzBuilder(env):
    source_targz_builder = Builder(action = makeSourceTarGz,
                                   suffix = '.tar.gz')
    env['BUILDERS']['SourceTarGz'] = source_targz_builder
+   
+   
+   
+   
+   
+# ------------------ CONFIG SCRIPT ------------------- #
+config_script_contents = '''#!/bin/env python
+#
+import getopt
+import sys
+
+vars = {}
+
+# -- BEGIN CUT --
+# config script generated for PACKAGE
+vars["Libs"] = "-L/usr/lib -lmylib"
+vars["Cflags"] = "-I/include/here -Dmy_VAR"
+vars["Version"] = "4.5.0"
+vars["Name"] = "My Module"
+vars["Description"] = "This is my module over here"
+vars["test_var"] = "Test value"
+vars["Requires"] = "OtherPackage"
+# -- END CUT -- #
+
+def usage():
+   print """Usage:
+   --libs            output all linker flags
+   --cflags          output all compiler flags
+   --cflags-only-I   output only the -I flags
+   --modversion      get the version of the module
+   --modname         get the name of the module
+   --moddesc         get the description of the module
+   --variable=VAR    get the value of a variable
+
+   --help            display this help message
+"""
+
+def getVar(varName):
+   if vars.has_key(varName):
+      return vars[varName]
+   else:
+      return ""
+
+def main():
+   try:
+      opts, args = getopt.getopt(sys.argv[1:], "",
+                                 ["help", "libs", "cflags", "cflags-only-I",
+                                  "modversion", "modname", "moddesc",
+                                  "variable="])
+   except getopt.GetoptError:
+      usage()
+      sys.exit(2)
+      
+   if not len(opts):
+      usage()
+      sys.exit()
+
+   ret_val = ""
+   
+   predefined_opts = { "libs" : "Libs",
+                       "cflags" : "Cflags",
+                       "modversion" : "Version",
+                       "modname" : "Name",
+                       "moddesc" : "Description" }
+   for o,a in opts:
+      if o == "--help":
+         usage()
+         sys.exit()
+      if predefined_opts.has_key(o[2:]):      # Handle standard options
+         print getVar(predefined_opts[o[2:]]),
+      elif o == "--cflags-only-I":
+         cflags = getVar("Cflags")
+         cflags_i = [x for x in cflags.split() if x.startswith("-I")]
+         print " ".join(cflags_i),
+      elif o == "--variable":
+         print getVar(a),
+         
+if __name__=='__main__':
+    main()
+'''
