@@ -122,6 +122,8 @@ def GetPlatform():
       return 'win32'
    elif string.find(sys.platform, 'sun') != -1:
       return 'sun'
+   elif string.find(sys.platform, 'darwin' ) != -1:
+      return 'mac'
    else:
       return sys.platform   
    
