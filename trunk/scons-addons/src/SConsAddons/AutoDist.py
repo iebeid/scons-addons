@@ -36,6 +36,7 @@ __version__    = '0.1.4'
 __author__     = 'Ben Scott'
 
 
+import os
 from os import path
 
 import SCons.Defaults
@@ -318,11 +319,21 @@ class Package:
       self.data['assemblies'].extend([prog])
       return prog
 
-   def addExtraDist(self, files):
+   def addExtraDist(self, files, exclude=[]):
       """
-      Adds in the given files to the distribution of this package.
+      Adds in the given files to the distribution of this package. If a
+      directory is encountered in the file list, it is recursively added. Files
+      whose names are in the exclude list are not added to the list.
       """
-      self.data['extra_dist'].extend(files)
+      for file in files:
+         # Make sure to skip files in the exclude list
+         if not file in exclude:
+            # If the file is a directory, recurse on it
+            if os.path.isdir(file):
+               self.addExtraDist(os.listdir(file), exclude)
+            # If the file is not a directory, add in the extra dist list
+            else:
+               self.data['extra_dist'].append(file)
 
    def getName(self):
       return self.data['name']
