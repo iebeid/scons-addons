@@ -71,14 +71,28 @@ class Assembly:
       # Add these sources into the mix
       self.data['sources'].extend(srcs)
 
+   def addHeaders(self, headers, prefix = None):
+      hdrs = map(File, headers)
+      for h in hdrs:
+         self.data['headers'].extend([[prefix, h]])
+
+   def addIncludes(self, includes):
+      self.data['includes'].extend(includes)
+
    def addLibs(self, libs):
       self.data['libs'].extend(libs)
 
    def addLibPaths(self, libpaths):
       self.data['libpaths'].extend(libpaths)
 
-   def addHeaders(self, headers):
-      self.data['headers'].extend(headers)
+   def build(self, env):
+      # Setup the environment for the build
+      env.Append(CPPPATH = self.data['includes'],
+                 LIBPATH = self.data['libpaths'],
+                 LIBS    = self.data['libs'])
+
+      # Now actually do the build
+      self.buildImpl(env)
 
 
 class Library(Assembly):
@@ -86,7 +100,7 @@ class Library(Assembly):
       Assembly.__init__(self, name)
       self.data['shared'] = shared
 
-   def build(self, env):
+   def buildImpl(self, env):
       if self.data['shared']:
          makeLib = env.SharedLibrary
       else:
@@ -99,17 +113,20 @@ class Library(Assembly):
       env.Install(path.join(Prefix(), 'lib'), lib)
 
       # Install the headers in the source list
-      headers = filter(lambda n: str(n)[-2:] == '.h',
-                       map(str, self.data['headers']))
-
-      for h in headers:
-         env.Install(path.join(Prefix(), 'include'), h)
+      for h in self.data['headers']:
+         prefix = h[0]
+         filename = h[1]
+         target = path.join(Prefix(), 'include')
+         # Add on the prefix if this header has one
+         if prefix:
+            target = path.join(target, prefix)
+         env.Install(target, filename)
 
 class Program(Assembly):
    def __init__(self, name):
       Assembly.__init__(self, name)
 
-   def build(self, env = None):
+   def buildImpl(self, env = None):
       # Build rule
       prog = env.Program(self.data['name'], source  = self.data['sources'])
 
@@ -154,4 +171,4 @@ class Package:
       
       env.Alias('install', Prefix())
       for assembly in self.data['assemblies']:
-         assembly.build(env)
+         assembly.build(env.Copy())
