@@ -32,7 +32,7 @@ Automatic distribution builder and packager for SCons.
 # -----------------------------------------------------------------
 ############################################################## autodist-cpr end
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 
 from os import path
@@ -252,7 +252,7 @@ class Program(_Assembly):
       prog_name = path.join(path.dirname(str(name)),
                             baseEnv.subst('${PROGPREFIX}') + path.basename(str(name)) + baseEnv.subst('${PROGSUFFIX}'))
 
-      _Assembly.__init__(self, name, baseEnv)
+      _Assembly.__init__(self, prog_name, baseEnv)
 
    def _buildImpl(self):
       """
