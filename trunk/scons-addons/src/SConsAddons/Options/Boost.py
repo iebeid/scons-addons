@@ -64,6 +64,7 @@ class Boost(SConsAddons.Options.PackageOption):
       self.toolset = "gcc"     # XXX: This is currently a hack
       self.use_mt = useMt
       self.use_debug = useDebug 
+      print "Use debug set to:", self.use_debug
 
    def setToolset(self, toolset):
       self.toolset = toolset
@@ -293,6 +294,7 @@ class Boost(SConsAddons.Options.PackageOption):
    def updatePythonEmbeddedEnv(self,env):
       """ Update the environment for building python embedded """
       self.updateEnv(env)
+      print "Full python lib name:", self.buildFullLibName('python')
       env.Append(LIBS = [self.buildFullLibName('python')])
       env.Append(CPPPATH = [self.python_inc_dir,],
                  LINKFLAGS = self.python_link_share_flags,
