@@ -1,5 +1,6 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-04-14 allenb       Added support for packagers.
 2004-04-13 allenb       Refactor AutoDist to make it handle files and prefixes
                         better.
 2004-03-25 allenb       Require param to boost option stating wether to use
