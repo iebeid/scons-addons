@@ -1,3 +1,9 @@
+"""
+AutoDist
+
+Automatic distribution builder and packager for SCons.
+
+"""
 ############################################################## autodist-cpr beg
 #
 # AutoDist - Automatic distribution builder and packager for
@@ -26,11 +32,15 @@
 # -----------------------------------------------------------------
 ############################################################## autodist-cpr end
 
+__version__ = '0.1.0'
+
+
 from os import path
 
 import SCons.Defaults
 import SCons.Environment
 import SCons.Node.FS
+
 
 # SCons shorthand mappings
 Action          = SCons.Action.Action
