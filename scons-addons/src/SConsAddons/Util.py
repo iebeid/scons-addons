@@ -181,3 +181,105 @@ def getRelativeSourcePath(env=SCons.Environment.Environment()):
 def getFullRootPath(env=SCons.Environment.Environment()):
    " Return the full path of the root build dir "
    return str(env.Dir('#'))
+
+
+# ---------- Inprogress ---------- #
+import SCons.Node.FS
+
+import fnmatch
+import glob
+
+
+def Glob(pathname):
+    """Return a list of paths matching a pathname pattern.
+
+    The pattern may contain simple shell-style wildcards a la fnmatch.
+
+    """
+    glob_magic_check = re.compile('[*?[]')
+    fs = SCons.Node.FS.default_fs
+
+    def glob_has_magic(s):
+       " Does the glob string contain magic characters."
+       return magic_check.search(s) is not None
+    
+    def find_node(node_name):
+       """ Returns node if the given node names exists in the default file system.
+           Otherwise returns 0.
+       """
+       try:
+          node = fs.Entry(node_name, create=0)
+       except SCons.Errors.UserError:
+          return 0
+       return node
+    
+    # If no magic, then just check for the specified file
+    if not has_magic(pathname):
+       node = find_node(pathname)
+       if node != 0:
+          return [node]
+       else:
+          return []
+
+    dirname, basename = os.path.split(pathname)
+
+    if not dirname:
+        return Glob_FilesInDir(os.curdir, basename)
+    elif has_magic(dirname):                 # If there is magic in dir name then recurse
+        list = glob(dirname)
+    else:
+        list = [dirname]
+    
+    # Assert: list contains full list of directories to search for file   
+    if not has_magic(basename):
+        result = []
+        for dirname in list:
+            if basename or os.path.isdir(dirname):
+                name = os.path.join(dirname, basename)
+                if os.path.exists(name):
+                    result.append(name)
+    else:
+        result = []
+        for dirname in list:
+            sublist = Glob_FilesInDir(dirname, basename)
+            for name in sublist:
+                result.append(os.path.join(dirname, name))
+    return result
+
+def Glob_FilesInDir(dirnode, pattern):
+   """ Return list of files in directory dirname that match the pattern. """
+   children = dirnode.all_children()
+        
+   #if pattern[0]!='.':
+   #   names=filter(lambda x: x[0]!='.',names)
+   def fn_filter(node):
+      filename = str(node)
+      return fnmatch.fnmatch(filename, pattern)
+   
+   ret_list = [child for child in children if fn_filter(child)]
+   return ret_list
+
+
+def Glob(match):
+    """Similar to glob.glob, except globs SCons nodes, and thus sees
+    generated files and files from build directories.  Basically, it sees
+    anything SCons knows about."""
+    def fn_filter(node):
+        fn = str(node)
+        return fnmatch.fnmatch(os.path.basename(fn), match)
+    
+    here = Dir('.')
+    
+    children = here.all_children()
+    nodes = map(File, filter(fn_filter, children))
+    node_srcs = [n.srcnode() for n in nodes]
+
+    src = here.srcnode()
+    if src is not here:
+        src_children = map(File, filter(fn_filter, src.all_children()))
+        for s in src_children:
+            if s not in node_srcs:
+                nodes.append(File(os.path.basename(str(s))))
+
+    return nodes
+
