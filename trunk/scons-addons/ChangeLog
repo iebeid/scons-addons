@@ -1,5 +1,8 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2004-09-24 allenb       Updated Boost python to get more info from python
+                        about current version, libs, etc.  This allows building
+                        with 2.2 or 2.3 (or future versions hopefully).
 2004-05-31 allenb       Added option to updateEnv for boost and vapor options
                         to explicitly tell it to update CPPPATH with include
                         paths.
