@@ -63,6 +63,7 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
       self.found_libs = None;
       self.found_cflags = None;
       self.found_lib_paths = None;
+      self.found_defines = None;
       
    def checkRequired(self, msg):
       """ Called when there is config problem.  If required, then exit with error message """
@@ -157,6 +158,7 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
          lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
          lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
          link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
+         defines_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE);
          
          # Returns lists of the options we want
          self.found_cflags = os.popen(self.osgconfig_cmd + " --cflags").read().strip().split(" ")
@@ -172,6 +174,7 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
          self.found_lib_paths["glut"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs GLUT").read().strip());
          self.found_lib_paths["x"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs X").read().strip());
          self.found_lib_paths["qt"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs QT").read().strip());
+         self.found_defines = defines_re.findall(os.popen(self.osgconfig_cmd + " --cflags").read().strip())
          
          print "[OK]"
              
@@ -201,4 +204,5 @@ class OpenSG(SConsAddons.Options.LocalUpdateOption):
          for lib_name in self.found_libs.keys():
             print "LIBS (%s):"%lib_name, self.found_libs[lib_name]
             print "LIBPATH (%s):"%lib_name, self.found_lib_paths[lib_name]
+      print "DEFINES:", self.found_defines
 
