@@ -193,7 +193,7 @@ class _Library(_Assembly):
    meant to be private.
    """
 
-   def __init__(self, libname, baseEnv, builderNames):
+   def __init__(self, libname, baseEnv, builderNames, installDir):
       """
       Creates a new library builder for a library of the given name.
       """
@@ -203,6 +203,7 @@ class _Library(_Assembly):
          self.builder_names = [ builderNames ]
       else:
          self.builder_names = builderNames
+      self.installDir = installDir
 
    def _buildImpl(self):
       """
@@ -212,8 +213,9 @@ class _Library(_Assembly):
       # Setup build and install for each built library
       # Use get_abspath() with fileNode so we get the path into the build_dir and not src dir
       for lib_builder in self.builder_names:
-         lib = self.data['env'].__dict__[lib_builder](self.fileNode.get_abspath(), self.data['sources'])
-         inst_prefix = pj(Prefix(), 'lib')
+         lib_filepath = self.fileNode.get_abspath()
+         lib = self.data['env'].__dict__[lib_builder](lib_filepath, self.data['sources'])
+         inst_prefix = pj(Prefix(), self.installDir)
          if self.installPrefix:
             inst_prefix = pj(inst_prefix,self.installPrefix)
          self.data['env'].Install(inst_prefix, lib)
@@ -232,24 +234,24 @@ class _Library(_Assembly):
 class SharedLibrary(_Library):
    """ This object knows how to build & install a shared library from a set of sources. """
 
-   def __init__(self, libname, baseEnv = None):
+   def __init__(self, libname, baseEnv = None, installDir='lib'):
       """ Creates a new shared library builder for a library of the given name. """
-      _Library.__init__(self, libname, baseEnv, 'SharedLibrary')
+      _Library.__init__(self, libname, baseEnv, 'SharedLibrary', installDir)
 
 
 class StaticLibrary(_Library):
    """ This object knows how to build & install a static library from a set of sources """
 
-   def __init__(self, libname, baseEnv = None):
+   def __init__(self, libname, baseEnv = None, installDir='lib'):
       """ Creates a new static library builder for a library of the given name. """
-      _Library.__init__(self, libname, baseEnv, 'StaticLibrary')
+      _Library.__init__(self, libname, baseEnv, 'StaticLibrary', installDir)
 
 class StaticAndSharedLibrary(_Library):
    """ This object knows how to build & install a static and shared libraries from a set of sources """
 
-   def __init__(self, libname, baseEnv = None):
+   def __init__(self, libname, baseEnv = None, installDir='lib'):
       """ Creates a new static and shared library builder for a library of the given name. """
-      _Library.__init__(self, libname, baseEnv, ['StaticLibrary', 'SharedLibrary'])
+      _Library.__init__(self, libname, baseEnv, ['StaticLibrary', 'SharedLibrary'], installDir)
 
 
 class Program(_Assembly):
@@ -301,30 +303,30 @@ class Package:
          self.version_minor = int(re_matches.group(2))
          self.version_patch = int(re_matches.group(3))
 
-   def createSharedLibrary(self, name, baseEnv = None):
+   def createSharedLibrary(self, name, baseEnv = None, installDir='lib'):
       """
       Creates a new shared library of the given name as a part of this package.
       The library will be built within the given environment.
       """
-      lib = SharedLibrary(name, baseEnv)
+      lib = SharedLibrary(name, baseEnv, installDir)
       self.assemblies.append(lib)
       return lib
 
-   def createStaticLibrary(self, name, baseEnv = None):
+   def createStaticLibrary(self, name, baseEnv = None, installDir='lib'):
       """
       Creates a new static library of the given name as a part of this package.
       The library will be built within the given environment.
       """
-      lib = StaticLibrary(name, baseEnv)
+      lib = StaticLibrary(name, baseEnv, installDir)
       self.assemblies.append(lib)
       return lib
    
-   def createStaticAndSharedLibrary(self, name, baseEnv = None):
+   def createStaticAndSharedLibrary(self, name, baseEnv = None, installDir='lib'):
       """
       Creates new static and shared library of the given name as a part of this package.
       The library will be built within the given environment.
       """
-      lib = StaticAndSharedLibrary(name, baseEnv)
+      lib = StaticAndSharedLibrary(name, baseEnv, installDir)
       self.assemblies.append(lib)
       return lib
 
