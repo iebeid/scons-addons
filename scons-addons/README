@@ -7,27 +7,14 @@ o------------------------------------------------------------------------------o
 | What is it?
 o------------------------------------------------------------------------------o
 
-This project is a collection of addons for the scons build system.  
+  
 
-See: http://www.scons.org
-
-o------------------------------------------------------------------------------o
-| Why does this project exist?  Why not just put this all in SCons?
-o------------------------------------------------------------------------------o
-There are two answers for this question:
-
-First, this allows for a place to test new addon capabilities that *may* end up
-in scons in the long term for all I know.
-
-Second, SCons doesn't have to be a kitchen sink of everything under the sun.
-Many things can be written as addons to SCons that are distributed and used
-separately.  That is where this project comes in.
 
 o------------------------------------------------------------------------------o
 | Requirements
 o------------------------------------------------------------------------------o
 
-We generally require the latest released version of scons.  Some addons may require the CVS version though.
+We generally require the latest released version of scons.
 
 o------------------------------------------------------------------------------o
 | Installation
