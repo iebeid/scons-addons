@@ -125,18 +125,7 @@ class Plexus(SConsAddons.Options.PackageOption):
       self.found_libs = cfg_cmd_parser.findLibs()
       self.found_lib_paths = cfg_cmd_parser.findLibPaths()
 
-       # Try to build against the library
-      conf_env = env.Copy();                     # Make a copy of the env
-      self.updateEnv(conf_env);                  # Update it with the guessed values
-      conf_ctxt = Configure(conf_env);
-      if not conf_ctxt.CheckCXXHeader(pj("plx", "plxConfig.h")):
-         passed = False
-         self.checkRequired("Can't compile with plxConfig.h")
-
-
-
-      conf_ctxt.Finish()
-
+      
       if not passed:
          self.baseDir = None
          self.plx_cfg_cmd = None
