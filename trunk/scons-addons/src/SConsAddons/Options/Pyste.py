@@ -193,18 +193,22 @@ class Pyste(SConsAddons.Options.PackageOption):
       
    def AddPysteBuilder(self,env):
        """ Add the builder and scanner for pyste to use. """
-       def _path(env, dir, fs=SCons.Node.FS.default_fs):
-           path = env["CPPPATH"]
-           return tuple(fs.Rsearchall(SCons.Util.mapPaths(path, dir, env),
-                                       clazz = SCons.Node.FS.Dir,
-                                       must_exist = 0))
-   
+       #def _path(env, dir, fs=SCons.Node.FS.default_fs):
+       #    path = env["CPPPATH"]
+       #    return tuple(fs.Rsearchall(SCons.Util.mapPaths(path, dir, env),
+       #                                clazz = SCons.Node.FS.Dir,
+       #                                must_exist = 0))
+       # XXX: This may not be right.  Need to find better description of the path scanner stuff
+       fs = SCons.Node.FS.default_fs
+       pf = SCons.Scanner.FindPathDirs('CPPPATH', fs)
        pyste_scanner = SCons.Scanner.Base(function=PysteRecursiveScanFunction, 
                                name="PysteRecursive",
                                skeys=[".pyste",".Pyste"],
-                               path_function=_path,
+                               #path_function=_path,
+                               path_function=pf,
                                recursive=1)
-       pyste_builder = SCons.Builder.Builder(generator = lambda source, target, env, for_signature: PysteBuildGenerator(source,target,env,for_signature,False),
+       pyste_builder = SCons.Builder.Builder(generator = lambda source, target, env, 
+                                              for_signature: PysteBuildGenerator(source,target,env,for_signature,False),
                                              suffix=".cpp", src_suffix=".pyste",
                                              );
        pyste_multi_builder = SCons.Builder.Builder(generator = lambda source, target, env, for_signature: PysteBuildGenerator(source,target,env,for_signature,True),
