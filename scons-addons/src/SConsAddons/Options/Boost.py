@@ -211,10 +211,7 @@ class Boost(SConsAddons.Options.PackageOption):
 
       # Set lists of the options we want
       self.found_incs = [self.incDir]
-      self.found_incs_as_flags = "";
-      for p in self.found_incs:
-         self.found_incs_as_flags = self.found_incs_as_flags + " " + env["INCPREFIX"] + p
-      self.found_incs_as_flags = self.found_incs_as_flags.strip()
+      self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
       self.found_lib_paths = [pj(self.baseDir, 'lib')]
 
       ######## BUILD CHECKS ###########  
