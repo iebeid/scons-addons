@@ -57,6 +57,33 @@ def getPredFilesRecursive(tree_root, predicateMethod):
    os.chdir(cur_dir)
    return f_list
 
+
+def getHeaders():
+   """ get the headers in the current directory """
+   exts = ['.h','.hpp']
+   files = os.listdir('.')
+   ret = []
+   for x in files:
+      for e in exts:
+         if x.endswith(e):
+            ret.append(x)
+   return ret
+ 
+def getSources():
+   """ get the source files in the current directory"""
+   exts = ['.cpp','.c']
+   files = os.listdir('.')
+   ret = []
+   for x in files:
+      print "checking if"+x+"is a header"
+      for e in exts:
+         print "wither header suffix: "+e
+         if x.endswith(e):
+            ret.append(x)
+   return ret
+
+ 
+         
 def getFilesRecursiveByExt(tree_root, fexts):
    def hasExtension(f):
       return fileExtensionMatches(f, fexts)
