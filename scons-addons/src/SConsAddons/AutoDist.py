@@ -769,7 +769,69 @@ class TarGzPackager(Packager):
                   Action( lambda target, source, env:  self.makeDistTarGz(target, work_dir, env),
                           self.makeDistTarGz_print) 
                  )
+
+class RpmPackager(Packager):
+   """ Very simple stupid packager for working with rpm spec files.
+   
+   """
+   def __init__(self, specFile):
+      """ Initialize the packager.
       
+      """
+      Packager.__init__(self)
+      self.specFile = specFile
+
+   def makeDistRpm(self, target, source, distdir, buildroot, topdir, env = None):
+      """ Builder for rpm files.
+          target is rpm target file.
+          source is the .spec file to use
+          distdir - The distribution dir to install into
+          buildroot is the root where the files are installed to package
+          topdir is the destination direct for the files
+      """
+      #rpmbuild -bb -v --define='_topdir /var/tmp/cppdom' --define='_rpmdir /var/tmp/cppdom' --buildroot=/..../cppdom/build.linux/dist/cppdom-0.5.3 cppdom.spec
+      rpmbuild_cmd = Action("rpmbuild -bb -v --define='_topdir %s' --define='_rpmdir %s' --buildroot=%s %s"%(topdir,topdir,buildroot,source[0]))
+      rpmbuild_cmd(target, source, env)
+      
+      # copy to the target location
+      return None
+
+   def makeDistRpm_print(self, target, source, env):
+      print "Building rpm dist: %s"% (target[0],)
+   
+   def build(self):
+      env = self.package.getEnv().Copy()
+      dist_dir = self.package.getDistDir()
+      
+      package_arch = 'i386'    # Hardcode for now
+      package_version = self.package.getFullVersion()
+      package_release = '1'
+      package_name = self.package.getName()
+      
+      # Setup the rpm file name (note this can change due to local user settings in rpmrc)
+      rpm_fn_base = "%s-%s-%s.%s.rpm"%(package_name, package_version, package_release, package_arch)
+      
+      rootname = "%s-%s-root"% (self.package.getName(), self.package.getFullVersion())
+      dist_name = "rpm"
+      build_root_dir = pj(dist_dir, dist_name, rootname)              # Path where we will put the build root to create the RPM
+      target_rpm_dir = pj(dist_dir, dist_name)                        # Path to throw the rpm output
+      
+      # Setup the spec file
+      spec_contents = open(self.specFile, 'rb').read()
+      print "spec contents:\n", spec_contents
+      spec_contents.replace('_SCONS_PACKAGE_NAME_',package_name)
+      spec_contents.replace('_SCONS_PACKAGE_VERSION_',package_version)
+      spec_contents.replace('_SCONS_PACKAGE_RELEASE_',package_release)
+      spec_filename_out = pj(target_rpm_dir, os.path.basename(self.specFile))
+      open(spec_filename_out, 'wb').write(spec_contents)
+
+      # Explicitly install to the directory
+      # Then create command to build dist from that directory with the install files and dependencies
+      inst_targets = self.package.getFileBundle().buildInstall(env, build_root_dir)
+      env.Command(pj(dist_dir, rpm_fn_base), [spec_filename_out] + inst_targets,
+                  Action( lambda target, source, env:  self.makeDistRpm(target, source, dist_dir, build_root_dir, target_rpm_dir, env),
+                          self.makeDistRpm_print) 
+                 )
 
 def MakeSourceDist(package, baseEnv = None):
    """
