@@ -514,6 +514,10 @@ class Package:
    
    def getFileBundle(self):
       return self.fileBundle
+   
+   def getEnv(self):
+      " Get the common pakcage environment. "
+      return self.env
 
    # ###### Assembly factory methods ####### #
    def createSharedLibrary(self, name, baseEnv = None, installPrefix='lib'):
@@ -671,7 +675,7 @@ class Package:
 
       # Setup standard file bundle install and add alias to it
       self.fileBundle.buildInstall(self.env, self.prefix)
-      Environment().Alias('install', self.prefix)            
+      self.env.Alias('install', self.prefix)            
 
 
 def MakeSourceDist(package, baseEnv = None):
