@@ -1,5 +1,7 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2003-11-10 allenb       Removed global Prefix() method replacing it with 
+                        storing the prefix in the autodist package instead.
 2003-10-?? allenb       Added support for Pyste
 2003-09-09 allenb       Added install prefixes to all AutoDist packages.
                         NEW VERSION 0.0.8
