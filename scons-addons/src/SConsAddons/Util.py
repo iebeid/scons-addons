@@ -33,10 +33,24 @@ import sys
 import re
 import string
 import SCons.Environment
+import SCons
 
 pj = os.path.join
 
 
+def hasHelpFlag():
+   """ Return true if the help flag was passed to scons. """
+   try: 
+      has_help_flag = SCons.Script.Main.options.help_msg
+   except AttributeError: 
+      has_help_flag = SCons.Script.options.help_msg
+      
+   return has_help_flag
+
+
+# ----------------------------------
+# File extension retrieval methods
+# -----------------------------------
 def fileExtensionMatches(f, fexts):
    """ Returns true if f has an extension in the list fexts """
    for ext in fexts:
