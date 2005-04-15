@@ -1,6 +1,6 @@
-"""SConsAddons.Options.VRJuggler.Vapor
+"""SConsAddons.Options.VRJuggler.VRJ
 
-Defines options for Vapor project
+Defines options for VR Juggler project
 """
 
 #
@@ -36,7 +36,7 @@ from SCons.Util import WhereIs
 pj = os.path.join;
 
 
-class Vapor(JugglerCommon.JugglerCommon):
+class VRJ(JugglerCommon.JugglerCommon):
    """ 
    Options object for capturing vapor options and dependencies.
    """
@@ -44,14 +44,18 @@ class Vapor(JugglerCommon.JugglerCommon):
    def __init__(self, name, requiredVersion, required=True, useCppPath=False):
       """
          name - The name to use for this option
-         requiredVersion - The version of vapor required (ex: "0.16.7")
+         requiredVersion - The version of VRJ required (ex: "0.16.7")
          required - Is the dependency required?  (if so we exit on errors)
          useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
       """
-      help_text = """Base directory for vapor. bin, include, and lib should be under this directory""";
-      self.baseDirKey = "VprBaseDir"
-      self.optionName = "Vapor"
-      self.configCmdName = 'vpr-config'
-      self.filesToCheckRelBase = [pj('include','vpr','vprConfig.h'),]
+      help_text = """Base directory for VRJ. bin, include, and lib should be under this directory""";
+      self.baseDirKey = "VrjBaseDir"
+      self.optionName = "VR Juggler"
+      self.configCmdName = 'vrjuggler-config'
+      self.filesToCheckRelBase = [pj('include','vpr','vprConfig.h'),
+                                  pj('include','jccl','jcclConfig.h'),
+                                  pj('include','gadget','gadgetConfig.h'),
+                                  pj('include','vrj','vrjConfig.h')]
+
+      JugglerCommon.JugglerCommon.__init__(self, name, requiredVersion,required, useCppPath, help_text);
       
-      JugglerCommon.JugglerCommon.__init__(self, name, requiredVersion, required, useCppPath, help_text);
