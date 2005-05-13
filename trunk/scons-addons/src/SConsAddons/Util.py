@@ -236,8 +236,70 @@ import SCons.Node.FS
 import fnmatch
 import glob
 
+def Glob(match, env=SCons.Environment.Environment()):
+    """Similar to glob.glob, except globs SCons nodes, and thus sees
+    generated files and files from build directories.  Basically, it sees
+    anything SCons knows about."""
+    def fn_filter(node):
+        fn = str(node)
+        return fnmatch.fnmatch(os.path.basename(fn), match)
 
-def Glob(pathname):
+    from SCons.Scanner.Dir import DirScanner
+    scanner = DirScanner()
+
+    children = []
+    def add(node):
+        print "Adding: ", str(node)
+        children.extend(node.all_children())
+        children.extend(scanner(node, node.get_build_env()))
+
+    here = env.Dir('.')
+    add(here)
+    while here.srcnode() != here:
+        here = here.srcnode()
+        add(here)
+	
+    print "children: ", [str(c) for c in children]
+
+    nodes = map(env.File, filter(fn_filter, children))
+
+    # Remove duplicates.  O(n2) :(
+    rv = []
+    for n in nodes:
+        if n not in rv:
+            rv.append(n)
+    return rv 
+
+def Globber( pattern = '*.*', dir = '.', env=SCons.Environment.Environment() ):
+    import os, fnmatch
+    files = []
+    srcdir_abs_path = env.Dir(dir).srcnode().abspath
+    #print "srcdir_abs: ", srcdir_abs_path
+    for file in os.listdir( srcdir_abs_path ):
+        if fnmatch.fnmatch(file, pattern) :
+            files.append( os.path.join( dir, file ) )
+    return files
+    
+    
+def WalkBuildFromSource(dir='.', env=SCons.Environment.Environment() ):
+    """ Something similar to os.walk() but it is called
+        in the build directory and walks over the stuff in the source
+	but makes it look like it is relative to the build directory.
+    """
+    srcdir_abs_path = env.Dir(dir).srcnode().abspath
+    #print "src dir abs: ", srcdir_abs_path
+    
+    # Each dirpath is going to start with the top of the walk
+    for dirpath, dirs, filenames in os.walk(srcdir_abs_path):
+       if dirpath.startswith(srcdir_abs_path):
+          dirpath = dirpath[len(srcdir_abs_path)+1:]   
+       bdirpath = os.path.join(dir, dirpath)
+       bfiles = filenames
+       bdirs = dirs
+       yield (bdirpath, bdirs, bfiles)
+
+
+def GlobA(pathname):
     """Return a list of paths matching a pathname pattern.
 
     The pattern may contain simple shell-style wildcards a la fnmatch.
@@ -307,7 +369,7 @@ def Glob_FilesInDir(dirnode, pattern):
    return ret_list
 
 
-def Glob(match):
+def GlobB(match):
     """Similar to glob.glob, except globs SCons nodes, and thus sees
     generated files and files from build directories.  Basically, it sees
     anything SCons knows about."""
