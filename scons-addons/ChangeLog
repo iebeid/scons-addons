@@ -1,5 +1,6 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2005-05-13 allenb       Added a couple of globs to utils to test out.
 2005-04-14 allenb       Moved over to subversion.
 2004-11-17 allenb       Added utility method to get a relative path
                         from a known path and base directory.
