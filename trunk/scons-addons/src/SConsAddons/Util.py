@@ -27,6 +27,7 @@ up long term.
 #
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
+from __future__ import generators
 
 import os
 import sys
@@ -280,8 +281,7 @@ def Globber( pattern = '*.*', dir = '.', env=SCons.Environment.Environment() ):
             files.append( os.path.join( dir, file ) )
     return files
     
-    
-def WalkBuildFromSource(dir='.', env=SCons.Environment.Environment() ):
+def WalkBuildFromSourceOld(dir='.', env=SCons.Environment.Environment() ):
     """ Something similar to os.walk() but it is called
         in the build directory and walks over the stuff in the source
 	but makes it look like it is relative to the build directory.
@@ -298,6 +298,35 @@ def WalkBuildFromSource(dir='.', env=SCons.Environment.Environment() ):
        bdirs = dirs
        yield (bdirpath, bdirs, bfiles)
 
+def WalkBuildFromSource(dir='.', env=SCons.Environment.Environment() ):
+    """ Something similar to os.walk() but it is called
+        in the build directory and walks over the stuff in the source
+	but makes it look like it is relative to the build directory.
+    """
+    srcdir_abs_path = env.Dir(dir).srcnode().abspath
+    #print "src dir abs: ", srcdir_abs_path
+    ret_args = []
+    
+    def collect_args(junk, dir_path, name_list):
+        dirs = []
+        files = []
+        for n in name_list:
+            if os.path.isfile(os.path.join(dir_path, n)):
+                files.append(n)
+            else:
+                dirs.append(n)
+        ret_args.append( [dir_path, dirs, files] )
+
+    os.path.walk(srcdir_abs_path, collect_args, None)
+
+    # Each dirpath is going to start with the top of the walk
+    for dirpath, dirs, filenames in ret_args:
+       if dirpath.startswith(srcdir_abs_path):
+          dirpath = dirpath[len(srcdir_abs_path)+1:]   
+       bdirpath = os.path.join(dir, dirpath)
+       bfiles = filenames
+       bdirs = dirs
+       yield (bdirpath, bdirs, bfiles)
 
 def GlobA(pathname):
     """Return a list of paths matching a pathname pattern.
