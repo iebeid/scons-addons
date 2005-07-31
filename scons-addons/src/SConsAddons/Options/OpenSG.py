@@ -151,59 +151,69 @@ class OpenSG(SConsAddons.Options.PackageOption):
          if edict.has_key(self.baseDirKey):
             del edict[self.baseDirKey];
       else:
-         self.available = True
-         # Get output from osg-config
-         # Res that when matched against osg-config output should match the options we want
-         # In future could try to use INCPREFIX and other platform neutral stuff
-         inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
-         lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
-         lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
-         link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
-         defines_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE);
-         
-         # Returns lists of the options we want
-         self.found_cflags = os.popen(self.osgconfig_cmd + " --cflags").read().strip().split(" ")
-         self.found_libs = {}
-         self.found_libs["base"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs Base").read().strip());
-         self.found_libs["system"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs System").read().strip());
-         self.found_libs["glut"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs GLUT").read().strip());
-         self.found_libs["x"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs X").read().strip());
-         self.found_libs["qt"] = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs QT").read().strip());         
-         self.found_lib_paths = {}
-         self.found_lib_paths["base"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs Base").read().strip());
-         self.found_lib_paths["system"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs System").read().strip());
-         self.found_lib_paths["glut"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs GLUT").read().strip());
-         self.found_lib_paths["x"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs X").read().strip());
-         self.found_lib_paths["qt"] = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs QT").read().strip());
-         self.found_defines = defines_re.findall(os.popen(self.osgconfig_cmd + " --cflags").read().strip())
-         
+         self.available = True         
          print "[OK]"
-             
-   def updateEnv(self, env, lib="system"):
+         
+   def updateEnv(self, env, lib="system", optimize=False):
       """ Add environment options for building against vapor.
           lib: One of: base, system, glut, x, qt.
+          optimize: If true use --opt option
       """
-      if self.found_cflags:
-         env.Append(CXXFLAGS = self.found_cflags);
-      if self.found_libs:
-         if self.found_libs.has_key(lib):
-            env.Append(LIBS = self.found_libs[lib]);
-         else:
-            print "ERROR: Could not find OpenSG libs for lib=", lib
-      if self.found_lib_paths:
-         if self.found_lib_paths.has_key(lib):
-            env.Append(LIBPATH = self.found_lib_paths[lib]);
-         else:
-            print "ERROR: Could not find OpenSG lib paths for lib=", lib
+      
+      # Get output from osg-config
+      # Res that when matched against osg-config output should match the options we want
+      # In future could try to use INCPREFIX and other platform neutral stuff
+      inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
+      lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
+      lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
+      link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
+      defines_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
+      optimization_opts_re = re.compile(r'^-(g|O\d)$')
+         
+      # Returns lists of the options we want
+      opt_option = " --dbg"
+      if optimize:
+         opt_option = " --opt"
+         
+      found_cflags = os.popen(self.osgconfig_cmd + opt_option + " --cflags").read().strip().split(" ")
+      found_cflags = [s for s in found_cflags if not optimization_opts_re.match(s)]
+      found_libs = []
+      found_lib_paths = []
+      lib_name = ""
+      if lib in ["base","Base"]:
+         lib_name = "Base"
+      elif lib in ["system","System"]:
+         lib_name = "System"
+      elif lib in ["GLUT","glut","Glut"]:
+         lib_name = "GLUT"
+      elif lib in ["X","x"]:
+         lib_name = "X"
+      elif lib in ["QT","qt"]:
+         lib_name = "QT"
+      
+      found_libs = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs "+lib_name).read().strip());
+      found_lib_paths = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs "+lib_name).read().strip());
+      found_defines = defines_re.findall(os.popen(self.osgconfig_cmd + opt_option + " --cflags").read().strip())
+       
+      if len(found_cflags):
+         env.Append(CXXFLAGS = found_cflags);
+      if len(found_libs):
+         env.Append(LIBS = found_libs);
+      else:
+         print "ERROR: Could not find OpenSG libs for lib=", lib
+      if len(found_lib_paths):
+         env.Append(LIBPATH = found_lib_paths);
+      else:
+         print "ERROR: Could not find OpenSG lib paths for lib=", lib
          
    def dumpSettings(self):
       "Write out the settings"
       print "OpenSGBaseDir:", self.baseDir;
       print "osg-config:", self.osgconfig_cmd;      
-      print "CXXFLAGS:", self.found_cflags;
-      if self.found_libs:
-         for lib_name in self.found_libs.keys():
-            print "LIBS (%s):"%lib_name, self.found_libs[lib_name]
-            print "LIBPATH (%s):"%lib_name, self.found_lib_paths[lib_name]
-      print "DEFINES:", self.found_defines
+      #print "CXXFLAGS:", self.found_cflags;
+      #if self.found_libs:
+      #   for lib_name in self.found_libs.keys():
+      #      print "LIBS (%s):"%lib_name, self.found_libs[lib_name]
+      #      print "LIBPATH (%s):"%lib_name, self.found_lib_paths[lib_name]
+      #print "DEFINES:", self.found_defines
 
