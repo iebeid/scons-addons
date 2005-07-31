@@ -1,5 +1,7 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2005-07-30 allenb       Make OpenSG option smarter about handling opts
+                        and libs.  Delay calling osg-config until necessary.
 2005-05-13 allenb       Added a couple of globs to utils to test out.
 2005-04-14 allenb       Moved over to subversion.
 2004-11-17 allenb       Added utility method to get a relative path
