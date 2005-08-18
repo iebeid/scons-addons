@@ -1,5 +1,9 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2005-08-18 allenb       OpenSG Options:
+                        - Minimize calls to osg-config
+                        - Capture defines
+                        - Add flag for putting options in cpppath
 2005-07-30 allenb       Make OpenSG option smarter about handling opts
                         and libs.  Delay calling osg-config until necessary.
 2005-05-13 allenb       Added a couple of globs to utils to test out.
