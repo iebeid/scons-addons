@@ -181,7 +181,7 @@ class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
          print "[OK]"
              
    def updateEnv(self, env, useCppPath=False):
-      """ Add environment options for building against vapor"""
+      """ Add environment options for building against vrj-based library"""
       if self.found_incs:
          if self.useCppPath or useCppPath:
             env.Append(CPPPATH = self.found_incs)
