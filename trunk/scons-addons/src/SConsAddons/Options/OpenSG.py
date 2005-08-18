@@ -43,16 +43,18 @@ class OpenSG(SConsAddons.Options.PackageOption):
    Options object for capturing vapor options and dependencies.
    """
 
-   def __init__(self, name, requiredVersion, required=True):
+   def __init__(self, name, requiredVersion, required=True, useCppPath = False):
       """
          name - The name to use for this option
          requiredVersion - The version of vapor required (ex: "0.16.7")
          required - Is the dependency required?  (if so we exit on errors)
+         useCppPath - Should includes be put in cpp path environment
       """
       help_text = """Base directory for OpenSG. (bin should be under this directory for osg-config).""";
       self.baseDirKey = "OpenSGBaseDir";
       self.requiredVersion = requiredVersion;
       self.required = required;
+      self.useCppPath = useCppPath
       SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text);
       
       # configurable options
@@ -146,7 +148,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
       if not passed:
          # Clear everything
          self.baseDir = None;
-         self.vprconfig_cmd = None;
+         self.osgconfig_cmd = None;
          edict = env.Dictionary();
          if edict.has_key(self.baseDirKey):
             del edict[self.baseDirKey];
@@ -154,31 +156,13 @@ class OpenSG(SConsAddons.Options.PackageOption):
          self.available = True         
          print "[OK]"
          
-   def updateEnv(self, env, lib="system", optimize=False):
+   def updateEnv(self, env, lib="system", optimize=False, useCppPath=False):
       """ Add environment options for building against vapor.
           lib: One of: base, system, glut, x, qt.
           optimize: If true use --opt option
+          useCppPath: If true, then put the include paths into the CPPPATH variable.
       """
       
-      # Get output from osg-config
-      # Res that when matched against osg-config output should match the options we want
-      # In future could try to use INCPREFIX and other platform neutral stuff
-      inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
-      lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
-      lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
-      link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
-      defines_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
-      optimization_opts_re = re.compile(r'^-(g|O\d)$')
-         
-      # Returns lists of the options we want
-      opt_option = " --dbg"
-      if optimize:
-         opt_option = " --opt"
-         
-      found_cflags = os.popen(self.osgconfig_cmd + opt_option + " --cflags").read().strip().split(" ")
-      found_cflags = [s for s in found_cflags if not optimization_opts_re.match(s)]
-      found_libs = []
-      found_lib_paths = []
       lib_name = ""
       if lib in ["base","Base"]:
          lib_name = "Base"
@@ -190,10 +174,43 @@ class OpenSG(SConsAddons.Options.PackageOption):
          lib_name = "X"
       elif lib in ["QT","qt"]:
          lib_name = "QT"
+
+      # Returns lists of the options we want
+      opt_option = " --dbg"
+      if optimize:
+         opt_option = " --opt"
+
+      # Call script for output
+      cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags").read().strip()      
+      libs_stripped = os.popen(self.osgconfig_cmd + " --libs "+lib_name).read().strip()
+
+      # Get output from osg-config
+      # Res that when matched against osg-config output should match the options we want
+      # In future could try to use INCPREFIX and other platform neutral stuff
+      inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
+      lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
+      lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
+      link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
+      defines_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
+      optimization_opts_re = re.compile(r'^-(g|O\d)$')
+         
+      # Extract the flags and options from the script output
+      found_cflags = cflags_stripped.split(" ")
+      found_cflags = [s for s in found_cflags if not optimization_opts_re.match(s)]
+      found_cflags = [s for s in found_cflags if not inc_re.match(s)]
+      found_cflags = [s for s in found_cflags if not defines_re.match(s)]
+
+      found_libs = lib_re.findall(libs_stripped)
+      found_lib_paths = lib_path_re.findall(libs_stripped)
+      found_defines = defines_re.findall(cflags_stripped)
+      found_incs = inc_re.findall(cflags_stripped)
+      found_incs_as_flags = [env["INCPREFIX"] + p for p in found_incs]
       
-      found_libs = lib_re.findall(os.popen(self.osgconfig_cmd + " --libs "+lib_name).read().strip());
-      found_lib_paths = lib_path_re.findall(os.popen(self.osgconfig_cmd + " --libs "+lib_name).read().strip());
-      found_defines = defines_re.findall(os.popen(self.osgconfig_cmd + opt_option + " --cflags").read().strip())
+      #print "cflags_stripped: [%s]"%cflags_stripped
+      #print "found cflags:", found_cflags
+      #print "Found: ", found_defines
+      #print "found_incs_as_flags: ", found_incs_as_flags
+      #print "Found incs:", found_incs
        
       if len(found_cflags):
          env.Append(CXXFLAGS = found_cflags);
@@ -205,6 +222,14 @@ class OpenSG(SConsAddons.Options.PackageOption):
          env.Append(LIBPATH = found_lib_paths);
       else:
          print "ERROR: Could not find OpenSG lib paths for lib=", lib
+         
+      if len(found_incs):
+         if self.useCppPath or useCppPath:
+            env.Append(CPPPATH = found_incs)
+         else:
+            env.Append(CXXFLAGS = found_incs_as_flags)
+      if len(found_defines):
+         env.Append(CPPDEFINES = found_defines)
          
    def dumpSettings(self):
       "Write out the settings"
