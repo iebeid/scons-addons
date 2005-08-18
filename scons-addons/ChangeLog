@@ -1,5 +1,6 @@
 DATE       AUTHOR       CHANGE
 ---------- ------------ -------------------------------------------------------
+2005-08-18 allenb       Pyste Option: Added cache environment flag and param.
 2005-08-18 allenb       OpenSG Options:
                         - Minimize calls to osg-config
                         - Capture defines

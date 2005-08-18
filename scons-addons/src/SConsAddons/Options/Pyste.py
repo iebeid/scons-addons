@@ -52,7 +52,7 @@ def PysteScan(fs = SCons.Node.FS.default_fs):
     return ps
     
 def PysteMainEmitter(target, source, env):
-    """Produces a list of outputs from the MIDL compiler"""
+    """Produces a list of outputs from the Pyste compiler"""
     d = os.path.dirname(str(target[0]))
     main_file = pj(d, '_main.cpp')
     t = [main_file,]
@@ -81,6 +81,8 @@ def PysteBuildGenerator(source, target, env, for_signature, multi):
     
     if env.Dictionary().has_key("PYSTE_MODULE"):
        cmd += "--module=$PYSTE_MODULE "
+    if env.Dictionary().has_key("PYSTE_CACHE_DIR"):
+       cmd += "--cache-dir=$PYSTE_CACHE_DIR "
     if multi:                                # generate for multiple output files
        cmd += "--multiple "
        out_string = "${TARGET.dir}"
@@ -95,6 +97,8 @@ def PysteMainBuildGenerator(source, target, env, for_signature):
     cmd = "$PYSTE_CMD $_CPPINCFLAGS $_CPPDEFFLAGS --multiple --generate-main --out=${TARGET.dir}"
     if env.Dictionary().has_key("PYSTE_MODULE"):
        cmd += " --module=$PYSTE_MODULE "
+    if env.Dictionary().has_key("PYSTE_CACHE_DIR"):
+       cmd += "--cache-dir=$PYSTE_CACHE_DIR "
     cmd += "${SOURCES}"
     return cmd
     
@@ -159,9 +163,7 @@ class Pyste(SConsAddons.Options.PackageOption):
    
    def validate(self, env):
       # Check that file exists
-      # Check that vpr-config exist
       # Check version is correct
-      # Check that an include file: include/vpr/vprConfig.h  exists
       # Update the temps for later usage
       passed = True
       if not self.pysteScriptPath:
@@ -223,11 +225,15 @@ class Pyste(SConsAddons.Options.PackageOption):
        env.Append(BUILDERS = {'PysteMainBuilder' : pyste_main_builder})
        env.Append(SCANNERS = pyste_scanner)
              
-   def updateEnv(self, env):
-      """ Add pyste environment options, builder, and scanner."""
-      if self.pysteScriptCommand:
+   def updateEnv(self, env, cacheDir=None):
+      """ Add pyste environment options, builder, and scanner.
+          cacheDir - If set, automatically set PYSTE_CACHE_DIR to use.
+      """
+      if self.pysteScriptCommand:         
          env.Append(PYSTE_CMD = self.pysteScriptCommand);
          self.AddPysteBuilder(env)
+         if cacheDir:
+            env["PYSTE_CACHE_DIR"] = cacheDir
          
    def dumpSettings(self):
       "Write out the settings"
