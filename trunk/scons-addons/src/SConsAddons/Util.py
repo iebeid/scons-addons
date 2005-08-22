@@ -129,9 +129,9 @@ class ConfigCmdParser:
       # Initialize regular expressions
       # Res that when matched against config output should match the options we want
       # In future could try to use INCPREFIX and other platform neutral stuff
-      self.inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
-      self.lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
-      self.lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
+      self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
+      self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
+      self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
       
    def findLibs(self, arg="--libs"):
       if not self.valid:

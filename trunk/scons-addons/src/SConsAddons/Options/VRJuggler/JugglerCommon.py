@@ -167,7 +167,7 @@ class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
          inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
          lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
          lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
-         link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
+         link_from_lib_re = re.compile(r'(?: |^)(-[^lL]\S*)', re.MULTILINE);
          
          # Returns lists of the options we want
          self.found_incs = inc_re.findall(os.popen(self.configCmdFullPath + " --includes").read().strip());
@@ -199,6 +199,7 @@ class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
       print "%s: %s", (self.baseDirKey, self.baseDir)
       print "%s: %s"%(self.configCmdName,self.configCmdFullPath)
       print "CPPPATH:", self.found_incs
+      print "CPPPATH as flags:", self.found_incs_as_flags
       print "LIBS:", self.found_libs
       print "LIBPATH:", self.found_lib_paths
       print "LINKFLAGS:", self.found_link_from_libs
