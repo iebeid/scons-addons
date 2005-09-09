@@ -164,9 +164,9 @@ class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
          # Get output from cmd-config
          # Res that when matched against vrj-config output should match the options we want
          # In future could try to use INCPREFIX and other platform neutral stuff
-         inc_re = re.compile(r'-I(\S*)', re.MULTILINE);
-         lib_re = re.compile(r'-l(\S*)', re.MULTILINE);
-         lib_path_re = re.compile(r'-L(\S*)', re.MULTILINE);
+         inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
+         lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
+         lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
          link_from_lib_re = re.compile(r'(?: |^)(-[^lL]\S*)', re.MULTILINE);
          
          # Returns lists of the options we want
@@ -174,6 +174,11 @@ class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
          self.found_libs = lib_re.findall(os.popen(self.configCmdFullPath + " --libs --extra-libs").read().strip());
          self.found_lib_paths = lib_path_re.findall(os.popen(self.configCmdFullPath + " --libs --extra-libs").read().strip());
          self.found_link_from_libs = link_from_lib_re.findall(os.popen(self.configCmdFullPath + " --extra-libs").read().strip());
+
+         print "-----------------------"
+         print "self.found_libs:", self.found_libs
+         print "self.found_lib_paths:", self.found_lib_paths
+         print "self.found_link_from_libs:", self.found_link_from_libs
 
          # Create list of flags that may be needed later
          self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
