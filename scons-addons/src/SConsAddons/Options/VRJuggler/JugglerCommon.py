@@ -197,7 +197,7 @@ class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths)
       if self.found_link_from_libs:
-         env.Append(LINKFLAGS = " ".join(self.found_link_from_libs))
+         env.Append(LINKFLAGS = self.found_link_from_libs)
          
    def dumpSettings(self):
       "Write out the settings"
