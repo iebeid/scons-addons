@@ -35,7 +35,7 @@ from SCons.Util import WhereIs
 pj = os.path.join;
 
 
-class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
+class JugglerCommon(SConsAddons.Options.PackageOption):
    """ 
    Options object for capturing common options and dependencies for VR Juggler projects
    """
@@ -182,7 +182,7 @@ class JugglerCommon(SConsAddons.Options.LocalUpdateOption):
 
          # Create list of flags that may be needed later
          self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
-         
+         self.available = True
          print "[OK]"
              
    def updateEnv(self, env, useCppPath=False):
