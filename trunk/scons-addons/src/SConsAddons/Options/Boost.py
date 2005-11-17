@@ -99,11 +99,13 @@ class Boost(SConsAddons.Options.PackageOption):
       
    def buildFullLibName(self, libname):
       """ Returns the full name of the boost library"""
-      fullname = "boost_" + libname + "-" + self.toolset
-      if self.use_mt:
-         fullname += "-mt"
-      if self.use_debug:
-         fullname += "-d"
+      fullname = "boost_" + libname
+      if SConsAddons.Util.GetPlatform() != 'mac':
+         fullname = fullname + "-" + self.toolset
+         if self.use_mt:
+            fullname += "-mt"
+         if self.use_debug:
+            fullname += "-d"
          
       return fullname
       
