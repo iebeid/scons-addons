@@ -156,33 +156,35 @@ class OpenSG(SConsAddons.Options.PackageOption):
          self.available = True         
          print "[OK]"
          
-   def updateEnv(self, env, lib="system", optimize=False, useCppPath=False):
+   def updateEnv(self, env, libs=["system"], optimize=False, useCppPath=False):
       """ Add environment options for building against vapor.
           lib: One of: base, system, glut, x, qt.
           optimize: If true use --opt option
           useCppPath: If true, then put the include paths into the CPPPATH variable.
       """
-      
       lib_name = ""
-      if lib in ["base","Base"]:
-         lib_name = "Base"
-      elif lib in ["system","System"]:
-         lib_name = "System"
-      elif lib in ["GLUT","glut","Glut"]:
-         lib_name = "GLUT"
-      elif lib in ["X","x"]:
-         lib_name = "X"
-      elif lib in ["QT","qt"]:
-         lib_name = "QT"
-
+      for lib in libs:
+         if lib in ["base","Base"]:
+            lib_name += "Base "
+         elif lib in ["system","System"]:
+            lib_name += "System "
+         elif lib in ["GLUT","glut","Glut"]:
+            lib_name += "GLUT "
+         elif lib in ["X","x"]:
+            lib_name += "X "
+         elif lib in ["QT","qt"]:
+            lib_name += "QT "
+         elif lib in ["contrib","Contrib"]:
+            lib_name += "Contrib "
+      
       # Returns lists of the options we want
       opt_option = " --dbg"
       if optimize:
          opt_option = " --opt"
 
       # Call script for output
-      cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags").read().strip()      
-      libs_stripped = os.popen(self.osgconfig_cmd + " --libs "+lib_name).read().strip()
+      cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags " + lib_name).read().strip()      
+      libs_stripped = os.popen(self.osgconfig_cmd + " --libs " + lib_name).read().strip()
 
       # Get output from osg-config
       # Res that when matched against osg-config output should match the options we want
