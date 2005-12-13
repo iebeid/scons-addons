@@ -175,10 +175,10 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
          self.found_lib_paths = lib_path_re.findall(os.popen(self.configCmdFullPath + " --libs --extra-libs").read().strip());
          self.found_link_from_libs = link_from_lib_re.findall(os.popen(self.configCmdFullPath + " --extra-libs").read().strip());
 
-         print "-----------------------"
-         print "self.found_libs:", self.found_libs
-         print "self.found_lib_paths:", self.found_lib_paths
-         print "self.found_link_from_libs:", self.found_link_from_libs
+         #print "-----------------------"
+         #print "self.found_libs:", self.found_libs
+         #print "self.found_lib_paths:", self.found_lib_paths
+         #print "self.found_link_from_libs:", self.found_link_from_libs
 
          # Create list of flags that may be needed later
          self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
