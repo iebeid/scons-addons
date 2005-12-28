@@ -56,13 +56,14 @@ class PyJuggler(SConsAddons.Options.PackageOption):
       if self.baseDir !=None:
          return
 
-      sys.stdout.write("searching...\n")
+      sys.stdout.write("Find not supported for PyJuggler.  Must specify manually.\n")
 
-      if not os.path.isdir(self.baseDir):
-         self.checkRequired("   returned directory does not exist:%s"%self.baseDir)
-         self.baseDir = None;
-      else:
-         print "   found at: ", self.baseDir
+      #if not os.path.isdir(self.baseDir):
+      #   self.checkRequired("   returned directory does not exist:%s"%self.baseDir)
+      #   self.baseDir = None;
+      #else:
+      #   print "   found at: ", self.baseDir
+      
 
    def convert(self):
       pass
