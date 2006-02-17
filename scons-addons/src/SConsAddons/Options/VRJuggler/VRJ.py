@@ -41,7 +41,7 @@ class VRJ(JugglerCommon.JugglerCommon):
    Options object for capturing vapor options and dependencies.
    """
 
-   def __init__(self, name, requiredVersion, required=True, useCppPath=False):
+   def __init__(self, name, requiredVersion, required=True, useCppPath=True):
       """
          name - The name to use for this option
          requiredVersion - The version of VRJ required (ex: "0.16.7")
