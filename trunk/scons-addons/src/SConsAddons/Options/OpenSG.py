@@ -25,17 +25,18 @@ Defines options for OpenSG project
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-import SCons.Environment;   # Get the environment crap
-import SCons;
-import SConsAddons.Options;   # Get the modular options stuff
+import SCons.Environment   # Get the environment crap
+import SCons
+import SConsAddons.Options   # Get the modular options stuff
 import SCons.Util
-import sys;
-import os;
-import re;
-import string;
+import sys
+import os
+import re
+import string
+import types
 
 from SCons.Util import WhereIs
-pj = os.path.join;
+pj = os.path.join
 
 
 class OpenSG(SConsAddons.Options.PackageOption):
@@ -156,26 +157,30 @@ class OpenSG(SConsAddons.Options.PackageOption):
          self.available = True         
          print "[OK]"
          
-   def updateEnv(self, env, libs=["system"], optimize=False, useCppPath=False):
+   def updateEnv(self, env, libs=['system',], optimize=False, useCppPath=False):
       """ Add environment options for building against vapor.
           lib: One of: base, system, glut, x, qt.
           optimize: If true use --opt option
           useCppPath: If true, then put the include paths into the CPPPATH variable.
       """
-      lib_name = ""
+
+      if not (type(libs) in (types.TupleType, types.ListType)):
+         libs = (libs,)
+
+      lib_names = ""
       for lib in libs:
          if lib in ["base","Base"]:
-            lib_name += "Base "
+            lib_names += "Base "
          elif lib in ["system","System"]:
-            lib_name += "System "
+            lib_names += "System "
          elif lib in ["GLUT","glut","Glut"]:
-            lib_name += "GLUT "
+            lib_names += "GLUT "
          elif lib in ["X","x"]:
-            lib_name += "X "
+            lib_names += "X "
          elif lib in ["QT","qt"]:
-            lib_name += "QT "
+            lib_names += "QT "
          elif lib in ["contrib","Contrib"]:
-            lib_name += "Contrib "
+            lib_names += "Contrib "
       
       # Returns lists of the options we want
       opt_option = " --dbg"
@@ -183,8 +188,8 @@ class OpenSG(SConsAddons.Options.PackageOption):
          opt_option = " --opt"
 
       # Call script for output
-      cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags " + lib_name).read().strip()      
-      libs_stripped = os.popen(self.osgconfig_cmd + " --libs " + lib_name).read().strip()
+      cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags " + lib_names).read().strip()      
+      libs_stripped = os.popen(self.osgconfig_cmd + " --libs " + lib_names).read().strip()
 
       # Get output from osg-config
       # Res that when matched against osg-config output should match the options we want
@@ -219,11 +224,11 @@ class OpenSG(SConsAddons.Options.PackageOption):
       if len(found_libs):
          env.Append(LIBS = found_libs);
       else:
-         print "ERROR: Could not find OpenSG libs for lib=", lib
+         print "ERROR: Could not find OpenSG libs for libs:%s lib_names:%s" % (libs, lib_names)
       if len(found_lib_paths):
          env.Append(LIBPATH = found_lib_paths);
       else:
-         print "ERROR: Could not find OpenSG lib paths for lib=", lib
+         print "ERROR: Could not find OpenSG lib paths for libs: %s lib_names:%s" % (libs, lib_names)
          
       if len(found_incs):
          if self.useCppPath or useCppPath:
