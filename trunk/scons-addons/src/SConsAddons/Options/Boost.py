@@ -80,6 +80,7 @@ class Boost(SConsAddons.Options.PackageOption):
       # Map from library name to header to check for       
       self.headerMap = { 'program_options':'boost/program_options.hpp',
                          'python':'boost/python.hpp',
+                         'signals':'boost/signal.hpp',
                          'thread':'boost/thread.hpp',
                          'filesystem':'boost/filesystem/path.hpp' }
       
