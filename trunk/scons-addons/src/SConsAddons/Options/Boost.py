@@ -30,7 +30,7 @@ Configure = SCons.SConf.SConf
 # Options
 # ##############################################
 class Boost(SConsAddons.Options.PackageOption):
-   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], required=True, useCppPath=False, toolset="gcc"):
+   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], required=True, useCppPath=False, toolset="gcc", useVersion=False):
       """
          name - The name to use for this option
          requiredVersion - The version of Boost required (ex: "1.30.0")
@@ -65,6 +65,7 @@ class Boost(SConsAddons.Options.PackageOption):
       # Options for which libraries to use
       self.use_mt = useMt
       self.use_debug = useDebug 
+      self.use_ver = useVersion
       print "Use debug set to:", self.use_debug
 
    def setToolset(self, toolset):
@@ -107,7 +108,10 @@ class Boost(SConsAddons.Options.PackageOption):
             fullname += "-mt"
          if self.use_debug:
             fullname += "-d"
-         
+
+      if self.use_ver and self.libVersionStr is not None:
+         fullname += "-" + self.libVersionStr
+
       return fullname
       
    def checkRequired(self, msg):
@@ -215,10 +219,22 @@ class Boost(SConsAddons.Options.PackageOption):
       
       # --- Check version requirement --- #
       ver_file = file(version_header)
-      ver_match = re.search("define\s+?BOOST_VERSION\s+?(\d*)", ver_file.read())
+      ver_file_contents = ver_file.read()
+      ver_match = re.search("define\s+?BOOST_VERSION\s+?(\d*)",
+                            ver_file_contents)
       if not ver_match:
          self.checkRequired("   could not find BOOST_VERSION in file: %s"%version_header)
          return
+
+      lib_ver_match = re.search("define\s+?BOOST_LIB_VERSION\s+?\"(.*)\"",
+                                ver_file_contents)
+      if lib_ver_match:
+         self.libVersionStr = lib_ver_match.group(1)
+      else:
+         print "WARNING: Could not determine library version string"
+         print "WARNING: Could not determine library version string"
+         self.libVersionStr = None
+
       found_ver_str = int(ver_match.group(1))
       found_ver_str = str(found_ver_str / 100000) + '.' + str(found_ver_str / 100 % 1000) + '.' + str(found_ver_str % 100)
       req_ver = [int(n) for n in self.requiredVersion.split('.')]
@@ -251,7 +267,7 @@ class Boost(SConsAddons.Options.PackageOption):
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
                             LIBS = [full_libname,] + self.python_extra_libs + ["dl",])
-         if "thread" == libname:
+         elif "thread" == libname:
             conf_env.Append(LIBS = [full_libname,] + ["pthread",] + ["dl",])
             conf_ctxt = Configure(conf_env)
 #            result = conf_ctxt.CheckLib(full_libname, "join", header_to_check, "c++")
