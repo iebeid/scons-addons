@@ -168,6 +168,8 @@ class OpenSG(SConsAddons.Options.PackageOption):
          libs = (libs,)
 
       lib_names = ""
+      if not isinstance(libs, list):
+         libs = [libs]
       for lib in libs:
          if lib in ["base","Base"]:
             lib_names += "Base "
