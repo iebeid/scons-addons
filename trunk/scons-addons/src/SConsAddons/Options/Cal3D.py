@@ -126,7 +126,6 @@ class Cal3D(SConsAddons.Options.PackageOption):
    
    def validate(self, env):
       # Check that path exist
-      # Check that an include file: include/OpenSG/OSGConfig.h  exists
       # Update the temps for later usage
       passed = True;
 
