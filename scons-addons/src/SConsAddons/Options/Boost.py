@@ -77,6 +77,9 @@ class Boost(SConsAddons.Options.PackageOption):
    def setUseDebug(self, bval=True):
       self.use_debug = bval
 
+   def setUseVersion(self, useVersion = True):
+      self.use_ver = useVersion
+
    def setupLibrarySettings(self):
       # Map from library name to header to check for       
       self.headerMap = { 'program_options':'boost/program_options.hpp',
