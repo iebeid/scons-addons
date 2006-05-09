@@ -264,22 +264,23 @@ class Boost(SConsAddons.Options.PackageOption):
             header_to_check = self.headerMap[libname]
 
          # Create config environment
+         # - Need to extend the environment
          conf_env = env.Copy()
          conf_env.Append(CXXFLAGS= self.found_incs_as_flags, LIBPATH = self.found_lib_paths)
          if "python" == libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
                             LIBS = [full_libname,] + self.python_extra_libs + ["dl",])
-         elif "thread" == libname:
+         
+         # Thread library has different method of checking
+         if "thread" == libname:
             conf_env.Append(LIBS = [full_libname,] + ["pthread",] + ["dl",])
             conf_ctxt = Configure(conf_env)
 #            result = conf_ctxt.CheckLib(full_libname, "join", header_to_check, "c++")
             result = True
-
          else:
             conf_ctxt =Configure(conf_env)
             result = conf_ctxt.CheckLibWithHeader(full_libname, header_to_check, "c++")
-
            
          if not result:
             passed = False
