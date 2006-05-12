@@ -183,7 +183,7 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
          # Create list of flags that may be needed later
          self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
          self.available = True
-         print "[OK]"
+         print "%s [OK]" % found_ver_str
              
    def updateEnv(self, env, useCppPath=False):
       """ Add environment options for building against vrj-based library"""
