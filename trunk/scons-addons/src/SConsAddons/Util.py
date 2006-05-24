@@ -178,7 +178,7 @@ def getFullSrcPath(env=SCons.Environment.Environment()):
    """ Return the full path to the local source directory we are in 
        (taking into account BuildDir) """
    # Get the local directory using Dir(.)
-   # Then return the string rep of it's src node
+   # Then return the string rep of its src node
    ldir_node = env.Dir('.')                                   # .
    ldir_srcnode = ldir_node.srcnode()                     # /home/.../XXX/src/plx
    return str(ldir_srcnode)

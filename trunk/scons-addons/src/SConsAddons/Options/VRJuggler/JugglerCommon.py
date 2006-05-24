@@ -54,7 +54,7 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
                         'configCmdName',
                         'filesToCheckRelBase']
       for a in required_attrs:
-         assert hasattr(self,a), "JugglerCommon needs attribute [%s] set before calling it's init."%a
+         assert hasattr(self,a), "JugglerCommon needs attribute [%s] set before calling its init."%a
          
       #self.baseDirKey = "NoneBaseDir"
       #self.optionName = "No option name"
