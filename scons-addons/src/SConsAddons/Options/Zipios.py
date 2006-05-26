@@ -74,7 +74,7 @@ class Zipios(SConsAddons.Options.PackageOption):
          sys.exit(1);
 
    def startUpdate(self):
-      print "Checking for zipios...\n",
+      print "Checking for zipios...",
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
@@ -151,10 +151,8 @@ class Zipios(SConsAddons.Options.PackageOption):
 
 
       found_ver_str = ver_match.group(1)
-      print "found_ver_str: ", found_ver_str
       req_ver = [int(n) for n in self.requiredVersion.split('.')]
       found_ver = [int(n) for n in found_ver_str.split('.')]
-      print "   zipios version:", ".".join([str(x) for x in found_ver])
       if found_ver < req_ver:
          self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str))
          return

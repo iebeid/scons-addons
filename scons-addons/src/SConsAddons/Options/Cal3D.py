@@ -74,7 +74,7 @@ class Cal3D(SConsAddons.Options.PackageOption):
          sys.exit(1);
 
    def startUpdate(self):
-      print "Checking for Cal3D...\n",
+      print "Checking for Cal3D...",
       
    def setInitial(self, optDict):
       " Set initial values from given dict "
@@ -157,7 +157,6 @@ class Cal3D(SConsAddons.Options.PackageOption):
       found_ver_str = str(found_ver_str / 100000) + '.' + str(found_ver_str / 100 % 1000) + '.' + str(found_ver_str % 100)
       req_ver = [int(n) for n in self.requiredVersion.split('.')]
       found_ver = [int(n) for n in found_ver_str.split('.')]
-      print "   Cal3D version:", ".".join([str(x) for x in found_ver])
       if found_ver < req_ver:
          self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str))
          return

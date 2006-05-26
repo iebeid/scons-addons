@@ -49,7 +49,7 @@ class PyJuggler(SConsAddons.Options.PackageOption):
       sys.stdout.write("checking for PyJuggler...")
       if optDict.has_key(self.baseDirKey):
          self.baseDir = optDict[self.baseDirKey]
-         sys.stdout.write("specified or cached. [%s].\n"% self.baseDir)
+         #sys.stdout.write("specified or cached. [%s].\n"% self.baseDir)
 
    def find(self, env):
       # quick exit if nothing to find
@@ -101,6 +101,7 @@ class PyJuggler(SConsAddons.Options.PackageOption):
          self.found_lib_paths = None
       else:
          self.available = True
+         print "[OK]"
 
    def updateEnv(self, env):
       """ Add environment options for building against plexus"""
