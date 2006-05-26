@@ -46,6 +46,7 @@ class Boost(SConsAddons.Options.PackageOption):
       self.baseDirKey = "BoostBaseDir"
       self.incDirKey = "BoostIncludeDir"
       self.requiredVersion = requiredVersion
+      self.libVersionStr = None
       self.lib_names = libs
       self.required = required
       self.useCppPath = useCppPath
