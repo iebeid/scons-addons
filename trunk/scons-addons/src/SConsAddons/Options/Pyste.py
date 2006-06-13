@@ -201,8 +201,7 @@ class Pyste(SConsAddons.Options.PackageOption):
        #                                clazz = SCons.Node.FS.Dir,
        #                                must_exist = 0))
        # XXX: This may not be right.  Need to find better description of the path scanner stuff
-       fs = SCons.Node.FS.default_fs
-       pf = SCons.Scanner.FindPathDirs('CPPPATH', fs)
+       pf = SCons.Scanner.FindPathDirs('CPPPATH')
        pyste_scanner = SCons.Scanner.Base(function=PysteRecursiveScanFunction, 
                                name="PysteRecursive",
                                skeys=[".pyste",".Pyste"],
