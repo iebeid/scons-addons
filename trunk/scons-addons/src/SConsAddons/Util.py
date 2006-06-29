@@ -32,11 +32,68 @@ from __future__ import generators
 import os
 import sys
 import re
+import distutils.util
 import string
 import SCons.Environment
 import SCons
+import SCons.Platform
 
 pj = os.path.join
+
+def GetPlatform():
+   "Get a platform string"
+   if string.find(sys.platform, 'irix') != -1:
+      return 'irix'
+   elif string.find(sys.platform, 'linux') != -1:
+      return 'linux'
+   elif string.find(sys.platform, 'freebsd') != -1:
+      return 'freebsd'
+   elif string.find(sys.platform, 'cygwin') != -1:
+      return 'win32'
+   elif string.find(sys.platform, 'sunos') != -1:
+      return 'sunos'
+   elif string.find(sys.platform, 'darwin' ) != -1:
+      return 'mac'
+   elif os.name == 'os2':
+      return 'os2'
+   else:
+      return sys.platform   
+
+def GetArch():
+   """ Return identifier for CPU architecture. """
+   platform = distutils.util.get_platform()
+   arch = ""
+   if re.search(r'i.86', platform):
+      arch = 'ia32'
+   # x86_64 (aka, x64, EM64T)
+   elif re.search(r'x86_64', platform):
+      arch = 'x86_64'
+      # PowerPC
+   elif re.search(r'Power_Mac', platform):
+      arch = 'ppc'
+   
+   return arch
+
+def GetCpuType():
+   """ Return the type of cpu found in the system. 
+       TODO: Extend this to support more OS's and CPUs
+   """
+   cpu_type = None
+
+   if os.path.exists('/proc/cpuinfo'):
+      cpu_info = file('/proc/cpuinfo').read().lower()
+      if (cpu_info.count("ia-64") > 0):
+         cpu_type = "itanium"
+      elif (cpu_info.count("athlon") > 0):
+         cpu_type = "athlon"
+
+   if not cpu_type:
+      platform = distutils.util.get_platform()
+      if re.search(r'i.86', platform):
+         cpu_type = 'i386'
+   
+   return cpu_type
+
 
 
 def hasHelpFlag():
@@ -152,24 +209,6 @@ class ConfigCmdParser:
       if not self.valid:
          return ""
       return os.popen(self.config_cmd + " " + arg).read().strip()
-   
-def GetPlatform():
-   "Get a platform string"
-   if string.find(sys.platform, 'irix') != -1:
-      return 'irix'
-   elif string.find(sys.platform, 'linux') != -1:
-      return 'linux'
-   elif string.find(sys.platform, 'freebsd') != -1:
-      return 'freebsd'
-   elif string.find(sys.platform, 'cygwin') != -1:
-      return 'win32'
-   elif string.find(sys.platform, 'sun') != -1:
-      return 'sun'
-   elif string.find(sys.platform, 'darwin' ) != -1:
-      return 'mac'
-   else:
-      return sys.platform   
-   
    
 # -------------------- #
 # Path utils
