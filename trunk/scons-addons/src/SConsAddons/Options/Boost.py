@@ -273,15 +273,15 @@ class Boost(SConsAddons.Options.PackageOption):
                             LIBPATH = self.python_lib_path,
                             LIBS = [full_libname,] + self.python_extra_libs + ["dl",])
          
-         # Thread library has different method of checking
+         # Thread library needs some additional libraries on Linux... (yuck)
          if "thread" == libname:
             conf_env.Append(LIBS = [full_libname,] + ["pthread",] + ["dl",])
-            conf_ctxt = Configure(conf_env)
+#            conf_ctxt = Configure(conf_env)
 #            result = conf_ctxt.CheckLib(full_libname, "join", header_to_check, "c++")
-            result = True
-         else:
-            conf_ctxt =Configure(conf_env)
-            result = conf_ctxt.CheckLibWithHeader(full_libname, header_to_check, "c++")
+#            result = True
+         
+         conf_ctxt =Configure(conf_env)
+         result = conf_ctxt.CheckLibWithHeader(full_libname, header_to_check, "c++")
            
          if not result:
             passed = False
