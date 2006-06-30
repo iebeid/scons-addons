@@ -148,10 +148,10 @@ def gcc_optimizations(bldr, env):
    else:
       if bldr.optLevel == EnvironmentBuilder.MINIMAL:
          CCFLAGS.append('-O1')
-      elif bld.optLevel == EnvironmentBuilder.STANDARD:
+      elif bldr.optLevel == EnvironmentBuilder.STANDARD:
          CCFLAGS.append('-O2')
-      elif ((bld.optLevel == EnvironmentBuilder.EXTENSIVE) or
-            (bld.optLevel == EnvironmentBuilder.MAXIMUM)):
+      elif ((bldr.optLevel == EnvironmentBuilder.EXTENSIVE) or
+            (bldr.optLevel == EnvironmentBuilder.MAXIMUM)):
          CCFLAGS.append('-O3')
 
    # Fast math
@@ -215,10 +215,10 @@ def msvc_optimizations(bldr, env):
    else:
       if bldr.optLevel == EnvironmentBuilder.MINIMAL:
          CCFLAGS.extend(['/Ot','/Og'])
-      elif bld.optLevel == EnvironmentBuilder.STANDARD:
+      elif bldr.optLevel == EnvironmentBuilder.STANDARD:
          CCFLAGS.append('/O2')
-      elif ((bld.optLevel == EnvironmentBuilder.EXTENSIVE) or
-            (bld.optLevel == EnvironmentBuilder.MAXIMUM)):
+      elif ((bldr.optLevel == EnvironmentBuilder.EXTENSIVE) or
+            (bldr.optLevel == EnvironmentBuilder.MAXIMUM)):
          CCFLAGS.append('/Ox')
 
    # Fast math
