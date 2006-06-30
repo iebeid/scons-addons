@@ -44,7 +44,12 @@ class EnvironmentBuilder(object):
    # Warning flags
    WARN_AS_ERROR = 'warn_as_error'
    WARN_STRICT   = 'warn_strict'
-
+   
+   # MSVC runtime
+   MSVC_MT_DLL_RT     = "msvc_mt_dll_rt"
+   MSVC_MT_DBG_DLL_RT = "msvc_mt_dbg_dll_rt"
+   MSVC_MT_RT         = "msvc_mt_rt"
+   MSVC_MT_DBG_RT     = "msvc_mt_dbg_rt"
    
    def __init__(self):
       """ Initialize the class with defaults. """
@@ -56,7 +61,9 @@ class EnvironmentBuilder(object):
       self.warningLevel = EnvironmentBuilder.MINIMAL 
       self.warningTags  = []
       self.profEnabled  = False
-      self.exceptionsEnabled = False
+      self.exceptionsEnabled = True
+      self.rttiEnabled  = True
+      self.msvcRuntime  = None
 
       # List of [ [compilers], [platforms], func ]
       # If compiler or platform list is empty, then ignore that check
@@ -97,7 +104,15 @@ class EnvironmentBuilder(object):
       self.exceptionsEnabled = val
    def disableExceptions(self):
       self.enableExceptions(False)
+      
+   def enableRTTI(self, val=True):
+      self.rttiEnabled = val
+   def disableRTTI(self):
+      self.enableRTTI(False)
 
+   def setMsvcRuntime(self, val):
+      self.msvcRuntime = val
+   
    # ---- Option application ---- #
    def applyOptionsToEnvironment(self, env):
       tools = env["TOOLS"]
@@ -183,7 +198,100 @@ def gcc_misc(bldr, env):
 default_funcs.append([['gcc','g++'],[],gcc_optimizations])
 default_funcs.append([['gcc','g++'],[],gcc_debug])
 default_funcs.append([['gcc','g++'],[],gcc_warnings])
+default_funcs.append([['gcc','g++'],[],gcc_misc])
 
+# ---- MSVC ---- #      
+def msvc_optimizations(bldr, env):
+   if EnvironmentBuilder.NONE == bldr.optLevel:
+      return
+   
+   CCFLAGS = []
+   CXXFLAGS = []
+   CPPDEFINES = []
+   LINKFLAGS = ["/RELEASE",]
+
+   if EnvironmentBuilder.REDUCE_SIZE in bldr.optTags:
+      CCFLAGS.extend(['/O1'])
+   else:
+      if bldr.optLevel == EnvironmentBuilder.MINIMAL:
+         CCFLAGS.extend(['/Ot','/Og'])
+      elif bld.optLevel == EnvironmentBuilder.STANDARD:
+         CCFLAGS.append('/O2')
+      elif ((bld.optLevel == EnvironmentBuilder.EXTENSIVE) or
+            (bld.optLevel == EnvironmentBuilder.MAXIMUM)):
+         CCFLAGS.append('/Ox')
+
+   # Fast math
+   if EnvironmentBuilder.FAST_MATH in bldr.optTags:
+      CCFLAGS.append('/fp:fast')
+   
+   # TODO: Do architecture specific optimizations here
+   # /arch:SSE/SEE2 /G1 /G2 
+   # /favor
+   env.Append(CXXFLAGS=CXXFLAGS, CCFLAGS=CCFLAGS, CPPDEFINES=CPPDEFINES, LINKFLAGS=LINKFLAGS)
+
+def msvc_debug(bldr, env):
+   """ TODO: Update to handle PDB debug database files. 
+       TODO: Add support for run-time error checking.
+   """
+   print "Calling gcc_debug."
+   if EnvironmentBuilder.NONE == bldr.debugLevel:
+      return
+   env.Append(CCFLAGS=['/Od','/Ob0','/Z7'],
+              LINKFLAGS=['/DEBUG'])
+
+def msvc_warnings(bldr, env):
+   CCFLAGS = []
+   
+   if EnvironmentBuilder.NONE == bldr.warningLevel:
+      CCFLAGS.append('/W0')
+   if bldr.warningLevel == EnvironmentBuilder.MINIMAL:
+      CCFLAGS.append('/W1')
+   elif bldr.warningLevel == EnvironmentBuilder.STANDARD:
+      CCFLAGS.append('/W2')
+   elif bldr.warningLevel == EnvironmentBuilder.EXTENSIVE:
+      CCFLAGS.append('/W3')
+   elif bldr.warningLevel == EnvironmentBuilder.MAXIMUM:
+      CCFLAGS.append('/Wall')
+
+   # warnings as errors
+   if EnvironmentBuilder.WARN_AS_ERROR in bldr.debugTags:
+      CCFLAGS.append('/WX')
+   
+   if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
+      CCFLAGS.append('/Za')
+      
+   env.Append(CCFLAGS=CCFLAGS)
+   
+def msvc_misc(bldr, env):
+   # Runtime library
+   rt_map = { EnvironmentBuilder.MSVC_MT_DLL_RT:'/MD',
+              EnvironmentBuilder.MSVC_MT_DBG_DLL_RT:'/MDd',
+              EnvironmentBuilder.MSVC_MT_RT:'/MT',
+              EnvironmentBuilder.MSVC_MT_DBG_RT:'/MTd'
+            }   
+   if rt_map.has_key(bldr.msvcRuntime):
+      env.Append(CCFLAGS=rt_map[bldr.msvcRuntime])
+
+   # Exception handling
+   if bldr.exceptionsEnabled:
+      if env["MSVS"]["VERSION"] >= "7.1":
+         env.Append(CCFLAGS='/EHsc')
+      else:
+         env.Append(CCFLAGS='/GX')
+
+   # RTTI
+   if bldr.rttiEnabled:
+      env.Append(CCFLAGS="/GR")
+      
+   # Default defines
+   env.Append(CPPDEFINES=["WIN32","_WINDOWS"])
+
+# MSVC functions
+default_funcs.append([['cl'],[],msvc_optimizations])
+default_funcs.append([['cl'],[],msvc_debug])
+default_funcs.append([['cl'],[],msvc_warnings])
+default_funcs.append([['cl'],[],msvc_misc])
 
 # ---- DEFAULT ---- #
 def default_debug_define(bldr,env):

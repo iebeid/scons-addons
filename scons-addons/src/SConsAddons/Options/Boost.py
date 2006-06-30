@@ -94,8 +94,10 @@ class Boost(SConsAddons.Options.PackageOption):
 
       # --- Build up settings using distutils.sysconfig to get Python build options --- #
       # distutils.sysconfig.get_config_vars()
-      #self.python_version = distutils.sysconfig.get_python_version()    # ex: '2.3'
-      self.python_version = distutils.sysconfig.get_config_var("VERSION")    # ex: '2.3'
+      try:
+         self.python_version = distutils.sysconfig.get_python_version()    # ex: '2.3'
+      except:
+         self.python_version = distutils.sysconfig.get_config_var("VERSION")    # ex: '2.3'
       self.python_inc_dir = distutils.sysconfig.get_python_inc()
       #python_link_share_flags = distutils.sysconfig.get_config_var('LINKFORSHARED')
       self.python_link_share_flags = "-Wl,-export-dynamic"
