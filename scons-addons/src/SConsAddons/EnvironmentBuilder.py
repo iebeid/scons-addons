@@ -18,11 +18,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-import os, sys, string, copy
+import os, sys, string, copy, re
 import SCons.Environment
 import SCons.Platform
 import SCons
-from Util import GetPlatform
+from Util import GetPlatform, GetArch
 default_funcs = []
 
 class EnvironmentBuilder(object):
@@ -51,6 +51,14 @@ class EnvironmentBuilder(object):
    MSVC_MT_RT         = "msvc_mt_rt"
    MSVC_MT_DBG_RT     = "msvc_mt_dbg_rt"
    
+   # CPU ARCH
+   AUTODETECT_ARCH    = "autodetect_arch"
+   IA32_ARCH          = "ia32_arch"
+   X64_ARCH           = "x64_arch"
+   IA64_ARCH          = "ia64_arch"
+   PPC_ARCH           = "ppc_arch"
+
+   
    def __init__(self):
       """ Initialize the class with defaults. """
       global default_funcs
@@ -62,7 +70,14 @@ class EnvironmentBuilder(object):
       self.warningTags  = []
       self.profEnabled  = False
       self.exceptionsEnabled = True
-      self.rttiEnabled  = True
+      self.rttiEnabled  = True            
+      self.cpuArch      = None
+      
+      # Darwin specific
+      self.darwinUniversalEnabled = False
+      self.darwinSdk = ''
+      
+      # MSVC specific
       self.msvcRuntime  = None
 
       # List of [ [compilers], [platforms], func ]
@@ -109,7 +124,26 @@ class EnvironmentBuilder(object):
       self.rttiEnabled = val
    def disableRTTI(self):
       self.enableRTTI(False)
+      
+   def setCpuArch(self, val=AUTODETECT_ARCH):
+      if val != EnvironmentBuilder.AUTODETECT_ARCH:
+         self.cpuArch = val
+      else:
+         arch_map = {"ia32":EnvironmentBuilder.IA32_ARCH,
+                     "x86_64":EnvironmentBuilder.X64_ARCH,
+                     "ppc":EnvironmentBuilder.PPC_ARCH}
+         self.cpuArch = arch_map.get(GetArch(), EnvironmentBuilder.AUTODETECT_ARCH)
 
+   # ---- Darwin specific ----- #
+   def darwin_enableUniversalBinaries(self, val=True):
+      self.darwinUniversalEnabled = val
+   def darwin_disableUniversalBinaries(self):
+      self.darwin_enableUniversalBinaries(False)
+
+   def darwin_setSdk(self, val):
+      self.darwinSdk = val
+      
+   # ---- MSVC specific ---- #
    def setMsvcRuntime(self, val):
       self.msvcRuntime = val
    
@@ -192,13 +226,60 @@ def gcc_warnings(bldr, env):
    
 def gcc_misc(bldr, env):
    if bldr.profEnabled:
-      env.Append(CCFLAGS="-pg", LINKFLAGS='-pg')   
+      env.Append(CCFLAGS="-pg", LINKFLAGS='-pg')
+
+def gcc_linux_misc(bldr, env):
+   assert isinstance(bldr, EnvironmentBuilder)
+   if bldr.cpuArch:
+      if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
+         env.Append(CXXFLAGS = ['-m32'],
+                    LINKFLAGS = ['-m32'])
+      elif bldr.cpuArch == EnvironmentBuilder.X64_ARCH:
+         env.Append(CXXFLAGS = ['-m64'],
+                    LINKFLAGS = ['-m64'])
+
+def gcc_darwin_misc(bldr,env):
+   assert isinstance(bldr, EnvironmentBuilder)
+   
+   if bldr.darwinUniversalEnabled:
+      env.Append(CXXFLAGS = ['-arch', 'ppc', '-arch', 'i386'],
+                 LINKFLAGS = ['-arch', 'ppc', '-arch', 'i386'])
+   else:
+      if bldr.cpuArch != None:
+         if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
+            env.Append(CXXFLAGS = ['-arch', 'i386'],
+                       LINKFLAGS = ['-arch', 'i386'])
+         elif bldr.cpuArch == EnvironmentBuilder.PPC_ARCH:
+            env.Append(CXXFLAGS = ['-arch', 'ppc'],
+                       LINKFLAGS = ['-arch', 'ppc'])
+   
+   if bldr.darwinSdkEnabled:
+      env.Append(CXXFLAGS = ['-isysroot', sdk],
+                 LINKFLAGS = ['-isysroot', sdk])
+
+      sdk_re = re.compile('MacOSX(10\..*?)u?\.sdk')
+      match = sdk_re.search(sdk)
+      if match is not None:
+         min_osx_ver = '-mmacosx-version-min=' + match.group(1)
+         env.Append(CXXFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])   
+         
+   if bldr.darwinSdk != '':
+      env.Append(CXXFLAGS = ['-isysroot', sdk],
+                 LINKFLAGS = ['-isysroot', sdk])
+
+      sdk_re = re.compile('MacOSX(10\..*?)u?\.sdk')
+      match = sdk_re.search(sdk)
+      if match is not None:
+         min_osx_ver = '-mmacosx-version-min=' + match.group(1)
+         env.Append(CXXFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])
 
 # GCC functions
 default_funcs.append([['gcc','g++'],[],gcc_optimizations])
 default_funcs.append([['gcc','g++'],[],gcc_debug])
 default_funcs.append([['gcc','g++'],[],gcc_warnings])
 default_funcs.append([['gcc','g++'],[],gcc_misc])
+default_funcs.append([['gcc','g++'],['linux'],gcc_linux_misc])
+default_funcs.append([['gcc','g++'],['darwin'],gcc_darwin_misc])
 
 # ---- MSVC ---- #      
 def msvc_optimizations(bldr, env):
