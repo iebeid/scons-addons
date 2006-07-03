@@ -48,9 +48,13 @@ Defines options extension for supporting modular options.
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
+import types
 import SCons.Errors
 import SCons.Util
 import os.path
+
+# TODO: Port more standard SCons options over to this interface.
+#
 
 def bogus_func():
     pass
@@ -191,7 +195,64 @@ class SimpleOption(Option):
         """ Validate the option settings """
         if self.validator_cb and self.value:
             self.validator_cb(self.keys[0], self.value, env)
+
+class BoolOption(Option):
+    """
+    Implementation of a bool option wrapper. 
+    This option wraps a single 'truth' value expressed as a string.
+    """
+    true_strings  = ('y', 'yes', 'true', 't', '1', 'on' , 'all' )
+    false_strings = ('n', 'no', 'false', 'f', '0', 'off', 'none') 
+   
+    def __init__(self, key, help, default):
+        """
+        Create a bool option
+        key - the name of the commandline option
+        help - Help text about the option object
+        default - Default truth value
+        """
+        Option.__init__(self, key, key, "%s (yes|no)"%help);        
+        self.value = None
+        self.default = default
+    
+    def textToBool(val):
+        """
+        Converts strings to True/False depending on the 'truth' expressed by
+        the string. If the string can't be converted, the original value
+        will be returned.
+        """
+        if isinstance(val, types.BooleanType):
+            return val
         
+        lval = string.lower(val)
+        if lval in BoolOption.true_strings: return True
+        if lval in BoolOption.false_strings: return False
+        raise ValueError("Invalid value for boolean option: %s" % val)
+
+    def setInitial(self, optDict):
+        if optDict.has_key(self.keys[0]):
+            self.value = optDict[self.keys[0]]
+
+    def find(self, env):
+        if None == self.value:     # If not already set by setInitial()
+            self.value = self.default
+    
+    def convert(self):
+        """ Convert the value """
+        if self.value:
+            try:
+                self.value = textToBool(self.value)
+            except ValueError, x:
+                raise SCons.Errors.UserError, 'Error converting option: %s value:%s\n%s'%(self.keys[0], self.value, x)
+    
+    def set(self, env):
+        """ Set the value(s) in the environment """
+        if self.value:
+            env[self.keys[0]] = self.value
+    
+    def validate(self, env):
+        """ Validate the option settings """
+        pass
     
 
 class Options:
