@@ -38,4 +38,7 @@ __date__ = "__DATE__"
 __developer__ = "__DEVELOPER__"
 
 import SConsAddons.Options.Options
-from SConsAddons.Options.Options import Option, LocalUpdateOption, PackageOption, SimpleOption, BoolOption, Options
+from SConsAddons.Options.Options import Option, LocalUpdateOption, PackageOption, \
+                                        SimpleOption, BoolOption, SeparatorOption, \
+                                        ListOption, Options
+

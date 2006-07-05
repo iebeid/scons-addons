@@ -48,10 +48,9 @@ Defines options extension for supporting modular options.
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-import types
+import types, string, os.path
 import SCons.Errors
 import SCons.Util
-import os.path
 
 # TODO: Port more standard SCons options over to this interface.
 #
@@ -226,7 +225,7 @@ class BoolOption(Option):
         self.value = None
         self.default = default
     
-    def textToBool(val):
+    def textToBool(self, val):
         """
         Converts strings to True/False depending on the 'truth' expressed by
         the string. If the string can't be converted, the original value
@@ -252,7 +251,7 @@ class BoolOption(Option):
         """ Validate and convert the option settings """
         if self.value:
             try:
-                self.value = textToBool(self.value)
+                self.value = self.textToBool(self.value)
             except ValueError, x:
                 raise SCons.Errors.UserError, 'Error converting option: %s value:%s\n%s'%(self.keys[0], self.value, x)
     
@@ -261,6 +260,94 @@ class BoolOption(Option):
     
     def getSettings(self):
         return [(self.keys[0],self.value),]
+
+
+class ListOption(Option):
+    """
+    Implementation of a list option wrapper.
+    Based off ListOption from SCons.
+    """    
+    def __init__(self, key, help, elems, defaultElems):
+        """
+        Create a bool option
+        key - the name of the commandline option
+        help - Help text about the option object
+        elems - List of allowable items.
+        default - List of default elements.
+        """
+        Option.__init__(self, key, key, "%s -- ('all'|%s)"%(help,elems))
+        self.value = None
+        self.default = defaultElems[:]    
+        self.allowedElems = elems[:]
+
+    def setInitial(self, optDict):
+        if optDict.has_key(self.keys[0]):
+            self.value = optDict[self.keys[0]]
+
+    def find(self, env):
+        if None == self.value:     # If not already set by setInitial()
+            self.value = self.default
+    
+    def validate(self, env):
+        """ Validate and convert the option settings """
+        if self.value and not isinstance(self.value,types.ListType):
+            if 'all' == self.value:
+                self.value = self.allowedElems
+            elif isinstance(self.value, types.StringType):
+                elems = self.value.split(',')
+                for i in elems:
+                    if not i in self.allowedElems:
+                        raise SCons.Errors.UserError, "List option '%s' does not allow item '%s'"%(self.keys[0],i)
+                self.value = elems
+            else:
+                raise SCons.Errors.UserError, 'Error converting option: %s value:%s\n%s\nMust be list or string.'%(self.keys[0], self.value, x)                
+    
+    def apply(self,env):
+        env[self.keys[0]] = self.value
+    
+    def getSettings(self):
+        if self.value == self.allowedElems:
+            ret_val = 'all'
+        else:
+            ret_val = self.value
+        return [(self.keys[0],ret_val),]
+
+
+class SeparatorOption(Option):
+    """
+    Helper option to all a 'separator' to be added to the debug output.
+    """
+    def __init__(self, helpText):
+        """
+        Create an option
+        name - Name of the option
+        keys - the name (or names) of the commandline option
+        help - Help text about the option object. If different help per key, put help in a list.
+        """
+        Option.__init__(self, "separator","separator", helpText);                
+        
+    def startProcess(self):
+        pass
+        
+    def setInitial(self, optDict):
+        """ Given an initial option Dictionary (probably from option file) initialize our data """
+        pass
+        
+    def find(self, env):
+        pass
+    
+    def validate(self, env):
+        pass
+    
+    def completeProcess(self,env):
+        pass
+    
+    def apply(self, env):
+        pass
+    
+    def getSettings(self):
+        return []
+
 
 class Options:
     """
@@ -300,6 +387,10 @@ class Options:
         converter - optional function that is called to convert the option's value before
                     putting it in the environment.
         """
+        # If meant to call AddOption, call it for them
+        if isinstance(key, Option):            
+            self.AddOption(key)
+            return
 
         if not SCons.Util.is_valid_construction_var(key):
             raise SCons.Errors.UserError, "Illegal Options.Add() key `%s'" % key
@@ -315,7 +406,7 @@ class Options:
         """ Add a single option object"""
         for k in option.keys:
             if not SCons.Util.is_valid_construction_var(k):
-                raise SCons.Errors.UserError, "Illegal Options.AddOption(): opt: '%s' -- key `%s'" % (options.name, option.key)
+                raise SCons.Errors.UserError, "Illegal Options.AddOption(): opt: '%s' -- key `%s'" % (option.name, k)
 
         self.options.append(option)
      
@@ -370,7 +461,7 @@ class Options:
     
         # Apply options if requested
         if True == applySimple:
-            self.Apply(env, allowedTypes=(SimpleOption,))
+            self.Apply(env, allowedTypes=(SimpleOption,BoolOption,ListOption))
     
 
     def Apply(self, env, all=False, allowedTypes=(), allowedNames=()):
@@ -445,17 +536,21 @@ class Options:
         max_key_len = max([len(k) for k in key_list])             # Get max key for spacing
         
         for option in options:
-            for ki in range(len(option.keys)):
-                k = option.keys[ki]
-                k_help = option.help
-                if SCons.Util.is_List(option.help):
-                    k_help = option.help[ki]    
-                help_text = help_text + '   %*s: %s' % (max_key_len, k, k_help)
-
-                if env.has_key(k):
-                    help_text = help_text + '  val: [%s]\n'%env.subst('${%s}'%k)
-                else:
-                    help_text = help_text + '  val: [None]\n'
+            if isinstance(option, SeparatorOption):
+                help_text = help_text + option.help + "\n"
+            else:
+                for ki in range(len(option.keys)):
+                    k = option.keys[ki]
+                    k_help = option.help
+                    if SCons.Util.is_List(option.help):
+                        k_help = option.help[ki]    
+                    help_text = help_text + '   %*s: %s' % (max_key_len, k, k_help)
+    
+                    if env.has_key(k):
+                        #help_text = help_text + '  val: [%s]\n'%env.subst('${%s}'%k)
+                        help_text = help_text + '  val: %s\n'%env[k]
+                    else:
+                        help_text = help_text + '  val: None\n'
 
         return help_text
 
