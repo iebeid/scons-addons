@@ -22,6 +22,7 @@ import os, sys, string, copy, re
 import SCons.Environment
 import SCons.Platform
 import SCons
+import Options
 from Util import GetPlatform, GetArch
 default_funcs = []
 
@@ -79,18 +80,37 @@ class EnvironmentBuilder(object):
       
       # MSVC specific
       self.msvcRuntime  = None
-
+      
       # List of [ [compilers], [platforms], func ]
       # If compiler or platform list is empty, then ignore that check
       self.funcList     = copy.copy(default_funcs)
 
-   def buildEnvironment(self, **kw):
+   def buildEnvironment(self, options=None, variant=None, **kw):
       """ Build an environment object and apply any options to it.
           Takes same parameters as Environment() in SCons.
+          options - If passed and is instance of SCons.Options.Options, it will
+                    be applied to environment before builder apply's it's options.
+          variant - If passed, it will be added as entry to environment
+                    and available when applying options.
       """
-      new_env = apply(SCons.Environment.Environment, [], kw)
-      self.applyOptionsToEnvironment(new_env)
+      if options and not isinstance(options, Options.Options):
+         kw["options"] = options      
+      new_env = apply(SCons.Environment.Environment, [], kw)      
+      self.applyToEnvironment(new_env,variant, options)
       return new_env
+   
+   def applyToEnvironment(self, env, variant=None, options=None):
+      """ Apply current builder options to an existing environment.
+          Returns env argument. 
+         
+         Ex: new_env = bldr.applyToEnvironment(env.Copy())
+      """
+      if variant:
+         env["variant"] = variant
+      if options and isinstance(options, Options.Options):
+         options.Apply(env)
+      self._applyOptionsToEnvironment(env)
+      return env
 
    def enableDebug(self, level=STANDARD, tags=[]):
       self.debugLevel = level
@@ -148,9 +168,9 @@ class EnvironmentBuilder(object):
       self.msvcRuntime = val
    
    # ---- Option application ---- #
-   def applyOptionsToEnvironment(self, env):
+   def _applyOptionsToEnvironment(self, env):
       tools = env["TOOLS"]
-      print "Using tools: ", tools
+      #print "Using tools: ", tools
       
       # Find the compilers/builders we are using
       c_compiler = env["CC"]
@@ -196,7 +216,7 @@ def gcc_optimizations(bldr, env):
    env.Append(CXXFLAGS=CXXFLAGS, CCFLAGS=CCFLAGS, CPPDEFINES=CPPDEFINES)
 
 def gcc_debug(bldr, env):
-   print "Calling gcc_debug."
+   #print "Calling gcc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
    env.Append(CCFLAGS="-g")
