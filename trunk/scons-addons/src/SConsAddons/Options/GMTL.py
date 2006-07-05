@@ -33,7 +33,7 @@ class GMTL(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion
       self.required = required
       SConsAddons.Options.LocalUpdateOption.__init__(self, name,
-      self.baseDirKey, help_text)
+                                                     self.baseDirKey, help_text)
 
       self.baseDir = None;
       self.gmtlconfig_cmd = None;
@@ -77,13 +77,6 @@ class GMTL(SConsAddons.Options.PackageOption):
             self.baseDir = None;
          else:
             print "   found at: ", self.baseDir
-
-   def convert(self):
-      pass
-
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir
 
    def validate(self, env):
       # check path existance
@@ -131,7 +124,7 @@ class GMTL(SConsAddons.Options.PackageOption):
       else:
          self.available = True
 
-   def updateEnv(self, env):
+   def apply(self, env):
       """ Add environment options for building against plexus"""
       if self.found_incs:
          env.Append(CPPPATH = self.found_incs)
@@ -139,7 +132,10 @@ class GMTL(SConsAddons.Options.PackageOption):
       #   env.Append(LIBS = self.found_libs)
       #if self.found_lib_paths:
       #   env.Append(LIBPATH = self.found_lib_paths)
-         
+
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir),]
+
    def dumpSettings(self):
       "Write out the settings"
       print "GMTLBaseDir:", self.baseDir

@@ -73,7 +73,7 @@ class Zipios(SConsAddons.Options.PackageOption):
       if self.required:
          sys.exit(1);
 
-   def startUpdate(self):
+   def startProcess(self):
       print "Checking for zipios...",
       
    def setInitial(self, optDict):
@@ -116,13 +116,6 @@ class Zipios(SConsAddons.Options.PackageOption):
             self.baseDir = None
          else:
             print "   found at: ", self.baseDir
-   
-   def convert(self):
-      pass;
-   
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir;
    
    def validate(self, env):
       # Check that path exist
@@ -170,7 +163,7 @@ class Zipios(SConsAddons.Options.PackageOption):
          self.available = True         
          print "[OK]"
          
-   def updateEnv(self, env):
+   def apply(self, env):
       """ Update the passed environment with full settings for the option """
 
       include_path = pj(self.baseDir, 'include')
@@ -183,7 +176,12 @@ class Zipios(SConsAddons.Options.PackageOption):
          env.Append(CXXFLAGS = include_path_as_flags)
       env.Append(LIBPATH = lib_path)
       env.Append(LIBS = ['zipios'])
-         
+
+
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir),]
+
+
    def dumpSettings(self):
       "Write out the settings"
       print "ZipiosBaseDir:", self.baseDir;

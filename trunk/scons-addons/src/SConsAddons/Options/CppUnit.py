@@ -107,13 +107,6 @@ class CppUnit(SConsAddons.Options.PackageOption):
          else:
             print "   found at: ", self.baseDir;
    
-   def convert(self):
-      pass;
-   
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir;
-   
    def validate(self, env):
       # Check that path exist
       # Check that cppunit-config exist
@@ -164,7 +157,7 @@ class CppUnit(SConsAddons.Options.PackageOption):
       
       # Try to build against the library
       conf_env = env.Copy();                     # Make a copy of the env
-      self.updateEnv(conf_env);                  # Update it with the guessed values
+      self.apply(conf_env);                  # Update it with the guessed values
       conf_ctxt = Configure(conf_env);
       if not conf_ctxt.CheckCXXHeader(pj("cppunit", "Test.h")):
          passed = False;
@@ -189,7 +182,7 @@ class CppUnit(SConsAddons.Options.PackageOption):
          self.available = True
 
              
-   def updateEnv(self, env):
+   def apply(self, env):
       """ Add environment options for building against us"""
       if self.found_incs:
          if self.useCppPath:
@@ -200,7 +193,10 @@ class CppUnit(SConsAddons.Options.PackageOption):
          env.Append(LIBS = self.found_libs);
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths);
-         
+
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir),]
+
    def dumpSettings(self):
       "Write out the settings"
       print "CppUnitBaseDir:", self.baseDir;

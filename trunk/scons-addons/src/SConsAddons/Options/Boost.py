@@ -51,7 +51,9 @@ class Boost(SConsAddons.Options.PackageOption):
       self.required = required
       self.useCppPath = useCppPath
       self.toolset = toolset
-      SConsAddons.Options.PackageOption.__init__(self, name, [self.baseDirKey, self.incDirKey], help_text)
+      SConsAddons.Options.PackageOption.__init__(self, name, 
+                                                 [self.baseDirKey, self.incDirKey], 
+                                                 help_text)
       self.available = False            # Track availability
       
       self.found_incs = []
@@ -171,15 +173,6 @@ class Boost(SConsAddons.Options.PackageOption):
             self.baseDir = None
          else:
             print "   found at: ", self.baseDir
-
-   def convert(self):
-      pass
-
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir
-      if self.incDir:
-         env[self.incDirKey] = self.incDir
 
    def validate(self, env):
       # Check that path exist
@@ -305,8 +298,8 @@ class Boost(SConsAddons.Options.PackageOption):
       else:
          self.available = True
 
-         
-   def updateEnv(self, env, libs=None, useCppPath=False):
+
+   def apply(self, env, libs=None, useCppPath=False):
       """ Add environment options for building against Boost libraries """
       if self.found_incs:
          if self.useCppPath or useCppPath:
@@ -319,9 +312,13 @@ class Boost(SConsAddons.Options.PackageOption):
          if 'python' != l:               # Don't add python by default
             env.Append(LIBS = [self.buildFullLibName(l)])
 
+
    def updatePythonEmbeddedEnv(self,env):
+      self.applyPythonEmbeddedEnv(env)
+
+   def applyPythonEmbeddedEnv(self,env):
       """ Update the environment for building python embedded """
-      self.updateEnv(env)
+      self.apply(env)
       #print "Full python lib name:", self.buildFullLibName('python')
       env.Append(LIBS = [self.buildFullLibName('python')])
       env.Append(CPPPATH = [self.python_inc_dir,],
@@ -329,14 +326,17 @@ class Boost(SConsAddons.Options.PackageOption):
                  LIBPATH = self.python_lib_path,
                  LIBS = self.python_extra_libs)
 
-                  
+   
    def updatePythonModEnv(self, env):
+      self.applyPythonModEnv(env)
+   
+   def applyPythonModEnv(self, env):
       """ Update the environment for building python modules """
       if not "python" in self.lib_names:
          print "Tried to updatePythonModEnv with boost option object not configured with python library.\n"
          sys.exit(0)
          
-      self.updateEnv(env)
+      self.apply(env)
       env.Append(LIBS = self.buildFullLibName("python") )    # Add on the boost python library
       env.Append(CPPPATH = [self.python_inc_dir,],
                  LIBPATH = self.python_lib_path,
@@ -348,7 +348,9 @@ class Boost(SConsAddons.Options.PackageOption):
          env['CXXCOM'] += " ; objcopy --set-section-flags .debug_str=contents,debug $TARGET"
          env['SHCXXCOM'] += " ; objcopy -v --set-section-flags .debug_str=contents,debug $TARGET $TARGET"
 
-
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir), (self.incDirKey, self.incDir)]
+   
    def dumpSettings(self):
       "Write out the settings"
       print "BoostBaseDir:", self.baseDir
