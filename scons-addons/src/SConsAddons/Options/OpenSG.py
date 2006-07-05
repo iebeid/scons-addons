@@ -74,7 +74,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
       if self.required:
          sys.exit(1);
 
-   def startUpdate(self):
+   def startProcess(self):
       print "Checking for OpenSG...",
       
    def setInitial(self, optDict):
@@ -110,13 +110,6 @@ class OpenSG(SConsAddons.Options.PackageOption):
             self.baseDir = None;
          else:
             print "   found at: ", self.baseDir;
-   
-   def convert(self):
-      pass;
-   
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir;
    
    def validate(self, env):
       # Check that path exist
@@ -157,7 +150,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
          self.available = True         
          print "[OK]"
          
-   def updateEnv(self, env, libs=['system',], optimize=False, useCppPath=False):
+   def apply(self, env, libs=['system',], optimize=False, useCppPath=False):
       """ Add environment options for building against vapor.
           lib: One of: base, system, glut, x, qt.
           optimize: If true use --opt option
@@ -239,7 +232,10 @@ class OpenSG(SConsAddons.Options.PackageOption):
             env.Append(CXXFLAGS = found_incs_as_flags)
       if len(found_defines):
          env.Append(CPPDEFINES = found_defines)
-         
+
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir),]
+
    def dumpSettings(self):
       "Write out the settings"
       print "OpenSGBaseDir:", self.baseDir;

@@ -69,7 +69,7 @@ class CppDom(SConsAddons.Options.PackageOption):
    def isAvailable(self):
       return self.available
 
-   def startUpdate(self):
+   def startProcess(self):
       print "Checking for cppdom...",
 
    def setInitial(self, optDict):
@@ -106,13 +106,6 @@ class CppDom(SConsAddons.Options.PackageOption):
             self.baseDir = None;
          else:
             print "   found at: ", self.baseDir;
-   
-   def convert(self):
-      pass;
-   
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir;
    
    def validate(self, env):
       # Check that path exist
@@ -151,7 +144,7 @@ class CppDom(SConsAddons.Options.PackageOption):
       
       # Try to build against the library
       conf_env = env.Copy();                     # Make a copy of the env
-      self.updateEnv(conf_env);                  # Update it with the guessed values
+      self.apply(conf_env);                  # Update it with the guessed values
       conf_ctxt = Configure(conf_env);
       if not conf_ctxt.CheckCXXHeader(pj("cppdom", "cppdom.h")):
          passed = False;
@@ -178,7 +171,7 @@ class CppDom(SConsAddons.Options.PackageOption):
          print "[OK]"
       
              
-   def updateEnv(self, env):
+   def apply(self, env):
       """ Add environment options for building against vapor"""
       if self.found_incs:
          env.Append(CPPPATH = self.found_incs);
@@ -186,7 +179,10 @@ class CppDom(SConsAddons.Options.PackageOption):
          env.Append(LIBS = self.found_libs);
       if self.found_lib_paths:
          env.Append(LIBPATH = self.found_lib_paths);
-         
+   
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir),]
+
    def dumpSettings(self):
       "Write out the settings"
       print "CppDomBaseDir:", self.baseDir;

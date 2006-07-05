@@ -69,15 +69,15 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion
       self.required = required
       self.useCppPath = useCppPath      
-      
-      
+   
+   
    def checkRequired(self, msg):
       """ Called when there is config problem.  If required, then exit with error message """
       print msg;
       if self.required:
          sys.exit(1);
 
-   def startUpdate(self):
+   def startProcess(self):
       print "Checking for %s..."%self.optionName,
       
    def setInitial(self, optDict):
@@ -112,13 +112,6 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
             self.baseDir = None;
          else:
             print "   found at: ", self.baseDir;
-   
-   def convert(self):
-      pass;
-   
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir;
    
    def validate(self, env):
       # Check that path exist
@@ -184,8 +177,9 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
          self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
          self.available = True
          print "%s [OK]" % found_ver_str
-             
-   def updateEnv(self, env, useCppPath=False):
+
+
+   def apply(self, env, useCppPath=False):
       """ Add environment options for building against vrj-based library"""
       if self.found_incs:
          if self.useCppPath or useCppPath:
@@ -198,7 +192,10 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
          env.Append(LIBPATH = self.found_lib_paths)
       if self.found_link_from_libs:
          env.Append(LINKFLAGS = self.found_link_from_libs)
-         
+   
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir),]
+   
    def dumpSettings(self):
       "Write out the settings"
       print "%s: %s", (self.baseDirKey, self.baseDir)

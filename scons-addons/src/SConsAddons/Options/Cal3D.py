@@ -56,7 +56,7 @@ class Cal3D(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion;
       self.required = required;
       self.useCppPath = useCppPath
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text);
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text);
       
       # configurable options
       self.baseDir = None;
@@ -73,7 +73,7 @@ class Cal3D(SConsAddons.Options.PackageOption):
       if self.required:
          sys.exit(1);
 
-   def startUpdate(self):
+   def startProcess(self):
       print "Checking for Cal3D...",
       
    def setInitial(self, optDict):
@@ -116,13 +116,6 @@ class Cal3D(SConsAddons.Options.PackageOption):
             self.baseDir = None
          else:
             print "   found at: ", self.baseDir
-   
-   def convert(self):
-      pass;
-   
-   def set(self, env):
-      if self.baseDir:
-         env[self.baseDirKey] = self.baseDir;
    
    def validate(self, env):
       # Check that path exist
@@ -174,7 +167,7 @@ class Cal3D(SConsAddons.Options.PackageOption):
          self.available = True         
          print "[OK]"
          
-   def updateEnv(self, env):
+   def apply(self, env):
       """ Update the passed environment with full settings for the option """
 
       include_path = pj(self.baseDir, 'include')
@@ -187,7 +180,10 @@ class Cal3D(SConsAddons.Options.PackageOption):
          env.Append(CXXFLAGS = include_path_as_flags)
       env.Append(LIBPATH = lib_path)
       env.Append(LIBS = ['cal3d'])
-         
+   
+   def getSettings(self):
+      return [(self.baseDirKey, self.baseDir),]
+   
    def dumpSettings(self):
       "Write out the settings"
       print "Cal3DBaseDir:", self.baseDir;

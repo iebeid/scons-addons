@@ -62,6 +62,9 @@ def bogus_func():
 class Option:
     """
     Base class for all options.
+    An option in our context is:
+      - Something(s) that can be set and found
+      - Once set(found) has the ability to set an environment with those settings      
     """
     def __init__(self, name, keys, help):
         """
@@ -77,8 +80,8 @@ class Option:
         self.help = help
         self.verbose = False      # If verbose, then output more information
         
-    def startUpdate(self):
-        """ Called at beginning of update.  Perform any intialization or notification here. """
+    def startProcess(self):
+        """ Called at beginning of processing.  Perform any intialization or notification here. """
         print "Updating ", self.name
         pass
         
@@ -94,33 +97,39 @@ class Option:
         """
         pass
     
-    def convert(self):
-        """ Convert the value """
-        pass
-    
-    def set(self, env):
-        """ Set the value(s) in the environment """
-        pass
-    
     def validate(self, env):
         """ Validate the option settings.  This checks to see if there are problems
             with the configured settings.
         """
         pass
     
-    def completeUpdate(self,env):
-        """ Complete the update process. """
+    def completeProcess(self,env):
+        """ Called when processing is complete. """
         pass
+    
+    def apply(self, env):
+        """ Apply the results of the option to the given environment. """
+        pass
+    
+    def getSettings(self):
+        """ Return list sequence of ((key,value),(key,value),).
+            dict.iteritems() should work.
+            Used to save out settings for persistent options.
+        """
+        assert False, "Please implement a getSettings() method to return settings to save."
+        return []
+        
 
 class LocalUpdateOption(Option):
     """ Extends the base option to have another method that allows updating of environment locally """
     def __init__(self, name, keys, help):
         Option.__init__(self, name, keys, help)
         
-    def updateEnv(self, env):
-        """ Update the passed environment with full settings for the option """
-        print "WARNING: updateEnv not defined for called option"
-        pass
+    def updateEnv(self, env, *pa, **kw):
+        """ Deprecated. """
+        print "DEPRECATED: method LocalUpdateOptions.updateEnv is deprecated. Please call 'apply' instead."
+        self.apply(env, *pa, **kw)
+    
 
 class PackageOption(LocalUpdateOption):
     """ Base class for options that are used for specifying options for installed software packages. """
@@ -176,25 +185,27 @@ class SimpleOption(Option):
             if self.finder_cb:
                 self.value = self.finder_cb(self.keys[0], env)
             else:
-                self.value = None
-    
-    def convert(self):
-        """ Convert the value """
+                self.value = None    
+        
+    def validate(self, env):
+        """ Validate and convert the option settings """
+        # -- convert the values -- #
         if self.converter_cb and self.value:
             try:
                 self.value = self.converter_cb(self.value)
             except ValueError, x:
                 raise SCons.Errors.UserError, 'Error converting option: %s value:%s\n%s'%(self.keys[0], self.value, x)
-    
-    def set(self, env):
-        """ Set the value(s) in the environment """
-        if self.value:
-            env[self.keys[0]] = self.value
-    
-    def validate(self, env):
-        """ Validate the option settings """
+            
+        # -- validate --- #
         if self.validator_cb and self.value:
             self.validator_cb(self.keys[0], self.value, env)
+    
+    def apply(self, env):
+        env[self.keys[0]] = self.value
+    
+    def getSettings(self):
+        return [(self.keys[0],self.value),]
+
 
 class BoolOption(Option):
     """
@@ -237,23 +248,19 @@ class BoolOption(Option):
         if None == self.value:     # If not already set by setInitial()
             self.value = self.default
     
-    def convert(self):
-        """ Convert the value """
+    def validate(self, env):
+        """ Validate and convert the option settings """
         if self.value:
             try:
                 self.value = textToBool(self.value)
             except ValueError, x:
                 raise SCons.Errors.UserError, 'Error converting option: %s value:%s\n%s'%(self.keys[0], self.value, x)
     
-    def set(self, env):
-        """ Set the value(s) in the environment """
-        if self.value:
-            env[self.keys[0]] = self.value
+    def apply(self,env):
+        env[self.keys[0]] = self.value
     
-    def validate(self, env):
-        """ Validate the option settings """
-        pass
-    
+    def getSettings(self):
+        return [(self.keys[0],self.value),]
 
 class Options:
     """
@@ -297,9 +304,8 @@ class Options:
         if not SCons.Util.is_valid_construction_var(key):
             raise SCons.Errors.UserError, "Illegal Options.Add() key `%s'" % key
 
-        if None == name:
-            self.unique_id = self.unique_id + 1
-            name = "Unamed_" + str(self.unique_id)
+        if None == name:            
+            name = "unamed_opt_" + str(key)
             
         option = SimpleOption(name, key, help, default, converter, None, validator)
 
@@ -322,7 +328,15 @@ class Options:
         return None
 
     def Update(self, env, args=None):
+        """ Deprecated method of calling Process. """
+        self.Process(env,args,applySimple=True)
+        
+    def Process(self, env, args=None, applySimple=True):
         """
+        Process all options within the given environment.
+        This will go through all options and will initialize, find, and validate
+        them against this environment.
+        If applySimple is set true, it will finish off by applying all simple options.
         Update an environment with the option variables.
 
         env - the environment to update.
@@ -347,20 +361,31 @@ class Options:
         values.update(args)
         
         # Process each option in order
-        # - Set intial value
-        # - Find new value if needed
-        # - Convert the value
-        # - Set the environment
-        # - Validate the setting
         for option in self.options:
-            option.startUpdate()
-            option.setInitial(values)
-            option.find(env)
-            option.convert()
-            option.set(env)
-            option.validate(env)
-            option.completeUpdate(env)
+            option.startProcess()         # Start processing
+            option.setInitial(values)     # Set initial values
+            option.find(env)              # Find values if needed
+            option.validate(env)          # Validate the settings
+            option.completeProcess(env)   # Signal processing completed
     
+        # Apply options if requested
+        if True == applySimple:
+            self.Apply(env, allowedTypes=(SimpleOption,))
+    
+
+    def Apply(self, env, all=False, allowedTypes=(), allowedNames=()):
+        """ Apply options from this option group to the given environment.
+            all - If set true, then applies all options.
+            allowedTypes - If set, it is a list of option types that will be applied.
+            allowedNames - If set, it is a list of option names that will be applied.
+            note: if both are set, then either must be true.
+        """
+        #print "Options.Apply: %s %s %s"%(all, allowedTypes, allowedNames)
+        for option in self.options:
+            #print "Checking: ", option.name
+            if (True == all) or (isinstance(option, allowedTypes)) or (option.name in allowedNames):
+                #print "    Passed, applying."
+                option.apply(env)
 
     def Save(self, filename, env):
         """
@@ -380,21 +405,17 @@ class Options:
                 # Make an assignment in the file for each option within the environment
                 # that was assigned a value other than the default.
                 # For each option and each key
-                key_list = []
+                key_value_list = []
                 for o in self.options:
-                    key_list.extend(o.keys)
-                for key in key_list:
-                    try:
-                        value = env[key]
+                    key_value_list.extend(o.getSettings())                    
+                for (key,value) in key_value_list:
+                    if None != value:
                         try:
                             eval(repr(value))
                         except:
                             # Convert stuff that has a repr that cannon be evaled to string
-                            value = SCons.Util.to_string(value)
-                            
+                            value = SCons.Util.to_string(value)                        
                         fh.write('%s = %s\n' % (key, repr(value)))
-                    except KeyError:
-                        pass
             finally:
                 fh.close()
 
