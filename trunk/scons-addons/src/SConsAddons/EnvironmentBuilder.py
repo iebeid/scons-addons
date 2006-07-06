@@ -58,6 +58,7 @@ class EnvironmentBuilder(object):
    X64_ARCH           = "x64_arch"
    IA64_ARCH          = "ia64_arch"
    PPC_ARCH           = "ppc_arch"
+   PPC64_ARCH         = "ppc64_arch"
 
    
    def __init__(self):
@@ -151,7 +152,8 @@ class EnvironmentBuilder(object):
       else:
          arch_map = {"ia32":EnvironmentBuilder.IA32_ARCH,
                      "x86_64":EnvironmentBuilder.X64_ARCH,
-                     "ppc":EnvironmentBuilder.PPC_ARCH}
+                     "ppc":EnvironmentBuilder.PPC_ARCH,
+                     "ppc64":EnvironmentBuilder.PPC64_ARCH}
          self.cpuArch = arch_map.get(GetArch(), EnvironmentBuilder.AUTODETECT_ARCH)
 
    # ---- Darwin specific ----- #
@@ -262,8 +264,8 @@ def gcc_darwin_misc(bldr,env):
    assert isinstance(bldr, EnvironmentBuilder)
 
    if bldr.darwinUniversalEnabled:
-      env.Append(CXXFLAGS = ['-arch', 'ppc', '-arch', 'i386'],
-                 LINKFLAGS = ['-arch', 'ppc', '-arch', 'i386'])
+      env.Append(CXXFLAGS = ['-arch', 'ppc', '-arch', 'i386', '-arch', 'ppc64'],
+                 LINKFLAGS = ['-arch', 'ppc', '-arch', 'i386', '-arch', 'ppc64'])
    else:
       if bldr.cpuArch != None:
          if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
@@ -272,6 +274,9 @@ def gcc_darwin_misc(bldr,env):
          elif bldr.cpuArch == EnvironmentBuilder.PPC_ARCH:
             env.Append(CXXFLAGS = ['-arch', 'ppc'],
                        LINKFLAGS = ['-arch', 'ppc'])
+         elif bldr.cpuArch == EnvironmentBuilder.PPC64_ARCH:
+            env.Append(CXXFLAGS = ['-arch', 'ppc64'],
+                       LINKFLAGS = ['-arch', 'ppc64'])
 
    if bldr.darwinSdk != '':
       env.Append(CXXFLAGS = ['-isysroot', bldr.darwinSdk],
