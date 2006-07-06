@@ -260,7 +260,7 @@ def gcc_linux_misc(bldr, env):
 
 def gcc_darwin_misc(bldr,env):
    assert isinstance(bldr, EnvironmentBuilder)
-   
+
    if bldr.darwinUniversalEnabled:
       env.Append(CXXFLAGS = ['-arch', 'ppc', '-arch', 'i386'],
                  LINKFLAGS = ['-arch', 'ppc', '-arch', 'i386'])
@@ -272,23 +272,13 @@ def gcc_darwin_misc(bldr,env):
          elif bldr.cpuArch == EnvironmentBuilder.PPC_ARCH:
             env.Append(CXXFLAGS = ['-arch', 'ppc'],
                        LINKFLAGS = ['-arch', 'ppc'])
-   
-   if bldr.darwinSdkEnabled:
-      env.Append(CXXFLAGS = ['-isysroot', sdk],
-                 LINKFLAGS = ['-isysroot', sdk])
 
-      sdk_re = re.compile('MacOSX(10\..*?)u?\.sdk')
-      match = sdk_re.search(sdk)
-      if match is not None:
-         min_osx_ver = '-mmacosx-version-min=' + match.group(1)
-         env.Append(CXXFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])   
-         
    if bldr.darwinSdk != '':
-      env.Append(CXXFLAGS = ['-isysroot', sdk],
-                 LINKFLAGS = ['-isysroot', sdk])
+      env.Append(CXXFLAGS = ['-isysroot', bldr.darwinSdk],
+                 LINKFLAGS = ['-isysroot', bldr.darwinSdk])
 
       sdk_re = re.compile('MacOSX(10\..*?)u?\.sdk')
-      match = sdk_re.search(sdk)
+      match = sdk_re.search(bldr.darwinSdk)
       if match is not None:
          min_osx_ver = '-mmacosx-version-min=' + match.group(1)
          env.Append(CXXFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])
@@ -299,7 +289,7 @@ default_funcs.append([['gcc','g++'],[],gcc_debug])
 default_funcs.append([['gcc','g++'],[],gcc_warnings])
 default_funcs.append([['gcc','g++'],[],gcc_misc])
 default_funcs.append([['gcc','g++'],['linux'],gcc_linux_misc])
-default_funcs.append([['gcc','g++'],['darwin'],gcc_darwin_misc])
+default_funcs.append([['gcc','g++'],['mac'],gcc_darwin_misc])
 
 # ---- MSVC ---- #      
 def msvc_optimizations(bldr, env):
