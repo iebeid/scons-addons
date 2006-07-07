@@ -85,9 +85,9 @@ class CppDom(SConsAddons.Options.PackageOption):
    def find(self, env):
       # Quick exit if nothing to find because it is already specified
       if self.baseDir != None:
-         assert self.baseDir;
-         assert self.cppdomconfig_cmd;
-         return;
+         assert self.baseDir
+         assert self.cppdomconfig_cmd
+         return
       
       # Find cppdom-config and call it to get the other arguments
       sys.stdout.write("searching...\n");
@@ -113,34 +113,41 @@ class CppDom(SConsAddons.Options.PackageOption):
       # Check version is correct
       # Check that an include file: include/vpr/vprConfig.h  exists
       # Update the temps for later usage
-      passed = True;
+      passed = True
       if not os.path.isdir(self.baseDir):
-         passed = False;
-         self.checkRequired("cppdom base dir does not exist:%s"%self.baseDir);
-      if not os.path.isfile(self.cppdomconfig_cmd):
-         passed = False;
-         self.checkRequired("cppdom-config does not exist:%s"%self.cppdomconfig_cmd);
-
-      cfg_cmd_parser = SConsAddons.Util.ConfigCmdParser(self.cppdomconfig_cmd)
+         passed = False
+         self.checkRequired("cppdom base dir does not exist:%s"%self.baseDir)
       
-      # Check version requirement
-      found_ver_str = cfg_cmd_parser.getVersion()
-      req_ver = [int(n) for n in self.requiredVersion.split(".")];
-      found_ver = [int(n) for n in found_ver_str.split(".")];
-      if found_ver < req_ver:
-         passed = False;
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));             
+      has_config_cmd = os.path.isfile(self.cppdomconfig_cmd)
+      if not has_config_cmd:
+         print "Can not find %s. Limping along without it."%self.cppdomconfig_cmd
+      else:
+         cfg_cmd_parser = SConsAddons.Util.ConfigCmdParser(self.cppdomconfig_cmd)
+      
+      if has_config_cmd:
+         # Check version requirement
+         found_ver_str = cfg_cmd_parser.getVersion()
+         req_ver = [int(n) for n in self.requiredVersion.split(".")];
+         found_ver = [int(n) for n in found_ver_str.split(".")];
+         if found_ver < req_ver:
+            passed = False;
+            self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));             
       
       # Check header file
       cppdom_header_file = pj(self.baseDir, 'include', 'cppdom', 'cppdom.h');
       if not os.path.isfile(cppdom_header_file):
          passed = False;
          self.checkRequired("cppdom.h not found:%s"%cppdom_header_file);
-         
-      # Returns lists of the options we want
-      self.found_incs = cfg_cmd_parser.findIncludes(" --cxxflags")
-      self.found_libs = cfg_cmd_parser.findLibs()
-      self.found_lib_paths = cfg_cmd_parser.findLibPaths()
+
+      if has_config_cmd:
+         # Returns lists of the options we want
+         self.found_incs = cfg_cmd_parser.findIncludes(" --cxxflags")
+         self.found_libs = cfg_cmd_parser.findLibs()
+         self.found_lib_paths = cfg_cmd_parser.findLibPaths()
+      else:
+         self.found_incs = [pj(self.baseDir,'include'),]
+         self.found_libs = ['cppdom',]
+         self.found_lib_paths = [pj(self.baseDir,'lib'),]
       
       # Try to build against the library
       conf_env = env.Copy();                     # Make a copy of the env
