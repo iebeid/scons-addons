@@ -25,9 +25,9 @@ Defines options for Vapor project
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-import SCons.Environment;   # Get the environment crap
-import SCons;
-import SConsAddons.Options;   # Get the modular options stuff
+import SCons.Environment   # Get the environment crap
+import SCons
+import SConsAddons.Options   # Get the modular options stuff
 import JugglerCommon
 import SCons.Util
 import sys, os, re, string

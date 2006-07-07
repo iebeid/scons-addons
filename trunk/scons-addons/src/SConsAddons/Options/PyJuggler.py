@@ -97,7 +97,7 @@ class PyJuggler(SConsAddons.Options.PackageOption):
          print "[OK]"
 
    def apply(self, env):
-      """ Add environment options for building against plexus"""
+      """ Add environment options for building against pyjuggler"""
       if self.found_incs:
          env.Append(CPPPATH = self.found_incs)
       if self.found_libs:
@@ -110,7 +110,7 @@ class PyJuggler(SConsAddons.Options.PackageOption):
 
    def dumpSettings(self):
       "Write out the settings"
-      print "GMTLBaseDir:", self.baseDir
+      print "PyJugglerBaseDir:", self.baseDir
       print "CPPPATH:", self.found_incs
       print "LIBS:", self.found_libs
       print "LIBPATH:", self.found_lib_paths

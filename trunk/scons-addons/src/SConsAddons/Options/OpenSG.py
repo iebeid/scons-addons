@@ -28,6 +28,7 @@ __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 import SCons.Environment   # Get the environment crap
 import SCons
 import SConsAddons.Options   # Get the modular options stuff
+import SConsAddons.Util as sca_util
 import SCons.Util
 import sys
 import os
@@ -82,7 +83,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
       if self.verbose:
          print "   Setting initial OpenSG settings."
       if optDict.has_key(self.baseDirKey):
-         self.baseDir = optDict[self.baseDirKey];
+         self.baseDir = optDict[self.baseDirKey]
          self.osgconfig_cmd = pj(self.baseDir, 'bin', 'osg-config')
          if self.verbose:
             print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir);
@@ -90,47 +91,55 @@ class OpenSG(SConsAddons.Options.PackageOption):
    def find(self, env):
       # Quick exit if nothing to find
       if self.baseDir != None:
-         return;
+         return
       
       # Find osg-config and call it to get the other arguments
-      sys.stdout.write("searching for osg-config...\n");
-      self.osgconfig_cmd = WhereIs('osg-config');
+      sys.stdout.write("searching for osg-config...\n")
+      self.osgconfig_cmd = WhereIs('osg-config')
       if not self.osgconfig_cmd:
-         self.checkRequired("   could not find osg-config.");
+         self.checkRequired("   could not find osg-config.")
+         self.osgconfig_cmd = None
          return
       else:
-         sys.stdout.write("   found osg-config.\n");
-         found_ver_str = os.popen(self.osgconfig_cmd + " --version").read().strip();
-         sys.stdout.write("   version:%s"%found_ver_str);
-         
-         # find base dir
-         self.baseDir = os.popen(self.osgconfig_cmd + " --prefix").read().strip();
-         if not os.path.isdir(self.baseDir):
-            self.checkRequired("   returned directory does not exist:%s"% self.baseDir);
-            self.baseDir = None;
-         else:
-            print "   found at: ", self.baseDir;
+         try:
+            sys.stdout.write("   found osg-config.\n");
+            found_ver_str = os.popen(self.osgconfig_cmd + " --version").read().strip();
+            sys.stdout.write("   version:%s"%found_ver_str);
+            
+            # find base dir
+            self.baseDir = os.popen(self.osgconfig_cmd + " --prefix").read().strip();
+            if not os.path.isdir(self.baseDir):
+               self.checkRequired("   returned directory does not exist:%s"% self.baseDir);
+               self.baseDir = None;
+            else:
+               print "   found at: ", self.baseDir;
+         except Exception, ex:
+            print "using osg-config failed."
+            self.osgconfig_cmd = None
+            self.checkRequired("  Running osg-config failed.")
    
    def validate(self, env):
       # Check that path exist
       # Check that osg-config exist
       # Check that an include file: include/OpenSG/OSGConfig.h  exists
       # Update the temps for later usage
-      passed = True;
-      if not os.path.isdir(self.baseDir):
-         self.checkRequired("OpenSG base dir does not exist:%s"%self.baseDir);
+      passed = True
+      if (None == self.baseDir) or (not os.path.isdir(self.baseDir)):
+         self.checkRequired("OpenSG base dir does not exist:%s"%self.baseDir)
          return
-      if not os.path.isfile(self.osgconfig_cmd):
-         self.checkRequired("osg-config does not exist:%s"%self.osgconfig_cmd);
-         return
-         
-      # Check version requirement
-      found_ver_str = os.popen(self.osgconfig_cmd + " --version").read().strip();
-      req_ver = self.requiredVersion.split(".")
-      found_ver = found_ver_str.split(".");
-      if found_ver < req_ver:
-         passed = False;
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));
+      
+      has_config_cmd = os.path.isfile(self.osgconfig_cmd)
+      if not has_config_cmd:
+         print "Can not find osg-config.  Limping along without it."         
+      
+      if has_config_cmd:
+         # Check version requirement
+         found_ver_str = os.popen(self.osgconfig_cmd + " --version").read().strip();
+         req_ver = self.requiredVersion.split(".")
+         found_ver = found_ver_str.split(".");
+         if found_ver < req_ver:
+            passed = False;
+            self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));
          
       osgconfig_file = pj(self.baseDir, 'include', 'OpenSG', 'OSGConfig.h');
       if not os.path.isfile(osgconfig_file):
@@ -177,61 +186,80 @@ class OpenSG(SConsAddons.Options.PackageOption):
          elif lib in ["contrib","Contrib"]:
             lib_names += "Contrib "
       
-      # Returns lists of the options we want
-      opt_option = " --dbg"
-      if optimize:
-         opt_option = " --opt"
-
-      # Call script for output
-      cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags " + lib_names).read().strip()      
-      libs_stripped = os.popen(self.osgconfig_cmd + " --libs " + lib_names).read().strip()
-
-      # Get output from osg-config
-      # Res that when matched against osg-config output should match the options we want
-      # In future could try to use INCPREFIX and other platform neutral stuff
-      inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
-      lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
-      lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
-      link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
-      defines_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
-      optimization_opts_re = re.compile(r'^-(g|O\d)$')
+      if self.osgconfig_cmd:
+         # Returns lists of the options we want
+         opt_option = " --dbg"
+         if optimize:
+            opt_option = " --opt"
+   
+         # Call script for output
+         cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags " + lib_names).read().strip()      
+         libs_stripped = os.popen(self.osgconfig_cmd + " --libs " + lib_names).read().strip()
+   
+         # Get output from osg-config
+         # Res that when matched against osg-config output should match the options we want
+         # In future could try to use INCPREFIX and other platform neutral stuff
+         inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
+         lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
+         lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
+         link_from_lib_re = re.compile(r'((?: |^)-[^lL]\S*)', re.MULTILINE);
+         defines_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
+         optimization_opts_re = re.compile(r'^-(g|O\d)$')
+            
+         # Extract the flags and options from the script output
+         found_cflags = cflags_stripped.split(" ")
+         found_cflags = [s for s in found_cflags if not optimization_opts_re.match(s)]
+         found_cflags = [s for s in found_cflags if not inc_re.match(s)]
+         found_cflags = [s for s in found_cflags if not defines_re.match(s)]
+   
+         found_libs = lib_re.findall(libs_stripped)
+         found_lib_paths = lib_path_re.findall(libs_stripped)
+         found_defines = defines_re.findall(cflags_stripped)
+         found_incs = inc_re.findall(cflags_stripped)
+         found_incs_as_flags = [env["INCPREFIX"] + p for p in found_incs]
          
-      # Extract the flags and options from the script output
-      found_cflags = cflags_stripped.split(" ")
-      found_cflags = [s for s in found_cflags if not optimization_opts_re.match(s)]
-      found_cflags = [s for s in found_cflags if not inc_re.match(s)]
-      found_cflags = [s for s in found_cflags if not defines_re.match(s)]
-
-      found_libs = lib_re.findall(libs_stripped)
-      found_lib_paths = lib_path_re.findall(libs_stripped)
-      found_defines = defines_re.findall(cflags_stripped)
-      found_incs = inc_re.findall(cflags_stripped)
-      found_incs_as_flags = [env["INCPREFIX"] + p for p in found_incs]
-      
-      #print "cflags_stripped: [%s]"%cflags_stripped
-      #print "found cflags:", found_cflags
-      #print "Found: ", found_defines
-      #print "found_incs_as_flags: ", found_incs_as_flags
-      #print "Found incs:", found_incs
-       
-      if len(found_cflags):
-         env.Append(CXXFLAGS = found_cflags);
-      if len(found_libs):
-         env.Append(LIBS = found_libs);
-      else:
-         print "ERROR: Could not find OpenSG libs for libs:%s lib_names:%s" % (libs, lib_names)
-      if len(found_lib_paths):
-         env.Append(LIBPATH = found_lib_paths);
-      else:
-         print "ERROR: Could not find OpenSG lib paths for libs: %s lib_names:%s" % (libs, lib_names)
-         
-      if len(found_incs):
-         if self.useCppPath or useCppPath:
-            env.Append(CPPPATH = found_incs)
+         #print "cflags_stripped: [%s]"%cflags_stripped
+         #print "found cflags:", found_cflags
+         #print "Found: ", found_defines
+         #print "found_incs_as_flags: ", found_incs_as_flags
+         #print "Found incs:", found_incs
+          
+         if len(found_cflags):
+            env.Append(CXXFLAGS = found_cflags);
+         if len(found_libs):
+            env.Append(LIBS = found_libs);
          else:
-            env.Append(CXXFLAGS = found_incs_as_flags)
-      if len(found_defines):
-         env.Append(CPPDEFINES = found_defines)
+            print "ERROR: Could not find OpenSG libs for libs:%s lib_names:%s" % (libs, lib_names)
+         if len(found_lib_paths):
+            env.Append(LIBPATH = found_lib_paths);
+         else:
+            print "ERROR: Could not find OpenSG lib paths for libs: %s lib_names:%s" % (libs, lib_names)
+            
+         if len(found_incs):
+            if self.useCppPath or useCppPath:
+               env.Append(CPPPATH = found_incs)
+            else:
+               env.Append(CXXFLAGS = found_incs_as_flags)
+         if len(found_defines):
+            env.Append(CPPDEFINES = found_defines)
+
+      # If on Windows, just make some very lame assumptions and hope they are correct
+      elif sca_util.GetPlatform() == "win32":
+         lib_map = {"Base":"OSGBase",
+                    "System":"OSGSystem",
+                    "GLUT":"OSGWindowGLUT",
+                    "WIN32":"OSGWIN32",
+                    "Contrib":"OSGContrib"}
+         found_libs = []
+         lib_suffix = ""
+         if not optimize:
+            lib_suffix = "D"
+         for l in lib_names:
+            if lib_map.has_key(l):
+               found_libs.append(lib_map + lib_suffix)
+         env.Append(LIBS = found_libs,
+                    CPPPATH = [pj(self.baseDir,include),])
+         
 
    def getSettings(self):
       return [(self.baseDirKey, self.baseDir),]
