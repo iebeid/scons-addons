@@ -51,6 +51,7 @@ __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 import types, string, os.path
 import SCons.Errors
 import SCons.Util
+import textwrap
 
 # TODO: Port more standard SCons options over to this interface.
 #
@@ -513,16 +514,15 @@ class Options:
         except IOError, x:
             raise SCons.Errors.UserError, 'Error writing options to file: %s\n%s' % (filename, x)
 
-    def GenerateHelpText(self, env, sort=None):
+    def GenerateHelpText(self, env, sort=None, width=80):
         """
         Generate the help text for the options.
 
-        env - an environment that is used to get the current values of the options.
-        sort - A sort method to use
+        env   - an environment that is used to get the current values of the options.
+        sort  - A sort method to use
+        width - max line width
         """
-
-        help_text = "\nOption Modules\n"
-
+        help_text = ""
         if sort:
             options = self.options[:]
             options.sort(lambda x,y,func=sort: func(x.key[0],y.key[0]))
@@ -531,9 +531,14 @@ class Options:
 
         key_list = []
         for o in options:
-            key_list.extend(o.keys)
-                
+            key_list.extend(o.keys)                
         max_key_len = max([len(k) for k in key_list])             # Get max key for spacing
+        leading_indent = ' '*2
+        key_spacing = leading_indent + " "*(max_key_len+2)
+
+        wrapper = textwrap.TextWrapper(width=width,
+                                       initial_indent=leading_indent,
+                                       subsequent_indent=key_spacing)
         
         for option in options:
             if isinstance(option, SeparatorOption):
@@ -543,14 +548,13 @@ class Options:
                     k = option.keys[ki]
                     k_help = option.help
                     if SCons.Util.is_List(option.help):
-                        k_help = option.help[ki]    
-                    help_text = help_text + '   %*s: %s' % (max_key_len, k, k_help)
+                        k_help = option.help[ki]
+                    option_help = '%*s: %s\n' % (max_key_len, k, k_help)
+                    help_text = help_text + wrapper.fill(option_help) + "\n"
     
-                    if env.has_key(k):
-                        #help_text = help_text + '  val: [%s]\n'%env.subst('${%s}'%k)
-                        help_text = help_text + '  val: %s\n'%env[k]
-                    else:
-                        help_text = help_text + '  val: None\n'
+                    if env.has_key(k):                        
+                        help_text = help_text + key_spacing + '[%s]\n'%env[k]
+                    
 
         return help_text
 
