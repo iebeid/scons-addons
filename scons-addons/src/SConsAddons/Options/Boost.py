@@ -222,7 +222,7 @@ class Boost(SConsAddons.Options.PackageOption):
          base_include_dir = pj(self.baseDir, 'include')
          potential_dirs = [base_include_dir, self.baseDir]
          if os.path.isdir(base_include_dir):
-            inc_dirs = pj(base_include_dir, os.listdir(base_include_dir))
+            inc_dirs = [pj(base_include_dir,d) for d in os.listdir(base_include_dir)]
             inc_dirs.sort()
             inc_dirs.reverse()
             potential_dirs.extend(inc_dirs)
