@@ -116,7 +116,6 @@ class OpenSG(SConsAddons.Options.PackageOption):
          except Exception, ex:
             print "using osg-config failed."
             self.osgconfig_cmd = None
-            self.checkRequired("  Running osg-config failed.")
    
    def validate(self, env):
       # Check that path exist
@@ -128,13 +127,20 @@ class OpenSG(SConsAddons.Options.PackageOption):
          self.checkRequired("OpenSG base dir does not exist:%s"%self.baseDir)
          return
       
+      # Check if osg-config is found and if it can be called
       has_config_cmd = os.path.isfile(self.osgconfig_cmd)
+      try:
+         found_ver_str = os.popen(self.osgconfig_cmd + " --version").read().strip()
+         if "" == found_ver_str:
+            has_config_cmd = False               # Set to false because the command is failing.
+      except Exception, ex:
+         self.osgconfig_cmd = None
+         has_config_cmd = False
+
       if not has_config_cmd:
-         print "Can not find osg-config.  Limping along without it."         
+         print "Can not find or use osg-config.  Limping along without it."         
       
-      if has_config_cmd:
-         # Check version requirement
-         found_ver_str = os.popen(self.osgconfig_cmd + " --version").read().strip();
+      if has_config_cmd:      
          req_ver = self.requiredVersion.split(".")
          found_ver = found_ver_str.split(".");
          if found_ver < req_ver:
@@ -258,7 +264,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
             if lib_map.has_key(l):
                found_libs.append(lib_map + lib_suffix)
          env.Append(LIBS = found_libs,
-                    CPPPATH = [pj(self.baseDir,include),])
+                    CPPPATH = [pj(self.baseDir,'include'),])
          
 
    def getSettings(self):
