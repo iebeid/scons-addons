@@ -204,13 +204,18 @@ class Boost(SConsAddons.Options.PackageOption):
          print "Boost, autofinding toolset... ",
          
          if env["CC"] == "gcc":
-            self.toolset = "gcc"
+            if sca_util.GetPlatform() == 'mac':
+               self.toolset = "darwin"
+            else:
+               self.toolset = "gcc"
          elif env["CC"] == "cl" and env.has_key("MSVS"):
             ver = env["MSVS"]["VERSION"]
             if "7.1" == ver:
                self.toolset = "vc71"
             elif "7.0" == ver:
                self.toolset = "vc7"
+         elif sca_util.GetPlatform() == 'mac' and env['CC'] == 'cc':
+            self.toolset = "darwin"
          else:
             self.checkRequired("Could not auto determine boost toolset.")
             return
