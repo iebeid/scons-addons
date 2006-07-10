@@ -372,9 +372,9 @@ def msvc_misc(bldr, env):
    # Exception handling
    if bldr.exceptionsEnabled:
       if env["MSVS"]["VERSION"] >= "7.1":
-         env.Append(CCFLAGS='/EHsc')
+         env.Append(CCFLAGS=['/EHsc',])
       else:
-         env.Append(CCFLAGS='/GX')
+         env.Append(CCFLAGS=['/GX',])
 
    # RTTI
    if bldr.rttiEnabled:
@@ -392,8 +392,8 @@ default_funcs.append([['cl'],[],msvc_misc])
 # ---- DEFAULT ---- #
 def default_debug_define(bldr,env):
    if EnvironmentBuilder.NONE != bldr.optLevel and EnvironmentBuilder.NONE == bldr.debugLevel:
-      env.Append(CPPDEFINES="NDEBUG")
+      env.Append(CPPDEFINES=["NDEBUG",])
    elif EnvironmentBuilder.NONE == bldr.optLevel and EnvironmentBuilder.NONE != bldr.debugLevel:
-      env.Append(CPPDEFINES="_DEBUG")
+      env.Append(CPPDEFINES=["_DEBUG",])
 
 default_funcs.append([[],[],default_debug_define])
