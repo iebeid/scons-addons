@@ -87,7 +87,8 @@ class Boost(SConsAddons.Options.PackageOption):
    def setupLibrarySettings(self):
       # Map from library name to header to check for       
       self.headerMap = { 'program_options':'boost/program_options.hpp',
-                         'python':'boost/python.hpp',
+                         #'python':'boost/python.hpp',
+                         'python':'boost/python/enum.hpp',
                          'signals':'boost/signal.hpp',
                          'thread':'boost/thread.hpp',
                          'filesystem':'boost/filesystem/path.hpp' }
@@ -113,7 +114,7 @@ class Boost(SConsAddons.Options.PackageOption):
          # Link flags that may be needed on unix for the embedded case
          self.python_embedded_link_flags = distutils.sysconfig.get_config_var('LINKFORSHARED')
          #self.python_embedded_link_flags = "-Wl,-export-dynamic"
-         self.python_lib_path = [""]    # On unix, just in normal paths
+         self.python_lib_path = pj(sys.prefix,'lib')
          self.python_static_lib_path = distutils.sysconfig.get_python_lib(standard_lib=True) + "/config"         
          self.python_extra_libs = ["python"+self.python_version, "util", "pthread", "dl"]  # See SHLIBS
          self.thread_extra_libs = ["pthread","dl"]
@@ -310,14 +311,15 @@ class Boost(SConsAddons.Options.PackageOption):
          if "python" == libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
-                            LIBS = [full_libname,] + self.python_extra_libs
+                            #LIBS = [full_libname,] + self.python_extra_libs
+                            LIBS = self.python_extra_libs
                          )
          
          # Thread library needs some additional libraries on Linux... (yuck)
          if "thread" == libname:
             conf_env.Append(LIBS = [full_libname,] + self.thread_extra_libs)
          
-         conf_ctxt =Configure(conf_env)
+         conf_ctxt = Configure(conf_env)
          result = conf_ctxt.CheckLibWithHeader(full_libname, header_to_check, "c++")
            
          if not result:
