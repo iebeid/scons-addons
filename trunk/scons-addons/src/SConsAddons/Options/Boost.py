@@ -104,13 +104,16 @@ class Boost(SConsAddons.Options.PackageOption):
       self.python_inc_dir = distutils.sysconfig.get_python_inc()
       if sca_util.GetPlatform() == "win32":
          self.python_embedded_link_flags = ""
-         self.python_static_lib_path = pj(sys.prefix,'libs')
+         self.python_lib_path = pj(sys.prefix,'libs')
+         self.python_static_lib_path = [""]                   # There is no static lib on win32
          lib_python_fname = 'python' + self.python_version.replace('.','')
          self.python_extra_libs = [lib_python_fname,]
          self.thread_extra_libs = []
       else:
-         #python_embedded_link_flags = distutils.sysconfig.get_config_var('LINKFORSHARED')
-         self.python_embedded_link_flags = "-Wl,-export-dynamic"
+         # Link flags that may be needed on unix for the embedded case
+         self.python_embedded_link_flags = distutils.sysconfig.get_config_var('LINKFORSHARED')
+         #self.python_embedded_link_flags = "-Wl,-export-dynamic"
+         self.python_lib_path = [""]    # On unix, just in normal paths
          self.python_static_lib_path = distutils.sysconfig.get_python_lib(standard_lib=True) + "/config"         
          self.python_extra_libs = ["python"+self.python_version, "util", "pthread", "dl"]  # See SHLIBS
          self.thread_extra_libs = ["pthread","dl"]
@@ -301,7 +304,7 @@ class Boost(SConsAddons.Options.PackageOption):
          conf_env.Append(CPPPATH= self.found_incs, LIBPATH = self.found_lib_paths)
          if "python" == libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
-                            LIBPATH = self.python_static_lib_path,
+                            LIBPATH = self.python_lib_path,
                             LIBS = [full_libname,] + self.python_extra_libs
                          )
          
@@ -351,13 +354,15 @@ class Boost(SConsAddons.Options.PackageOption):
       self.applyPythonEmbeddedEnv(env)
 
    def applyPythonEmbeddedEnv(self,env):
-      """ Update the environment for building python embedded """
+      """ Update the environment for building python embedded. 
+          XXX: may need python_static_lib_path.
+      """
       self.apply(env)
       #print "Full python lib name:", self.buildFullLibName('python')
       env.Append(LIBS = [self.buildFullLibName('python')])
       env.Append(CPPPATH = [self.python_inc_dir,],
                  LINKFLAGS = self.python_embedded_link_flags,
-                 LIBPATH = self.python_static_lib_path,
+                 LIBPATH = self.python_lib_path,
                  LIBS = self.python_extra_libs)
 
    
@@ -373,11 +378,14 @@ class Boost(SConsAddons.Options.PackageOption):
       self.apply(env)
       env.Append(LIBS = self.buildFullLibName("python") )    # Add on the boost python library
       env.Append(CPPPATH = [self.python_inc_dir,],
-                 #LIBPATH = self.python_static_lib_path,
+                 LIBPATH = self.python_lib_path,
                  LIBS = self.python_extra_libs)
 
             
       env["SHLIBPREFIX"] = ""                    # Clear the library prefix settings
+      if sca_util.GetPlatform == "win32":
+         env["SHLIBSUFFIX"] = ".pyd"
+         
       if(sca_util.GetPlatform() == "linux"):
          env['CXXCOM'] += " ; objcopy --set-section-flags .debug_str=contents,debug $TARGET"
          env['SHCXXCOM'] += " ; objcopy -v --set-section-flags .debug_str=contents,debug $TARGET $TARGET"
