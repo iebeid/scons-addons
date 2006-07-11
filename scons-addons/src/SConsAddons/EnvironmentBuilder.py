@@ -221,17 +221,17 @@ def gcc_debug(bldr, env):
    #print "Calling gcc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
-   env.Append(CCFLAGS="-g")
+   env.Append(CCFLAGS=["-g",])
 
 def gcc_warnings(bldr, env):
    CCFLAGS = []
    
    if EnvironmentBuilder.NONE == bldr.warningLevel:
-      CCFLAGS.append('-w')
+      CCFLAGS.append(['-w',])
    if bldr.warningLevel == EnvironmentBuilder.MINIMAL:
       pass
    elif bldr.warningLevel == EnvironmentBuilder.STANDARD:
-      CCFLAGS.append('-Wall')
+      CCFLAGS.append(['-Wall',])
    elif bldr.warningLevel == EnvironmentBuilder.EXTENSIVE:
       CCFLAGS.append(['-Wall','-Wextra'])
    elif bldr.warningLevel == EnvironmentBuilder.MAXIMUM:
@@ -239,16 +239,16 @@ def gcc_warnings(bldr, env):
 
    # warnings as errors
    if EnvironmentBuilder.WARN_AS_ERROR in bldr.debugTags:
-      CCFLAGS.append('-Werror')
+      CCFLAGS.append(['-Werror',])
    
    if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
-      CCFLAGS.append('-pedantic')
+      CCFLAGS.append(['-pedantic',])
       
    env.Append(CCFLAGS=CCFLAGS)
    
 def gcc_misc(bldr, env):
    if bldr.profEnabled:
-      env.Append(CCFLAGS="-pg", LINKFLAGS='-pg')
+      env.Append(CCFLAGS=["-pg",], LINKFLAGS=['-pg',])
 
 def gcc_linux_misc(bldr, env):
    assert isinstance(bldr, EnvironmentBuilder)
@@ -312,14 +312,14 @@ def msvc_optimizations(bldr, env):
       if bldr.optLevel == EnvironmentBuilder.MINIMAL:
          CCFLAGS.extend(['/Ot','/Og'])
       elif bldr.optLevel == EnvironmentBuilder.STANDARD:
-         CCFLAGS.append('/O2')
+         CCFLAGS.append(['/O2'])
       elif ((bldr.optLevel == EnvironmentBuilder.EXTENSIVE) or
             (bldr.optLevel == EnvironmentBuilder.MAXIMUM)):
-         CCFLAGS.append('/Ox')
+         CCFLAGS.append(['/Ox'])
 
    # Fast math
    if EnvironmentBuilder.FAST_MATH in bldr.optTags:
-      CCFLAGS.append('/fp:fast')
+      CCFLAGS.append(['/fp:fast'])
    
    # TODO: Do architecture specific optimizations here
    # /arch:SSE/SEE2 /G1 /G2 
@@ -340,22 +340,22 @@ def msvc_warnings(bldr, env):
    CCFLAGS = []
    
    if EnvironmentBuilder.NONE == bldr.warningLevel:
-      CCFLAGS.append('/W0')
+      CCFLAGS.append(['/W0'])
    if bldr.warningLevel == EnvironmentBuilder.MINIMAL:
-      CCFLAGS.append('/W1')
+      CCFLAGS.append(['/W1'])
    elif bldr.warningLevel == EnvironmentBuilder.STANDARD:
-      CCFLAGS.append('/W2')
+      CCFLAGS.append(['/W2'])
    elif bldr.warningLevel == EnvironmentBuilder.EXTENSIVE:
-      CCFLAGS.append('/W3')
+      CCFLAGS.append(['/W3'])
    elif bldr.warningLevel == EnvironmentBuilder.MAXIMUM:
-      CCFLAGS.append('/Wall')
+      CCFLAGS.append(['/Wall'])
 
    # warnings as errors
    if EnvironmentBuilder.WARN_AS_ERROR in bldr.debugTags:
-      CCFLAGS.append('/WX')
+      CCFLAGS.append(['/WX'])
    
    if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
-      CCFLAGS.append('/Za')
+      CCFLAGS.append(['/Za'])
       
    env.Append(CCFLAGS=CCFLAGS)
    
@@ -367,7 +367,7 @@ def msvc_misc(bldr, env):
               EnvironmentBuilder.MSVC_MT_DBG_RT:'/MTd'
             }   
    if rt_map.has_key(bldr.msvcRuntime):
-      env.Append(CCFLAGS=rt_map[bldr.msvcRuntime])
+      env.Append(CCFLAGS=[rt_map[bldr.msvcRuntime]])
 
    # Exception handling
    if bldr.exceptionsEnabled:
@@ -378,7 +378,7 @@ def msvc_misc(bldr, env):
 
    # RTTI
    if bldr.rttiEnabled:
-      env.Append(CCFLAGS="/GR")
+      env.Append(CCFLAGS=["/GR"])
       
    # Default defines
    env.Append(CPPDEFINES=["WIN32","_WINDOWS"])
