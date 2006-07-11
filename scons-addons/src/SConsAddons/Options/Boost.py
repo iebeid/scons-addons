@@ -274,8 +274,7 @@ class Boost(SConsAddons.Options.PackageOption):
                                 ver_file_contents)
       if lib_ver_match:
          self.libVersionStr = lib_ver_match.group(1)
-      else:
-         print "WARNING: Could not determine library version string"
+      else:         
          print "WARNING: Could not determine library version string"
          self.libVersionStr = None
 
