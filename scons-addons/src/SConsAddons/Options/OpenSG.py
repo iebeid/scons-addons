@@ -133,12 +133,12 @@ class OpenSG(SConsAddons.Options.PackageOption):
          found_ver_str = os.popen(self.osgconfig_cmd + " --version").read().strip()
          if "" == found_ver_str:
             has_config_cmd = False               # Set to false because the command is failing.
-      except Exception, ex:
-         self.osgconfig_cmd = None
+      except Exception, ex:         
          has_config_cmd = False
 
       if not has_config_cmd:
-         print "Can not find or use osg-config.  Limping along without it."         
+         print "Can not find or use osg-config.  Limping along without it."
+         self.osgconfig_cmd = None         
       
       if has_config_cmd:      
          req_ver = self.requiredVersion.split(".")
