@@ -52,22 +52,27 @@ class OpenSG(SConsAddons.Options.PackageOption):
          required - Is the dependency required?  (if so we exit on errors)
          useCppPath - Should includes be put in cpp path environment
       """
-      help_text = """Base directory for OpenSG. (bin should be under this directory for osg-config).""";
-      self.baseDirKey = "OpenSGBaseDir";
-      self.requiredVersion = requiredVersion;
-      self.required = required;
+      help_text = ["Base directory for OpenSG. (bin should be under this directory for osg-config).",
+                   "Optional directory that contains OpenSG dependencies. include and lib will be added to paths."]
+      self.baseDirKey = "OpenSGBaseDir"
+      self.depDirKey = "OpenSGDepDir"
+      self.requiredVersion = requiredVersion
+      self.required = required
       self.useCppPath = useCppPath
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text);
+      SConsAddons.Options.LocalUpdateOption.__init__(self, name, 
+                              [self.baseDirKey,self.depDirKey], 
+                              help_text)
       
       # configurable options
-      self.baseDir = None;
-      self.osgconfig_cmd = None;
+      self.baseDir = None
+      self.depDir = None
+      self.osgconfig_cmd = None
 
       # Settings to use
-      self.found_libs = None;
-      self.found_cflags = None;
-      self.found_lib_paths = None;
-      self.found_defines = None;
+      self.found_libs = None
+      self.found_cflags = None
+      self.found_lib_paths = None
+      self.found_defines = None
       
    def checkRequired(self, msg):
       """ Called when there is config problem.  If required, then exit with error message """
@@ -86,7 +91,13 @@ class OpenSG(SConsAddons.Options.PackageOption):
          self.baseDir = optDict[self.baseDirKey]
          self.osgconfig_cmd = pj(self.baseDir, 'bin', 'osg-config')
          if self.verbose:
-            print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir);
+            print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir)
+      if optDict.has_key(self.depDirKey):          
+         self.depDir = optDict[self.depDirKey]
+         if self.verbose:
+            print "   %s specified or cached. [%s]."% (self.depDirKey, self.depDir)
+      else:
+         print "   Did not find key:", self.depDirKey
         
    def find(self, env):
       # Quick exit if nothing to find
@@ -171,26 +182,24 @@ class OpenSG(SConsAddons.Options.PackageOption):
           optimize: If true use --opt option
           useCppPath: If true, then put the include paths into the CPPPATH variable.
       """
-
-      if not (type(libs) in (types.TupleType, types.ListType)):
-         libs = (libs,)
-
-      lib_names = ""
+      #if not (type(libs) in (types.TupleType, types.ListType)):
+      #   libs = (libs,)      
       if not isinstance(libs, list):
-         libs = [libs]
-      for lib in libs:
-         if lib in ["base","Base"]:
-            lib_names += "Base "
-         elif lib in ["system","System"]:
-            lib_names += "System "
-         elif lib in ["GLUT","glut","Glut"]:
-            lib_names += "GLUT "
-         elif lib in ["X","x"]:
-            lib_names += "X "
-         elif lib in ["QT","qt"]:
-            lib_names += "QT "
-         elif lib in ["contrib","Contrib"]:
-            lib_names += "Contrib "
+         libs = [libs,]
+      
+      # Ensure we are using standardized naming
+      naming_map = { ("base","Base"):"Base",
+                     ("system","System"):"System",
+                     ("GLUT","glut","Glut"):"GLUT",
+                     ("X","x"):"X",
+                     ("QT","qt"):"QT",
+                     ("contrib","Contrib"):"Contrib" }      
+      for i in range(len(libs)):
+         for (name_list,norm_name) in naming_map.iteritems():
+            if libs[i] in name_list:
+               libs[i] = norm_name
+      lib_names_str = " ".join(libs)      # List of library names as a string for osg-config
+      print "lib_names_str: ", lib_names_str
       
       if self.osgconfig_cmd:
          # Returns lists of the options we want
@@ -199,8 +208,8 @@ class OpenSG(SConsAddons.Options.PackageOption):
             opt_option = " --opt"
    
          # Call script for output
-         cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags " + lib_names).read().strip()      
-         libs_stripped = os.popen(self.osgconfig_cmd + " --libs " + lib_names).read().strip()
+         cflags_stripped = os.popen(self.osgconfig_cmd + opt_option + " --cflags " + lib_names_str).read().strip()      
+         libs_stripped = os.popen(self.osgconfig_cmd + " --libs " + lib_names_str).read().strip()
    
          # Get output from osg-config
          # Res that when matched against osg-config output should match the options we want
@@ -235,11 +244,11 @@ class OpenSG(SConsAddons.Options.PackageOption):
          if len(found_libs):
             env.Append(LIBS = found_libs);
          else:
-            print "ERROR: Could not find OpenSG libs for libs:%s lib_names:%s" % (libs, lib_names)
+            print "ERROR: Could not find OpenSG libs for libs:%s lib_names_str:%s" % (libs, lib_names_str)
          if len(found_lib_paths):
             env.Append(LIBPATH = found_lib_paths);
          else:
-            print "ERROR: Could not find OpenSG lib paths for libs: %s lib_names:%s" % (libs, lib_names)
+            print "ERROR: Could not find OpenSG lib paths for libs: %s lib_names_str:%s" % (libs, lib_names_str)
             
          if len(found_incs):
             if self.useCppPath or useCppPath:
@@ -251,24 +260,65 @@ class OpenSG(SConsAddons.Options.PackageOption):
 
       # If on Windows, just make some very lame assumptions and hope they are correct
       elif sca_util.GetPlatform() == "win32":
-         lib_map = {"Base":"OSGBase",
-                    "System":"OSGSystem",
-                    "GLUT":"OSGWindowGLUT",
-                    "WIN32":"OSGWIN32",
-                    "Contrib":"OSGContrib"}
+         lib_map = {"Base":["OSGBase",],
+                    "System":["OSGSystem","OSGBase"],
+                    "GLUT":["OSGWindowGLUT","OSGSystem","OSGBase"],
+                    "WIN32":["OSGWIN32",],
+                    "Contrib":["OSGContrib","OSGSystem","OSGBase"]}         
+         
          found_libs = []
          lib_suffix = ""
          if not optimize:
             lib_suffix = "D"
-         for l in lib_names:
+         for l in libs:
+            print "Checking: ", l
+            print "has_key: ", lib_map.has_key(l)
             if lib_map.has_key(l):
-               found_libs.append(lib_map + lib_suffix)
-         env.Append(LIBS = found_libs,
-                    CPPPATH = [pj(self.baseDir,'include'),])
+               found_libs.extend([lib+lib_suffix for lib in lib_map[l]])
+               
+         lib_path = pj(self.baseDir,'lib')
+         inc_path = pj(self.baseDir,'include')
+         if not os.path.exists(lib_path):
+            print "ERROR: Could not find OpenSG lib path.  tried: ", lib_path
+         if not os.path.exists(inc_path):
+            print "ERROR: Could not find OpenSG include path.  tried: ", inc_path
+         
+         env.AppendUnique(LIBS = found_libs,
+                    LIBPATH = [lib_path,],
+                    CPPPATH = [inc_path,])
+         
+         # XXX: Hack to apply extra info that I would like to get from osg-config
+         # if it only worked without cygwin
+         common_cppdefines = ["WIN32","_WINDOWS","WINVER=0x0400",("_WIN32_WINDOWS","0x0410"),
+                       ("_WIN32_WINNT","0x0400"), "_OSG_HAVE_CONFIGURED_H_",
+		                  "OSG_BUILD_DLL",  "OSG_WITH_TIF", "OSG_WITH_JPG",
+		                  "OSG_WITH_PNG", "OSG_WITH_GIF"]
+         debug_cppdefines = ["_DEBUG","OSG_DEBUG"]   
+         common_libs = ["tif32","libjpeg","libpng","opengl32","glu32",
+                        "gdi32","user32","kernel32","winmm","wsock32"]
+               
+         env.Append(CPPDEFINES=common_cppdefines,
+                    LIBS=common_libs)
+         if not optimize:
+            env.Append(CPPDEFINES=debug_cppdefines)         
+              
+         print "---------------------\nApplying OpenSG:\n-----------------"
+         print "lib_map: ", lib_map
+         print "libs: ", libs
+         print "found libs: ", found_libs
+         print "----------------------------------"
+      
+      # Apply dep dir settings if we have them
+      print "apply: depDir: ", self.depDir
+      if self.depDir:
+         print "Apply: Have depdir:", self.depDir
+         env.Append(CPPPATH=[pj(self.depDir,'include'),],
+                    LIBPATH=[pj(self.depDir,'lib'),])
+         print "   LIBPATH:", env["LIBPATH"]
          
 
    def getSettings(self):
-      return [(self.baseDirKey, self.baseDir),]
+      return [(self.baseDirKey, self.baseDir),(self.depDirKey,self.depDir)]
 
    def dumpSettings(self):
       "Write out the settings"
