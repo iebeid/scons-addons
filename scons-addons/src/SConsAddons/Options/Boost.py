@@ -70,7 +70,7 @@ class Boost(SConsAddons.Options.PackageOption):
       self.use_mt = useMt
       self.use_debug = useDebug 
       self.use_ver = useVersion
-      print "Use debug set to:", self.use_debug
+      #print "Use debug set to:", self.use_debug
 
    def setToolset(self, toolset):
       self.toolset = toolset
