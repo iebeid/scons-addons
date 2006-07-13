@@ -145,7 +145,7 @@ class OSG(SConsAddons.Options.PackageOption):
 
       env.Append(LIBPATH = [os.path.join(self.baseDir, 'lib')])
       env.Append(LIBS = ['osgText', 'osgProducer', 'Producer', 'osgText',
-                         'osgGA', 'osgDB', 'osgUtil', 'osg'])
+                         'osgGA', 'osgDB', 'osgUtil', 'osg', 'OpenThreads'])
 
    def getSettings(self):
       return [(self.baseDirKey, self.baseDir),]
