@@ -33,6 +33,7 @@ import sys
 import os
 import re
 import string
+import distutils.util
 
 from SCons.Util import WhereIs
 pj = os.path.join
@@ -144,6 +145,9 @@ class OSG(SConsAddons.Options.PackageOption):
          env.Append(CXXFLAGS = [inc_dir])
 
       env.Append(LIBPATH = [os.path.join(self.baseDir, 'lib')])
+      if distutils.util.get_platform().find('x86_64') != -1:
+         env.Append(LIBPATH = [os.path.join(self.baseDir, 'lib64')])
+
       env.Append(LIBS = ['osgText', 'osgProducer', 'Producer', 'osgText',
                          'osgGA', 'osgDB', 'osgUtil', 'osg', 'OpenThreads'])
 
