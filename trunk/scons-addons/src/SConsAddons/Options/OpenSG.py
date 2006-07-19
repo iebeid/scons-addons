@@ -199,7 +199,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
             if libs[i] in name_list:
                libs[i] = norm_name
       lib_names_str = " ".join(libs)      # List of library names as a string for osg-config
-      print "lib_names_str: ", lib_names_str
+      #print "lib_names_str: ", lib_names_str
       
       if self.osgconfig_cmd:
          # Returns lists of the options we want
@@ -271,8 +271,8 @@ class OpenSG(SConsAddons.Options.PackageOption):
          if not optimize:
             lib_suffix = "D"
          for l in libs:
-            print "Checking: ", l
-            print "has_key: ", lib_map.has_key(l)
+            #print "Checking: ", l
+            #print "has_key: ", lib_map.has_key(l)
             if lib_map.has_key(l):
                found_libs.extend([lib+lib_suffix for lib in lib_map[l]])
                
@@ -294,6 +294,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
 		                  "OSG_BUILD_DLL",  "OSG_WITH_TIF", "OSG_WITH_JPG",
 		                  "OSG_WITH_PNG", "OSG_WITH_GIF"]
          debug_cppdefines = ["_DEBUG","OSG_DEBUG"]   
+         glut_cppdefines = ["OSG_WITH_GLUT",]
          common_libs = ["tif32","libjpeg","libpng","opengl32","glu32",
                         "gdi32","user32","kernel32","winmm","wsock32"]
                
@@ -301,20 +302,22 @@ class OpenSG(SConsAddons.Options.PackageOption):
                     LIBS=common_libs)
          if not optimize:
             env.Append(CPPDEFINES=debug_cppdefines)         
+         if "GLUT" in libs:
+            env.Append(CPPDEFINES=glut_cppdefines)
               
-         print "---------------------\nApplying OpenSG:\n-----------------"
-         print "lib_map: ", lib_map
-         print "libs: ", libs
-         print "found libs: ", found_libs
-         print "----------------------------------"
+         #print "---------------------\nApplying OpenSG:\n-----------------"
+         #print "lib_map: ", lib_map
+         #print "libs: ", libs
+         #print "found libs: ", found_libs
+         #print "----------------------------------"
       
       # Apply dep dir settings if we have them
-      print "apply: depDir: ", self.depDir
+      #print "apply: depDir: ", self.depDir
       if self.depDir:
-         print "Apply: Have depdir:", self.depDir
+         #print "Apply: Have depdir:", self.depDir
          env.Append(CPPPATH=[pj(self.depDir,'include'),],
                     LIBPATH=[pj(self.depDir,'lib'),])
-         print "   LIBPATH:", env["LIBPATH"]
+         #print "   LIBPATH:", env["LIBPATH"]
          
 
    def getSettings(self):
