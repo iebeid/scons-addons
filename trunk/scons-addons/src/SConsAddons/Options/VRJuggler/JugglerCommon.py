@@ -196,15 +196,15 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
       """ Add environment options for building against vrj-based library"""
       if self.found_incs:
          if self.useCppPath or useCppPath:
-            env.Append(CPPPATH = self.found_incs)
+            env.AppendUnique(CPPPATH = self.found_incs)
          else:
-            env.Append(CXXFLAGS = self.found_incs_as_flags)
+            env.AppendUnique(CXXFLAGS = self.found_incs_as_flags)
       if self.found_libs:
-         env.Append(LIBS = self.found_libs)
+         env.AppendUnique(LIBS = self.found_libs)
       if self.found_lib_paths:
-         env.Append(LIBPATH = self.found_lib_paths)
+         env.AppendUnique(LIBPATH = self.found_lib_paths)
       if self.found_link_from_libs:
-         env.Append(LINKFLAGS = self.found_link_from_libs)
+         env.AppendUnique(LINKFLAGS = self.found_link_from_libs)
    
    def getSettings(self):
       return [(self.baseDirKey, self.baseDir),]
