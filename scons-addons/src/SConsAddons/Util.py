@@ -61,16 +61,27 @@ def GetPlatform():
 
 def GetArch():
    """ Return identifier for CPU architecture. """
-   platform = distutils.util.get_platform()
-   arch = ""
-   if re.search(r'i.86', platform):
-      arch = 'ia32'
-   # x86_64 (aka, x64, EM64T)
-   elif re.search(r'x86_64', platform):
-      arch = 'x86_64'
-      # PowerPC
-   elif re.search(r'Power_Mac', platform):
-      arch = 'ppc'
+   if 0:
+      platform = distutils.util.get_platform()
+      arch = ""
+      if re.search(r'i.86', platform):
+         arch = 'ia32'
+      # x86_64 (aka, x64, EM64T)
+      elif re.search(r'x86_64', platform):
+         arch = 'x86_64'
+         # PowerPC
+      elif re.search(r'Power_Mac', platform):
+         arch = 'ppc'
+   else:
+      arch_str = os.uname()[4]
+      if re.search(r'i.86', arch_str):
+         arch = 'ia32'
+      # x86_64 (aka, x64, EM64T)
+      elif re.search(r'x86_64', arch_str):
+         arch = 'x86_64'
+         # PowerPC
+      elif re.search(r'Power_Mac', arch_str):
+         arch = 'ppc'
    
    return arch
 
