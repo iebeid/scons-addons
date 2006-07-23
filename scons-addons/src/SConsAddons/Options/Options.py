@@ -562,7 +562,7 @@ class Options:
         except IOError, x:
             raise SCons.Errors.UserError, 'Error writing options to file: %s\n%s' % (filename, x)
 
-    def GenerateHelpText(self, env, sort=None, width=80):
+    def GenerateHelpText(self, env, sort=None, width=0):
         """
         Generate the help text for the options.
 
@@ -570,6 +570,15 @@ class Options:
         sort  - A sort method to use
         width - max line width
         """
+        # Find width
+        if 0 == width:
+            try:
+                import curses
+                curses.setupterm()
+                width = curses.tigetnum('cols')
+            except:
+                width = 80
+        
         help_text = ""
         if sort:
             options = self.options[:]
