@@ -12,7 +12,7 @@ import SCons.Util
 import SConsAddons.Util
 import sys,os,re,string
 
-if SConsAddons.Util.GetPlatform()=='mac':
+if SConsAddons.Util.GetPlatform()=='darwin':
    True = 1
    False = 0
 

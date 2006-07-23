@@ -53,7 +53,7 @@ def GetPlatform():
    elif string.find(sys.platform, 'sunos') != -1:
       return 'sunos'
    elif string.find(sys.platform, 'darwin' ) != -1:
-      return 'mac'
+      return 'darwin'
    elif os.name == 'os2':
       return 'os2'
    else:

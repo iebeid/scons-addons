@@ -141,7 +141,7 @@ class Boost(SConsAddons.Options.PackageOption):
       debug_ext = "-d"
       if sca_util.GetPlatform() == "win32":
          debug_ext = "-gd"     # Hack for now assuming debug code and runtime
-      if sca_util.GetPlatform() != 'mac':
+      if sca_util.GetPlatform() != 'darwin':
          fullname = fullname + "-" + self.toolset
          if self.use_mt:
             fullname += "-mt"
@@ -233,7 +233,7 @@ class Boost(SConsAddons.Options.PackageOption):
          print "   Boost, autofinding toolset... ",
          
          if env["CC"] == "gcc":
-            if sca_util.GetPlatform() == 'mac':
+            if sca_util.GetPlatform() == 'darwin':
                self.toolset = "darwin"
             else:
                self.toolset = "gcc"
@@ -243,7 +243,7 @@ class Boost(SConsAddons.Options.PackageOption):
                self.toolset = "vc71"
             elif "7.0" == ver:
                self.toolset = "vc7"
-         elif sca_util.GetPlatform() == 'mac' and env['CC'] == 'cc':
+         elif sca_util.GetPlatform() == 'darwin' and env['CC'] == 'cc':
             self.toolset = "darwin"
          else:
             self.checkRequired("Could not auto determine boost toolset.")

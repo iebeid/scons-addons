@@ -294,7 +294,7 @@ default_funcs.append([['gcc','g++'],[],gcc_debug])
 default_funcs.append([['gcc','g++'],[],gcc_warnings])
 default_funcs.append([['gcc','g++'],[],gcc_misc])
 default_funcs.append([['gcc','g++'],['linux'],gcc_linux_misc])
-default_funcs.append([['gcc','g++'],['mac'],gcc_darwin_misc])
+default_funcs.append([['gcc','g++'],['darwin'],gcc_darwin_misc])
 
 
 # ---- Irix ---- #
