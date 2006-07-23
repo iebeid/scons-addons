@@ -296,6 +296,44 @@ default_funcs.append([['gcc','g++'],[],gcc_misc])
 default_funcs.append([['gcc','g++'],['linux'],gcc_linux_misc])
 default_funcs.append([['gcc','g++'],['mac'],gcc_darwin_misc])
 
+
+# ---- Irix ---- #
+# XXX: Irix support is very minimal at this time.  
+#      I don't have access to an Irix box anymore and I don't compile
+#      code for Irix very often.  This could be easily extended to support
+#      many more features (archs, warnings, etc)
+def irix_opt(bldr, env):
+   if EnvironmentBuilder.NONE == bldr.optLevel:
+      return
+   
+   CCFLAGS = []
+   
+   if bldr.optLevel == EnvironmentBuilder.MINIMAL:
+      CCFLAGS.append('-O1')
+   elif bldr.optLevel == EnvironmentBuilder.STANDARD:
+      CCFLAGS.append('-O2')
+   elif ((bldr.optLevel == EnvironmentBuilder.EXTENSIVE) or
+         (bldr.optLevel == EnvironmentBuilder.MAXIMUM)):
+      CCFLAGS.append('-O3')
+
+   # TODO: Do architecture specific optimizations here
+   env.Append(CXXFLAGS=CXXFLAGS, CCFLAGS=CCFLAGS, CPPDEFINES=CPPDEFINES)
+
+def irix_debug(bldr, env):
+   #print "Calling gcc_debug."
+   if EnvironmentBuilder.NONE == bldr.debugLevel:
+      return
+   env.Append(CCFLAGS=["-g",])
+
+def irix_misc(bldr, env):
+   CCFLAGS = []
+   env.Append(CXXFLAGS=["-mips3","-LANG:std","-n32"])
+
+default_funcs.append([['cc',],['irix'],irix_opt])
+default_funcs.append([['cc',],['irix'],irix_debug])
+default_funcs.append([['cc',],['irix'],irix_misc])
+
+
 # ---- MSVC ---- #      
 def msvc_optimizations(bldr, env):
    if EnvironmentBuilder.NONE == bldr.optLevel:
