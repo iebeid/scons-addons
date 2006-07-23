@@ -25,6 +25,54 @@ common code used for variant handling.
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
+import os, sys, re
+import SConsAddons.Util as sca_util
+import SConsAddons.EnvironmentBuilder as sca_envbldr
+import SCons.Defaults
+import SCons.Environment
+import SCons.Node.FS
+import SCons.Util
+
+
+class VariantsHelper(object):
+   """ Helper class for managing builds using variants and some standard conventions.
+       Note: This class may not be fully general as it is setup to meet some conventions
+       that I have found helpful but not necessarily what everyone else may want.
+       Also note that the class may end up feeling rather monolithic.  Once again,
+       this is simply because it is trying to reuse code across multiple builds.
+       
+       variantKeys - List of default variant keys to use.  Valid values include:
+          type - runtime type (debug,optimize,hybrid)
+          libtype - shared,static
+          arch - ia32, x64, ppc, ppc64, etc
+   """
+
+   def __init__(self, variantKeys=["type","libtype","arch"]):
+      
+      # List of variants that we are using.
+      # - variants[key] - ([option_list,], is alternative)
+      self.variants = {}
+      self.fillDefaultVariants(variantKeys)
+      
+      
+   def fillDefaultVariants(self, varKeys):
+      """ Fill the variants variable with default allowable settings. """
+      if "type" in varKeys:
+         self.variants["type"] = (["debug","optimized"], True)
+         if sca_util.GetPlatform() == "win32":
+            self.variants["type"][0].append("hybrid")
+      
+      if "libtype" in varKeys:
+         self.variants["libtypes"] = (["static","shared"], False)
+      
+      if "arch" in varKeys:
+         valid_archs = sca_envbldr.detectValidArchs()
+         if len(valid_archs) == 0:
+            valid_archs = ["default"]
+         print "Valid archs: ", valid_archs
+         self.variants["arch"] = (valid_archs[:], True)
+
+
 
 
 def zipVariants(variantMap):
@@ -92,3 +140,5 @@ def zipVariants(variantMap):
    #pprint.pprint(ret_combos)
    
    return ret_combos
+
+   
