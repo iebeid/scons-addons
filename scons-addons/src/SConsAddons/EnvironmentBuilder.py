@@ -29,6 +29,9 @@ default_funcs = []
 class EnvironmentBuilder(object):
    """ Builder class for scons environments.
        Used to build up an environment based on user settings.
+       
+       There are default settings for all levels.  These settings can be overriden
+       through the class interface or through the supported options processing.
    """
    # Level options
    NONE = 0
@@ -85,6 +88,14 @@ class EnvironmentBuilder(object):
       # List of [ [compilers], [platforms], func ]
       # If compiler or platform list is empty, then ignore that check
       self.funcList     = copy.copy(default_funcs)
+      
+      # Defaults:  These levels are applied if the user just enables with no level      
+      self.defaultDebugLevel   = EnvironmentBuilder.STANDARD
+      self.defaultOptLevel     = EnvironmentBuilder.STANDARD
+      self.defaultWarningLevel = EnvironmentBuilder.STANDARD
+
+   def clone(self):
+      return copy.copy(self)
 
    def buildEnvironment(self, options=None, variant=None, **kw):
       """ Build an environment object and apply any options to it.
@@ -113,13 +124,17 @@ class EnvironmentBuilder(object):
       self._applyOptionsToEnvironment(env)
       return env
 
-   def enableDebug(self, level=STANDARD, tags=[]):
+   def enableDebug(self, level=None, tags=[]):
+      if not level:
+         level = self.defaultDebugLevel
       self.debugLevel = level
       self.debugTags = tags
    def disableDebug(self):
       self.enableDebug(level=NONE)
       
-   def enableOpt(self, level=STANDARD, tags=[]):
+   def enableOpt(self, level=None, tags=[]):
+      if not level:
+         level = self.defaultOptLevel
       self.optLevel = level
       self.optTags = tags
    def disableOpt(self):
@@ -130,7 +145,9 @@ class EnvironmentBuilder(object):
    def disableProfiling(self):
       self.enableProfiling(False)
    
-   def enableWarnings(self, level=STANDARD, tags=[]):
+   def enableWarnings(self, level=None, tags=[]):
+      if not level:
+         level = self.defaultWarningLevel
       self.warningLevel = level
       self.warningTags = tags
    def disableWarnings(self):
@@ -168,6 +185,60 @@ class EnvironmentBuilder(object):
    # ---- MSVC specific ---- #
    def setMsvcRuntime(self, val):
       self.msvcRuntime = val
+   
+   # ---- Command-line option processing ---- #
+   def addOptions(self, opts):
+      """ The EnvironmentBuilder has support for adding command line options to an
+          option processing object.  This object has to be an instance
+          of SConsAddons.Options.   Once the options are added, the user
+          will be able to set defaults for the environment builder.
+          
+          TODO: Add options for tags.
+      """
+      import SConsAddons.Options as sca_opts
+      
+      assert isinstance(opts, sca_opts.Options)
+      opts.AddOption(sca_opts.SeparatorOption("\nEnvironment Builder Defaults"))      
+      opts.AddOption(sca_opts.EnumOption('default_debug_level',
+                                         'Default debug level for environment builder.',
+                                         'standard', 
+                                         ['none','minimal','standard','extensive','maximum'],
+                                         {'none':EnvironmentBuilder.NONE,
+                                          'minimal':EnvironmentBuilder.STANDARD,
+                                          'standard':EnvironmentBuilder.STANDARD,
+                                          'extensive':EnvironmentBuilder.EXTENSIVE,
+                                          'maximum':EnvironmentBuilder.MAXIMUM}))
+      opts.AddOption(sca_opts.EnumOption('default_opt_level',
+                                         'Default optimization level for environment builder.',
+                                         'standard', 
+                                         ['none','minimal','standard','extensive','maximum'],
+                                         {'none':EnvironmentBuilder.NONE,
+                                          'minimal':EnvironmentBuilder.STANDARD,
+                                          'standard':EnvironmentBuilder.STANDARD,
+                                          'extensive':EnvironmentBuilder.EXTENSIVE,
+                                          'maximum':EnvironmentBuilder.MAXIMUM}))
+      opts.AddOption(sca_opts.EnumOption('default_warning_level',
+                                         'Default optimization level for environment builder.',
+                                         'standard', [],
+                                         {'none':EnvironmentBuilder.NONE,
+                                          'minimal':EnvironmentBuilder.STANDARD,
+                                          'standard':EnvironmentBuilder.STANDARD,
+                                          'extensive':EnvironmentBuilder.EXTENSIVE,
+                                          'maximum':EnvironmentBuilder.MAXIMUM}))            
+      if GetPlatform() == "darwin":
+         opts.Add(sca_opts.BoolOption('darwin_universal', 'Build universal binaries.',True))
+         opts.Add('darwin_sdk', 'Darwin Platform SDK.', '')
+   
+   def readOptions(self, optEnv):
+      """ Read the processed options from the given environment. """
+      self.defaultDebugLevel   = optEnv["default_debug_level"]
+      self.defaultOptLevel     = optEnv["default_opt_level"]
+      self.defaultWarningLevel = optEnv["default_warning_level"]
+
+      if GetPlatform() == "darwin":
+         self.darwinUniversalEnabled = opt_env["darwin_universal"]
+         self.darwinSdk = opt_env["darwin_sdk"]
+
    
    # ---- Option application ---- #
    def _applyOptionsToEnvironment(self, env):
