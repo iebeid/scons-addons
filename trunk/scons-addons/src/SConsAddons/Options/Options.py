@@ -263,6 +263,54 @@ class BoolOption(Option):
         return [(self.keys[0],self.value),]
 
 
+class EnumOption(Option):
+    """
+    Implementation of a enumerated option.
+    Based off EnumOption from SCons.
+    """    
+    def __init__(self, key, help, default, allowed_values=[], map={}):
+        """
+        Create a enumerated option
+        key - the name of the commandline option
+        help - Help text about the option object
+        default - The default value to use.
+        allowed_values - List of values allowed.
+        map - Dictionary to map string value passed to real value to use.
+        note: If allowed_values is empty the value values are pulled from map.
+        """
+        if len(allowed_values) == 0 and len(map) == 0:
+            raise SCons.Errors.UserError, 'EnumOption: Must have one entry in either allowed_values or map'
+        self.allowed_values = allowed_values
+        self.map = map
+        if len(self.allowed_values) == 0:
+            self.allowed_values = self.map.keys()
+            
+        help = '%s (%s)' % (help, '|'.join(self.allowed_values))
+        Option.__init__(self, key, key, help)
+        self.value = None
+        self.default = default                
+
+    def setInitial(self, optDict):
+        if optDict.has_key(self.keys[0]):
+            self.value = optDict[self.keys[0]]
+
+    def find(self, env):
+        if None == self.value:     # If not already set by setInitial()            
+            self.value = self.default
+    
+    def validate(self, env):
+        """ Validate and convert the option settings """
+        if self.value:
+            if self.value not in self.allowed_values:
+                raise SCons.Errors.UserError, 'Invalid value [%s] value use for option [%s]'%(self.value,self.keys[0])
+    
+    def apply(self,env):        
+        env[self.keys[0]] = self.map.get(self.value, self.value)
+    
+    def getSettings(self):
+        return [(self.keys[0],self.value),]
+
+
 class ListOption(Option):
     """
     Implementation of a list option wrapper.
@@ -462,7 +510,7 @@ class Options:
     
         # Apply options if requested
         if True == applySimple:
-            self.Apply(env, allowedTypes=(SimpleOption,BoolOption,ListOption))
+            self.Apply(env, allowedTypes=(SimpleOption,BoolOption,ListOption,EnumOption))
     
 
     def Apply(self, env, all=False, allowedTypes=(), allowedNames=()):

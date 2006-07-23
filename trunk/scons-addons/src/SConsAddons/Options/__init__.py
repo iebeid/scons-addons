@@ -40,5 +40,5 @@ __developer__ = "__DEVELOPER__"
 import SConsAddons.Options.Options
 from SConsAddons.Options.Options import Option, LocalUpdateOption, PackageOption, \
                                         SimpleOption, BoolOption, SeparatorOption, \
-                                        ListOption, Options
+                                        ListOption, EnumOption, Options
 
