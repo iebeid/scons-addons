@@ -57,11 +57,11 @@ class EnvironmentBuilder(object):
    
    # CPU ARCH
    AUTODETECT_ARCH    = "autodetect_arch"
-   IA32_ARCH          = "ia32_arch"
-   X64_ARCH           = "x64_arch"
-   IA64_ARCH          = "ia64_arch"
-   PPC_ARCH           = "ppc_arch"
-   PPC64_ARCH         = "ppc64_arch"
+   IA32_ARCH          = "ia32"
+   X64_ARCH           = "x64"
+   IA64_ARCH          = "ia64"
+   PPC_ARCH           = "ppc"
+   PPC64_ARCH         = "ppc64"
 
    
    def __init__(self):
@@ -506,3 +506,53 @@ def default_debug_define(bldr,env):
       env.Append(CPPDEFINES=["_DEBUG",])
 
 default_funcs.append([[],[],default_debug_define])
+
+
+# ---- Helpers ---- #
+def detectValidArchs():
+   """ Helper method that uses environment builder and SCon Confs to detect valid
+       arch targets for the current system.
+       Returns list of valid archs with the default first.
+   """
+   def CheckArch(context, archName, ccflags):
+      """ Custom config context check for checking arch in this method. """
+      context.Message( 'Checking for arch [%s] ...'%archName )
+      old_ccflags = context.env["CCFLAGS"]
+      context.env.Append(CCFLAGS=ccflags)
+      ret = context.TryCompile("""int main() { return 0; }""",'.c')
+      context.env.Replace(CCFLAGS=old_ccflags)
+      context.Result( ret )
+      return ret
+   
+   valid_archs = []
+   cur_arch = GetArch()
+   if "ia32" == cur_arch:
+      valid_archs.append(EnvironmentBuilder.IA32_ARCH)
+   elif "x86_64" == cur_arch:
+      valid_archs.append(EnvironmentBuilder.X64_ARCH)
+   elif "ppc" == cur_arch:
+      valid_archs.append(EnvironmentBuilder.PPC_ARCH)   
+   
+   conf_env = EnvironmentBuilder().buildEnvironment()
+   
+   # Only handle case of non-windows and using gcc compiler for now
+   if GetPlatform() == "win32" or conf_env["CC"] != 'gcc':
+      return valid_archs
+
+   # We are going to try to compile a program targetting potential valid architectures
+   # if the build works, then we add that one to valid possible architectures
+   arch_checks = []
+   if cur_arch in ["ia32","x86_64"]:   # Check x86 platforms
+      arch_checks = [(EnvironmentBuilder.IA32_ARCH,["-m32",]),(EnvironmentBuilder.X64_ARCH,["-m64"])]
+   elif cur_arch in ["ppc","ppc64"]:   # Check darwin
+      arch_checks = [(EnvironmentBuilder.PPC_ARCH,["-march=ppc",]),(EnvironmentBuilder.PPC64_ARCH,["-march=ppc64"])]
+   
+   for c in arch_checks:
+      if c[0] not in valid_archs:
+         conf_ctxt = conf_env.Configure(custom_tests={"CheckArch":CheckArch})
+         passed_test = conf_ctxt.CheckArch(c[0], c[1])
+         conf_ctxt.Finish()
+         if passed_test:
+            valid_archs.append(c[0])
+   
+   return valid_archs
