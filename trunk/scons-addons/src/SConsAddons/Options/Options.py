@@ -600,8 +600,13 @@ class Options:
                     option_help = '%*s: %s\n' % (max_key_len, k, k_help)
                     help_text = help_text + wrapper.fill(option_help) + "\n"
     
-                    if env.has_key(k):                        
-                        help_text = help_text + key_spacing + '[%s]\n'%env[k]
+                    if env.has_key(k):
+                        value = env[k]
+                        help_text += key_spacing
+                        if isinstance(value,types.ListType):
+                            help_text += '%s\n'%value
+                        else:
+                            help_text += '[%s]\n'%value
                     
 
         return help_text
