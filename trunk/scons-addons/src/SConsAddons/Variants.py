@@ -50,7 +50,7 @@ class VariantsHelper(object):
    def __init__(self, variantKeys=["type","libtype","arch"]):
       
       # List of variants that we are using.
-      # - variants[key] - ([option_list,], is alternative)
+      # - variants[key] - [[option_list,], is alternative]
       self.variants = {}
       self.fillDefaultVariants(variantKeys)
       
@@ -58,20 +58,54 @@ class VariantsHelper(object):
    def fillDefaultVariants(self, varKeys):
       """ Fill the variants variable with default allowable settings. """
       if "type" in varKeys:
-         self.variants["type"] = (["debug","optimized"], True)
+         self.variants["type"] = [["debug","optimized"], True]
          if sca_util.GetPlatform() == "win32":
             self.variants["type"][0].append("hybrid")
       
       if "libtype" in varKeys:
-         self.variants["libtypes"] = (["static","shared"], False)
+         self.variants["libtype"] = [["shared","static"], False]
       
       if "arch" in varKeys:
          valid_archs = sca_envbldr.detectValidArchs()
          if len(valid_archs) == 0:
             valid_archs = ["default"]
          print "Valid archs: ", valid_archs
-         self.variants["arch"] = (valid_archs[:], True)
+         self.variants["arch"] = [valid_archs[:], True]
 
+   # ---- Command-line option processing ---- #
+   def addOptions(self, opts):
+      """ The VariantHelper has support for adding command line options to an
+          option processing object.  This object has to be an instance
+          of SConsAddons.Options.   
+          The key for the options is the variant 'var_' + key
+      """
+      import SConsAddons.Options as sca_opts      
+      assert isinstance(opts, sca_opts.Options)
+      
+      known_help_text = {"type":"Types of tun-times to build.",
+                         "libtype":"Library types to build.",
+                         "arch":"Target processor architectures to build."}
+
+      opts.AddOption(sca_opts.SeparatorOption("\nVariant Helper Options"))      
+      
+      var_keys = self.variants.keys()
+      var_keys.sort()
+      for key in var_keys:
+         option_key_name = 'var_' + key
+         option_help = known_help_text.get(key,"Variant option")
+         option_allowed = self.variants[key][0][:]
+         opts.Add(sca_opts.ListOption(option_key_name,option_help,
+                                      option_allowed,option_allowed))      
+   
+   def readOptions(self, optEnv):
+      """ Read the processed options from the given environment. """
+      # For each key, if found in environment, copy the list over to the variant
+      var_keys = self.variants.keys()
+      for key in var_keys:         
+         opt_key_name = "var_" + key
+         if optEnv.has_key(opt_key_name):
+            print "key: %s  val: %s"%(key,optEnv[opt_key_name])
+            self.variants[key][0] = optEnv[opt_key_name][:]
 
 
 
