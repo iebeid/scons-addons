@@ -168,7 +168,7 @@ class EnvironmentBuilder(object):
          self.cpuArch = val
       else:
          arch_map = {"ia32":EnvironmentBuilder.IA32_ARCH,
-                     "x86_64":EnvironmentBuilder.X64_ARCH,
+                     "x64":EnvironmentBuilder.X64_ARCH,
                      "ppc":EnvironmentBuilder.PPC_ARCH,
                      "ppc64":EnvironmentBuilder.PPC64_ARCH}
          self.cpuArch = arch_map.get(GetArch(), EnvironmentBuilder.AUTODETECT_ARCH)
@@ -528,7 +528,7 @@ def detectValidArchs():
    cur_arch = GetArch()
    if "ia32" == cur_arch:
       valid_archs.append(EnvironmentBuilder.IA32_ARCH)
-   elif "x86_64" == cur_arch:
+   elif "x64" == cur_arch:
       valid_archs.append(EnvironmentBuilder.X64_ARCH)
    elif "ppc" == cur_arch:
       valid_archs.append(EnvironmentBuilder.PPC_ARCH)   
@@ -547,7 +547,7 @@ def detectValidArchs():
       arch_checks = [EnvironmentBuilder.PPC_ARCH,
                      EnvironmentBuilder.PPC64_ARCH,
                      EnvironmentBuilder.IA32_ARCH]
-   elif cur_arch in ["ia32","x86_64"]: # Check x86 platforms
+   elif cur_arch in ["ia32","x64"]: # Check x86 platforms
       arch_checks = [EnvironmentBuilder.IA32_ARCH,
                      EnvironmentBuilder.X64_ARCH]
    elif cur_arch in ["ppc","ppc64"]:   # Check PowerPC architectures
