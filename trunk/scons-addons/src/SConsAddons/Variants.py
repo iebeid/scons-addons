@@ -25,13 +25,14 @@ common code used for variant handling.
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-import os, sys, re
+import os, sys, re, types
 import SConsAddons.Util as sca_util
-import SConsAddons.EnvironmentBuilder as sca_envbldr
+from SConsAddons.EnvironmentBuilder import EnvironmentBuilder, detectValidArchs
 import SCons.Defaults
 import SCons.Environment
 import SCons.Node.FS
 import SCons.Util
+from SConsAddons.Util import GetPlatform, GetArch
 
 
 class VariantsHelper(object):
@@ -66,11 +67,83 @@ class VariantsHelper(object):
          self.variants["libtype"] = [["shared","static"], False]
       
       if "arch" in varKeys:
-         valid_archs = sca_envbldr.detectValidArchs()
+         valid_archs = detectValidArchs()
          if len(valid_archs) == 0:
             valid_archs = ["default"]
          print "Valid archs: ", valid_archs
          self.variants["arch"] = [valid_archs[:], True]
+         
+   def iterate(self, vars, baseEnvBuilder, baseEnv=None):
+      """
+         vars: locals() to use
+         baseEnvBuilder: Environment builder to start with
+         baseEnv: baseEnvironment to start with, if none, don't build environment
+         
+         Local variables exported:
+            variant_pass: Iterates from 0 to number of combos            
+            combo_dir: build dire parts made from combo strings
+            static_lib_suffix,shared_lib_suffix: Suffix values to use
+            env_builder: Created and modified environment builder
+            build_env: Created build environment to use (based on baseEnv) with:
+                   - "variant" - contains combo
+            
+      """
+      variant_pass = -1
+      var_combos = zipVariants(self.variants)
+      
+      # Main iteration
+      for combo in var_combos:      
+         variant_pass += 1
+         # -- Setup Environment builder --- #
+         env_bldr = baseEnvBuilder.clone()
+            
+         # Process modifications for variant combo            
+         if combo["type"] == "debug":
+            env_bldr.enableDebug()
+            env_bldr.setMsvcRuntime(EnvironmentBuilder.MSVC_MT_DBG_DLL_RT)
+         elif combo["type"] == "optimized":
+            env_bldr.enableOpt()
+            env_bldr.setMsvcRuntime(EnvironmentBuilder.MSVC_MT_DLL_RT)
+         elif combo["type"] == "hybrid":
+            env_bldr.enableDebug()
+            env_bldr.setMsvcRuntime(EnvironmentBuilder.MSVC_MT_DLL_RT)
+         
+         if "ia32" == combo["arch"]:
+            env_bldr.setCpuArch(EnvironmentBuilder.IA32_ARCH)
+         elif "x64" == combo["arch"]:
+            env_bldr.setCpuArch(EnvironmentBuilder.X64_ARCH)
+
+         # Build up library name and paths to use
+         # xxx: common
+         (static_lib_suffix,shared_lib_suffix) = ("","")
+         if GetPlatform() == "win32":   
+            if combo["type"] == "debug":
+               (static_lib_suffix,shared_lib_suffix) = ("_d_s","_d")
+            elif combo["type"] == "optimized":
+               (static_lib_suffix,shared_lib_suffix) = ("_s","")
+            elif combo["type"] == "hybrid":
+               (static_lib_suffix,shared_lib_suffix) = ("_h_s","_h")
+
+         # Determine the build dir for this variant
+         combo_dir = "--".join(['%s-%s'%(i[0],i[1]) for i in combo.iteritems() if not isinstance(i[1],(types.ListType))])
+      
+         # --- Build environment if needed--- #   
+         build_env = None
+         if baseEnv:
+            build_env = env_bldr.applyToEnvironment(baseEnv.Copy(), variant=combo)      
+         
+         # export the locals
+         vars["variant_pass"] = variant_pass
+         vars["combo_dir"] = combo_dir
+         vars["static_lib_suffix"] = static_lib_suffix
+         vars["shared_lib_suffix"] = shared_lib_suffix
+         vars["env_builder"] = env_bldr
+         vars["build_env"] = build_env
+         
+         yield combo
+         # Yield the combo
+
+
 
    # ---- Command-line option processing ---- #
    def addOptions(self, opts):
@@ -103,8 +176,7 @@ class VariantsHelper(object):
       var_keys = self.variants.keys()
       for key in var_keys:         
          opt_key_name = "var_" + key
-         if optEnv.has_key(opt_key_name):
-            print "key: %s  val: %s"%(key,optEnv[opt_key_name])
+         if optEnv.has_key(opt_key_name):            
             self.variants[key][0] = optEnv[opt_key_name][:]
 
 
