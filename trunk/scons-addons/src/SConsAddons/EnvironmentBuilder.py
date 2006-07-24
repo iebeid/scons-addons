@@ -324,11 +324,13 @@ def gcc_linux_misc(bldr, env):
    assert isinstance(bldr, EnvironmentBuilder)
    if bldr.cpuArch:
       if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
-         env.Append(CXXFLAGS = ['-m32'],
+         env.Append(CCFLAGS = ['-m32'],
                     LINKFLAGS = ['-m32'])
       elif bldr.cpuArch == EnvironmentBuilder.X64_ARCH:
-         env.Append(CXXFLAGS = ['-m64'],
+         env.Append(CCFLAGS = ['-m64'],
                     LINKFLAGS = ['-m64'])
+      else:
+         assert False, "Invalid arch used for Linux gcc."
 
 def gcc_darwin_misc(bldr,env):
    assert isinstance(bldr, EnvironmentBuilder)
@@ -339,14 +341,16 @@ def gcc_darwin_misc(bldr,env):
    else:
       if bldr.cpuArch != None:
          if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
-            env.Append(CXXFLAGS = ['-arch', 'i386'],
+            env.Append(CCFLAGS = ['-arch', 'i386'],
                        LINKFLAGS = ['-arch', 'i386'])
          elif bldr.cpuArch == EnvironmentBuilder.PPC_ARCH:
-            env.Append(CXXFLAGS = ['-arch', 'ppc'],
+            env.Append(CCFLAGS = ['-arch', 'ppc'],
                        LINKFLAGS = ['-arch', 'ppc'])
          elif bldr.cpuArch == EnvironmentBuilder.PPC64_ARCH:
-            env.Append(CXXFLAGS = ['-arch', 'ppc64'],
+            env.Append(CCFLAGS = ['-arch', 'ppc64'],
                        LINKFLAGS = ['-arch', 'ppc64'])
+         else:
+            assert False, "Invalid arch used for darwin gcc."
 
    if bldr.darwinSdk != '':
       env.Append(CXXFLAGS = ['-isysroot', bldr.darwinSdk],
@@ -513,13 +517,10 @@ def detectValidArchs():
        arch targets for the current system.
        Returns list of valid archs with the default first.
    """
-   def CheckArch(context, archName, ccflags):
+   def CheckArch(context, archName):
       """ Custom config context check for checking arch in this method. """
       context.Message( 'Checking for arch [%s] ...'%archName )
-      old_ccflags = context.env["CCFLAGS"]
-      context.env.Append(CCFLAGS=ccflags)
       ret = context.TryCompile("""int main() { return 0; }""",'.c')
-      context.env.Replace(CCFLAGS=old_ccflags)
       context.Result( ret )
       return ret
    
@@ -532,33 +533,36 @@ def detectValidArchs():
    elif "ppc" == cur_arch:
       valid_archs.append(EnvironmentBuilder.PPC_ARCH)   
    elif "ppc64" == cur_arch:
-      valid_archs.append(EnvironmentBuilder.PPC64_ARCH)   
-
-   conf_env = EnvironmentBuilder().buildEnvironment()
+      valid_archs.append(EnvironmentBuilder.PPC64_ARCH)      
    
    # Only handle case of non-windows and using gcc compiler for now
-   if GetPlatform() == "win32" or conf_env["CC"] != 'gcc':
+   test_env = EnvironmentBuilder().buildEnvironment()
+   if GetPlatform() == "win32" or test_env["CC"] != 'gcc':
       return valid_archs
 
    # We are going to try to compile a program targetting potential valid architectures
    # if the build works, then we add that one to valid possible architectures
    arch_checks = []
    if GetPlatform() == "darwin":    # Treat Darwin specially
-      arch_checks = [(EnvironmentBuilder.PPC_ARCH, ["-arch", "ppc"]),
-                     (EnvironmentBuilder.PPC64_ARCH, ["-arch", "ppc64"]),
-                     (EnvironmentBuilder.IA32_ARCH, ["-arch", "i386"])]
+      arch_checks = [EnvironmentBuilder.PPC_ARCH,
+                     EnvironmentBuilder.PPC64_ARCH,
+                     EnvironmentBuilder.IA32_ARCH]
    elif cur_arch in ["ia32","x86_64"]: # Check x86 platforms
-      arch_checks = [(EnvironmentBuilder.IA32_ARCH,["-m32",]),(EnvironmentBuilder.X64_ARCH,["-m64"])]
+      arch_checks = [EnvironmentBuilder.IA32_ARCH,
+                     EnvironmentBuilder.X64_ARCH]
    elif cur_arch in ["ppc","ppc64"]:   # Check PowerPC architectures
-      arch_checks = [(EnvironmentBuilder.PPC_ARCH, ["-march=G4"]),
-                     (EnvironmentBuilder.PPC64_ARCH, ["-march=G5"])]
+      arch_checks = [EnvironmentBuilder.PPC_ARCH,
+                     EnvironmentBuilder.PPC64_ARCH]
 
-   for c in arch_checks:
-      if c[0] not in valid_archs:
+   for test_arch in arch_checks:
+      if test_arch not in valid_archs:
+         env_bldr = EnvironmentBuilder()
+         env_bldr.setCpuArch(test_arch)
+         conf_env = env_bldr.buildEnvironment()
          conf_ctxt = conf_env.Configure(custom_tests={"CheckArch":CheckArch})
-         passed_test = conf_ctxt.CheckArch(c[0], c[1])
+         passed_test = conf_ctxt.CheckArch(test_arch)
          conf_ctxt.Finish()
          if passed_test:
-            valid_archs.append(c[0])
+            valid_archs.append(test_arch)
 
    return valid_archs
