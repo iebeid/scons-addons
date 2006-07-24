@@ -43,7 +43,7 @@ class VariantsHelper(object):
        this is simply because it is trying to reuse code across multiple builds.
        
        variantKeys - List of default variant keys to use.  Valid values include:
-          type - runtime type (debug,optimize,hybrid)
+          type - runtime type (debug,optimized,hybrid)
           libtype - shared,static
           arch - ia32, x64, ppc, ppc64, etc
    """
