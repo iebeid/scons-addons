@@ -121,6 +121,15 @@ def hasHelpFlag():
    return has_help_flag
 
 
+def symlinkInstallFunc(dest, source, env):
+    """Install a source file into a destination by sym linking it.
+       Ex:
+         common_env['INSTALL'] = symlinkInstallFunc         
+    """
+    os.symlink(pj(os.getcwd(), source), dest)
+    return 0
+
+
 # ----------------------------------
 # File extension retrieval methods
 # -----------------------------------
