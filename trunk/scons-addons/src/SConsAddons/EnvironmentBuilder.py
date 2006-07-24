@@ -236,10 +236,9 @@ class EnvironmentBuilder(object):
       self.defaultWarningLevel = optEnv["default_warning_level"]
 
       if GetPlatform() == "darwin":
-         self.darwinUniversalEnabled = opt_env["darwin_universal"]
-         self.darwinSdk = opt_env["darwin_sdk"]
+         self.darwinUniversalEnabled = optEnv["darwin_universal"]
+         self.darwinSdk = optEnv["darwin_sdk"]
 
-   
    # ---- Option application ---- #
    def _applyOptionsToEnvironment(self, env):
       tools = env["TOOLS"]
@@ -532,7 +531,9 @@ def detectValidArchs():
       valid_archs.append(EnvironmentBuilder.X64_ARCH)
    elif "ppc" == cur_arch:
       valid_archs.append(EnvironmentBuilder.PPC_ARCH)   
-   
+   elif "ppc64" == cur_arch:
+      valid_archs.append(EnvironmentBuilder.PPC64_ARCH)   
+
    conf_env = EnvironmentBuilder().buildEnvironment()
    
    # Only handle case of non-windows and using gcc compiler for now
@@ -542,11 +543,16 @@ def detectValidArchs():
    # We are going to try to compile a program targetting potential valid architectures
    # if the build works, then we add that one to valid possible architectures
    arch_checks = []
-   if cur_arch in ["ia32","x86_64"]:   # Check x86 platforms
+   if GetPlatform() == "darwin":    # Treat Darwin specially
+      arch_checks = [(EnvironmentBuilder.PPC_ARCH, ["-arch", "ppc"]),
+                     (EnvironmentBuilder.PPC64_ARCH, ["-arch", "ppc64"]),
+                     (EnvironmentBuilder.IA32_ARCH, ["-arch", "i386"])]
+   elif cur_arch in ["ia32","x86_64"]: # Check x86 platforms
       arch_checks = [(EnvironmentBuilder.IA32_ARCH,["-m32",]),(EnvironmentBuilder.X64_ARCH,["-m64"])]
-   elif cur_arch in ["ppc","ppc64"]:   # Check darwin
-      arch_checks = [(EnvironmentBuilder.PPC_ARCH,["-march=ppc",]),(EnvironmentBuilder.PPC64_ARCH,["-march=ppc64"])]
-   
+   elif cur_arch in ["ppc","ppc64"]:   # Check PowerPC architectures
+      arch_checks = [(EnvironmentBuilder.PPC_ARCH, ["-march=G4"]),
+                     (EnvironmentBuilder.PPC64_ARCH, ["-march=G5"])]
+
    for c in arch_checks:
       if c[0] not in valid_archs:
          conf_ctxt = conf_env.Configure(custom_tests={"CheckArch":CheckArch})
@@ -554,5 +560,5 @@ def detectValidArchs():
          conf_ctxt.Finish()
          if passed_test:
             valid_archs.append(c[0])
-   
+
    return valid_archs
