@@ -164,6 +164,10 @@ class Boost(SConsAddons.Options.PackageOption):
       if self.required:
          sys.exit(0)
 
+   def startProcess(self):
+      """ Called at beginning of processing.  Perform any intialization or notification here. """
+      print "Updating ", self.name
+    
    def isAvailable(self):
       " If true, then validation passed and we should be able to use boost. "
       return self.available

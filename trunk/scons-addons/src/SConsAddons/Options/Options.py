@@ -82,7 +82,7 @@ class Option:
         
     def startProcess(self):
         """ Called at beginning of processing.  Perform any intialization or notification here. """
-        print "Updating ", self.name
+        #print "Updating ", self.name
         pass
         
     def setInitial(self, optDict):
