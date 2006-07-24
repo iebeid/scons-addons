@@ -79,10 +79,14 @@ def GetArch():
       # x86_64 (aka, x64, EM64T)
       elif re.search(r'x86_64', arch_str):
          arch = 'x86_64'
-         # PowerPC
-      elif re.search(r'Power_Mac', arch_str):
-         arch = 'ppc'
-   
+      # PowerPC Macintosh
+      elif re.search(r'Power Macintosh', arch_str):
+         # XXX: Not sure if this actually works. -PH 7/24/2006
+         if re.search(r'64', arch_str):
+            arch = 'ppc64'
+         else:
+            arch = 'ppc'
+
    return arch
 
 def GetCpuType():
