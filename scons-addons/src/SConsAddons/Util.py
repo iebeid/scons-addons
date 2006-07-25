@@ -61,7 +61,7 @@ def GetPlatform():
 
 def GetArch():
    """ Return identifier for CPU architecture. """
-   if 0:
+   if not hasattr(os, 'uname'):
       platform = distutils.util.get_platform()
       arch = ""
       if re.search(r'i.86', platform):
