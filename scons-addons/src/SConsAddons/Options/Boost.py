@@ -30,8 +30,10 @@ Configure = SCons.SConf.SConf
 # Options
 # ##############################################
 class Boost(SConsAddons.Options.PackageOption):
-   def __init__(self, name, requiredVersion, useDebug=False, useMt=True, libs=[], 
-                required=True, useCppPath=False, toolset="auto", useVersion=False,
+   def __init__(self, name, requiredVersion, 
+                useDebug=False, useMt=True, libs=[], 
+                required=True, useCppPath=False, 
+                toolset="auto", useVersion=False,
                 preferDynamic=True, autoLink = False):
       """
          name - The name to use for this option
@@ -432,7 +434,7 @@ class Boost(SConsAddons.Options.PackageOption):
 
             
       env["SHLIBPREFIX"] = ""                    # Clear the library prefix settings
-      if sca_util.GetPlatform == "win32":
+      if sca_util.GetPlatform() == "win32":
          env["SHLIBSUFFIX"] = ".pyd"
          
       if(sca_util.GetPlatform() == "linux"):
