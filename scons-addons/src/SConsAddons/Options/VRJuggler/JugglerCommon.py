@@ -30,9 +30,10 @@ import SCons
 import SConsAddons.Options   # Get the modular options stuff
 import SCons.Util
 import sys, os, re, string
+import SConsAddons.Util as sca_util
 
 from SCons.Util import WhereIs
-pj = os.path.join;
+pj = os.path.join
 
 
 class JugglerCommon(SConsAddons.Options.PackageOption):
