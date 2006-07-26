@@ -184,15 +184,12 @@ class OpenSG(SConsAddons.Options.PackageOption):
           useCppPath: If true, then put the include paths into the CPPPATH variable.
       """
       # Auto-set optimize
-      if not optimize:
-         print "Applying optimize = ....",
+      if not optimize:         
          if env.has_key("variant") and env["variant"].has_key("type"):
             var_type = env["variant"]["type"]
-            optimize = ("debug" != "var_type")
-            print "auto: ", optimize 
+            optimize = ("debug" != "var_type")            
          else:            
-            optimize = False   # Default to debug
-            print "default: ", optimize
+            optimize = False   # Default to debug            
       #if not (type(libs) in (types.TupleType, types.ListType)):
       #   libs = (libs,)      
       if not isinstance(libs, list):
