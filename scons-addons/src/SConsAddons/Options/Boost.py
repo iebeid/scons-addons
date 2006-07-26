@@ -116,7 +116,7 @@ class Boost(SConsAddons.Options.PackageOption):
       self.python_inc_dir = distutils.sysconfig.get_python_inc()
       if sca_util.GetPlatform() == "win32":
          self.python_embedded_link_flags = []
-         self.python_lib_path = pj(sys.prefix,'libs')
+         self.python_lib_path = [pj(sys.prefix,'libs'),]
          self.python_static_lib_path = [""]                   # There is no static lib on win32
          lib_python_fname = 'python' + self.python_version.replace('.','')
          self.python_extra_libs = [lib_python_fname,]
@@ -127,7 +127,7 @@ class Boost(SConsAddons.Options.PackageOption):
          # Link flags that may be needed on unix for the embedded case
          self.python_embedded_link_flags = [distutils.sysconfig.get_config_var('LINKFORSHARED'),]
          #self.python_embedded_link_flags = "-Wl,-export-dynamic"
-         self.python_lib_path = pj(sys.prefix,'lib')
+         self.python_lib_path = [pj(sys.prefix,'lib'),]
          self.python_static_lib_path = distutils.sysconfig.get_python_lib(standard_lib=True) + "/config"         
          lib_python_fname = 'python' + self.python_version
          self.python_extra_libs = [lib_python_fname, "util", "pthread", "dl"]  # See SHLIBS
@@ -426,7 +426,7 @@ class Boost(SConsAddons.Options.PackageOption):
          sys.exit(0)
          
       self.apply(env)
-      env.AppendUnique(LIBS = self.buildFullLibName("python",env) )    # Add on the boost python library
+      env.AppendUnique(LIBS = [self.buildFullLibName("python",env),] )    # Add on the boost python library
       env.AppendUnique(CPPPATH = [self.python_inc_dir,],
                        LINKFLAGS = self.python_link_flags,
                        LIBPATH = self.python_lib_path,
