@@ -32,6 +32,7 @@ class GMTL(SConsAddons.Options.PackageOption):
       self.baseDirKey = "GMTLBaseDir"
       self.requiredVersion = requiredVersion
       self.required = required
+      self.available = False
       SConsAddons.Options.LocalUpdateOption.__init__(self, name,
                                                      self.baseDirKey, help_text)
 
@@ -49,29 +50,32 @@ class GMTL(SConsAddons.Options.PackageOption):
          sys.exit(1)
 
    def setInitial(self, optDict):
-      " Set initial values from given dictionary "
-      sys.stdout.write("checking for gmtl...")
+      " Set initial values from given dictionary. "
+      if self.verbose:
+         print "   Loading initial GMTL settings."
       if optDict.has_key(self.baseDirKey):
-         self.baseDir = optDict[self.baseDirKey]
+         self.baseDir = optDict[self.baseDirKey];
          self.gmtlconfig_cmd = pj(self.baseDir, 'bin', 'gmtl-config')
-         sys.stdout.write("specified or cached. [%s].\n"% self.baseDir)
+         if self.verbose:
+            print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir);
+
 
    def find(self, env):
-      # quick exit if nothing to find
+      # Quick exit if nothing to find because it is already specified
       if self.baseDir !=None:
+         assert self.baseDir
+         assert self.gmtlconfig_cmd
          return
 
+      # Find gmtl-config and call it to get the other arguments
       sys.stdout.write("searching...\n")
-      self.plxconfig_cmd = WhereIs('gmtl-config')
+      self.gmtlconfig_cmd = WhereIs('gmtl-config')
       if None == self.gmtlconfig_cmd:
          self.checkRequired("   could not find gmtl-config")
       else:
          sys.stdout.write("   found gmtl-config.\n")
-         found_ver_str = os.popen(self.gmtlconfig_cmd + " --version").read().strip()
-         sys.stdout.write("   version:%s"%found_ver_str)
-
+         # find base dir
          self.baseDir = os.popen(self.gmtlconfig_cmd + " --prefix").read().strip()
-
          if not os.path.isdir(self.baseDir):
             self.checkRequired("   returned directory does not exist:%s"%self.baseDir)
             self.baseDir = None;
@@ -83,34 +87,69 @@ class GMTL(SConsAddons.Options.PackageOption):
       # check gmtl-config existance
       # check include/gmtl/gmtl.h existance
       # check version correctness
+      # XXX: Check that an include file: include/vpr/vprConfig.h  exists
       # update the temps for later usage
       passed = True
+      print "ARON: ", self.baseDir
       if not os.path.isdir(self.baseDir):
          passed = False
          self.checkRequired("gmtl base dir does not exist:%s"%self.baseDir)
-      if not os.path.isfile(self.gmtlconfig_cmd):
-         passed = False;
-         self.checkRequired("gmtl-config does not exist:%s"%self.gmtlconfig_cmd)
 
-      cfg_cmd_parser = SConsAddons.Util.ConfigCmdParser(self.gmtlconfig_cmd)
+      # If gmtl-config exists and we are not on windows, use it.
+      has_config_cmd = os.path.isfile(self.gmtlconfig_cmd) and \
+         not SConsAddons.Util.GetPlatform() == "win32"
 
-      # check version requirement
+      if not has_config_cmd:
+         print "Can not find %s. Limping along without it." % self.gmtlconfig_cmd
+      else:
+         cfg_cmd_parser = SConsAddons.Util.ConfigCmdParser(self.gmtlconfig_cmd)           
 
-      found_ver_str = cfg_cmd_parser.getVersion()
-      req_ver = [int(n) for n in self.requiredVersion.split(".")]
-      found_ver = [int(n) for n in found_ver_str.split(".")]
+      # -- Find header directory -- #
+      inc_dir = None
+      header_file = pj('gmtl', 'gmtl.h')
+      base_include = pj(self.baseDir,'include')
+      # check standard directory first
+      if os.path.isfile(pj(base_include, header_file)):
+         inc_dir = base_include
+      # check versioned directories by building a list and sorting them
+      elif os.path.exists(base_include):
+         pot_dirs = [pj(base_include,d) for d in os.listdir(base_include)\
+                                              if d.count("gmtl")]
+         pot_dirs.sort()
+         pot_dirs.reverse()         
+         for d in pot_dirs:
+            if os.path.isfile(pj(d,header_file)):
+               inc_dir = d
+               break
+
+      if not inc_dir:
+         passed = False
+         self.checkRequired("gmtl.h not found in any gmtl directories.")
+      else:
+         print "   Found gmtl include directory: ", inc_dir
+
+
+      # --- Check version requirement --- #
+      req_ver = [int(n) for n in self.requiredVersion.split(".")];
+      if has_config_cmd:         
+         found_ver_str = cfg_cmd_parser.getVersion()         
+         print "VERSION: ", found_ver_str
+         found_ver = [int(n) for n in found_ver_str.split(".")];         
+      else:
+         found_ver = GetGMTLVersion(inc_dir)
+         found_ver_str = '.'.join([str(i) for i in found_ver])
+
+      print "   Found GMTL version: ", found_ver_str
       if found_ver < req_ver:
          passed = False
          self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion, found_ver_str))
 
-      gmtl_header_file = pj(self.baseDir, 'include', 'gmtl', 'gmtl.h')
-      if not os.path.isfile(gmtl_header_file):
-         passed = False
-         self.checkRequired("gmtl.h not found:%s"%gmtl_header_file)
-
-      self.found_incs = cfg_cmd_parser.findIncludes(" --cxxflags")
-      #self.found_libs = cfg_cmd_parser.findLibs()
-      #self.found_lib_paths = cfg_cmd_parser.findLibPaths()
+      # --- Build flag settings --- #         
+      if has_config_cmd:
+         # Returns lists of the options we want
+         self.found_incs = inc_dir + cfg_cmd_parser.findIncludes(" --cxxflags")
+      else:
+         self.found_incs = [inc_dir,]         
 
       if not passed:
          self.baseDir = None
@@ -125,13 +164,9 @@ class GMTL(SConsAddons.Options.PackageOption):
          self.available = True
 
    def apply(self, env):
-      """ Add environment options for building against plexus"""
+      """ Add environment options for building against gmtl"""
       if self.found_incs:
-         env.Append(CPPPATH = self.found_incs)
-      #if self.found_libs:
-      #   env.Append(LIBS = self.found_libs)
-      #if self.found_lib_paths:
-      #   env.Append(LIBPATH = self.found_lib_paths)
+         env.AppendUnique(CPPPATH = self.found_incs);
 
    def getSettings(self):
       return [(self.baseDirKey, self.baseDir),]
@@ -141,5 +176,13 @@ class GMTL(SConsAddons.Options.PackageOption):
       print "GMTLBaseDir:", self.baseDir
       print "gmtl-config:", self.gmtlconfig_cmd
       print "CPPPATH:", self.found_incs
-      #print "LIBS:", self.found_libs
-      #print "LIBPATH:", self.found_lib_paths
+
+def GetGMTLVersion(incPath):
+   """Gets the GMTL version from gmtl/Version.h.
+      Returns version as tuple (major,minor,patch)
+   """
+   contents = open(pj(incPath,'gmtl','version.h'), 'r').read()
+   major = re.compile('.*(#define *GMTL_VERSION_MAJOR *(\d+)).*', re.DOTALL).sub(r'\2', contents)
+   minor = re.compile('.*(#define *GMTL_VERSION_MINOR *(\d+)).*', re.DOTALL).sub(r'\2', contents)
+   patch = re.compile('.*(#define *GMTL_VERSION_PATCH *(\d+)).*', re.DOTALL).sub(r'\2', contents)
+   return (int(major), int(minor), int(patch))

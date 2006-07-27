@@ -139,7 +139,7 @@ class Zipios(SConsAddons.Options.PackageOption):
       ver_file = file(version_header)
       ver_match = re.search('#define\s*VERSION\s*\"(.*)\"', ver_file.read())
       if not ver_match:
-         self.checkRequired("   could not find LIBRARY_VERSION in file: %s"%version_header)
+         self.checkRequired("   could not find VERSION in file: %s"%version_header)
          return
 
 
