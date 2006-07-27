@@ -75,7 +75,7 @@ class CppDom(SConsAddons.Options.PackageOption):
       print "Checking for cppdom...",
 
    def setInitial(self, optDict):
-      " Set initial values from given dict "
+      " Set initial values from given dictionary. "
       if self.verbose:
          print "   Loading initial cppdom settings."
       if optDict.has_key(self.baseDirKey):
@@ -117,7 +117,10 @@ class CppDom(SConsAddons.Options.PackageOption):
          passed = False
          self.checkRequired("cppdom base dir does not exist:%s"%self.baseDir)
       
-      has_config_cmd = os.path.isfile(self.cppdomconfig_cmd)
+      # If cppdom-config exists and we are not on windows, use it.
+      has_config_cmd = os.path.isfile(self.cppdomconfig_cmd) and \
+         not SConsAddons.Util.GetPlatform() == "win32"
+
       if not has_config_cmd:
          print "Can not find %s. Limping along without it."%self.cppdomconfig_cmd
       else:
@@ -208,7 +211,7 @@ class CppDom(SConsAddons.Options.PackageOption):
       
              
    def apply(self, env):
-      """ Add environment options for building against vapor"""
+      """ Add environment options for building against cppdom"""
       if self.found_incs:
          env.AppendUnique(CPPPATH = self.found_incs);
       if self.found_libs:
