@@ -64,7 +64,6 @@ class GMTL(SConsAddons.Options.PackageOption):
       # Quick exit if nothing to find because it is already specified
       if self.baseDir !=None:
          assert self.baseDir
-         assert self.gmtlconfig_cmd
          return
 
       # Find gmtl-config and call it to get the other arguments
@@ -78,7 +77,7 @@ class GMTL(SConsAddons.Options.PackageOption):
          self.baseDir = os.popen(self.gmtlconfig_cmd + " --prefix").read().strip()
          if not os.path.isdir(self.baseDir):
             self.checkRequired("   returned directory does not exist:%s"%self.baseDir)
-            self.baseDir = None;
+            self.baseDir = None
          else:
             print "   found at: ", self.baseDir
 
@@ -87,10 +86,9 @@ class GMTL(SConsAddons.Options.PackageOption):
       # check gmtl-config existance
       # check include/gmtl/gmtl.h existance
       # check version correctness
-      # XXX: Check that an include file: include/vpr/vprConfig.h  exists
+      # XXX: Check that an include file: include/gmtl/gmtl.h  exists
       # update the temps for later usage
       passed = True
-      print "ARON: ", self.baseDir
       if not os.path.isdir(self.baseDir):
          passed = False
          self.checkRequired("gmtl base dir does not exist:%s"%self.baseDir)
@@ -130,14 +128,14 @@ class GMTL(SConsAddons.Options.PackageOption):
 
 
       # --- Check version requirement --- #
-      req_ver = [int(n) for n in self.requiredVersion.split(".")];
-      if has_config_cmd:         
-         found_ver_str = cfg_cmd_parser.getVersion()         
-         print "VERSION: ", found_ver_str
-         found_ver = [int(n) for n in found_ver_str.split(".")];         
-      else:
-         found_ver = GetGMTLVersion(inc_dir)
-         found_ver_str = '.'.join([str(i) for i in found_ver])
+      req_ver = [int(n) for n in self.requiredVersion.split(".")]
+      version_header = pj(inc_dir,'gmtl','version.h')
+      if not os.path.isfile(version_header):
+         passed = False
+         self.checkRequired("%s does not exist.  Can not determine gmtl version."%version_header)
+   
+      found_ver = GetGMTLVersion(version_header)
+      found_ver_str = '.'.join([str(i) for i in found_ver])
 
       print "   Found GMTL version: ", found_ver_str
       if found_ver < req_ver:
@@ -177,11 +175,11 @@ class GMTL(SConsAddons.Options.PackageOption):
       print "gmtl-config:", self.gmtlconfig_cmd
       print "CPPPATH:", self.found_incs
 
-def GetGMTLVersion(incPath):
+def GetGMTLVersion(versionHeader):
    """Gets the GMTL version from gmtl/Version.h.
       Returns version as tuple (major,minor,patch)
    """
-   contents = open(pj(incPath,'gmtl','version.h'), 'r').read()
+   contents = open(versionHeader, 'r').read()
    major = re.compile('.*(#define *GMTL_VERSION_MAJOR *(\d+)).*', re.DOTALL).sub(r'\2', contents)
    minor = re.compile('.*(#define *GMTL_VERSION_MINOR *(\d+)).*', re.DOTALL).sub(r'\2', contents)
    patch = re.compile('.*(#define *GMTL_VERSION_PATCH *(\d+)).*', re.DOTALL).sub(r'\2', contents)
