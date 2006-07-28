@@ -88,7 +88,6 @@ class CppDom(SConsAddons.Options.PackageOption):
       # Quick exit if nothing to find because it is already specified
       if self.baseDir != None:
          assert self.baseDir
-         assert self.cppdomconfig_cmd
          return
       
       # Find cppdom-config and call it to get the other arguments
@@ -151,13 +150,13 @@ class CppDom(SConsAddons.Options.PackageOption):
          print "   Found cppdom include directory: ", inc_dir
 
       # --- Check version requirement --- #
-      req_ver = [int(n) for n in self.requiredVersion.split(".")];
-      if has_config_cmd:         
-         found_ver_str = cfg_cmd_parser.getVersion()         
-         found_ver = [int(n) for n in found_ver_str.split(".")];         
-      else:
-         found_ver = GetCppDomVersion(inc_dir)
-         found_ver_str = '.'.join([str(i) for i in found_ver])
+      req_ver = [int(n) for n in self.requiredVersion.split(".")]
+      version_header = pj(inc_dir,'cppdom','version.h')
+      if not os.path.isfile(version_header):
+         passed = False
+         self.checkRequired("%s does not exist.  Can not determin gmtl version."%version_header)
+      found_ver = GetCppDomVersion(version_header)
+      found_ver_str = '.'.join([str(i) for i in found_ver])
       
       print "   Found cppdom version: ", found_ver_str
       if found_ver < req_ver:
@@ -234,11 +233,11 @@ class CppDom(SConsAddons.Options.PackageOption):
       print "LIBS:", self.found_libs
       print "LIBPATH:", self.found_lib_paths
       
-def GetCppDomVersion(incPath):
+def GetCppDomVersion(versionHeader):
    """Gets the CppDom version from cppdom/version.h.
       Returns version as tuple (major,minor,patch)
    """
-   contents = open(pj(incPath,'cppdom','version.h'), 'r').read()
+   contents = open(versionHeader, 'r').read()
    major = re.compile('.*(#define *CPPDOM_VERSION_MAJOR *(\d+)).*', re.DOTALL).sub(r'\2', contents)
    minor = re.compile('.*(#define *CPPDOM_VERSION_MINOR *(\d+)).*', re.DOTALL).sub(r'\2', contents)
    patch = re.compile('.*(#define *CPPDOM_VERSION_PATCH *(\d+)).*', re.DOTALL).sub(r'\2', contents)
