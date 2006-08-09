@@ -59,6 +59,13 @@ import textwrap
 def bogus_func():
     pass
 
+class OptionError(Exception):
+    def __init__(self, option, msg):
+        self.option = option
+        self.message = msg        
+        Exception.__init__(self,msg)
+
+
 class Option:
     """
     Base class for all options.
@@ -118,6 +125,13 @@ class Option:
         """
         assert False, "Please implement a getSettings() method to return settings to save."
         return []
+    
+    def getValue(self, index=0):
+        """ Return value associated with the key of the given index.
+            This can be used with simple options to get a value for the option.
+            Ex: options.GetOption("my_opt").getValue()
+        """ 
+        return self.getSettings()[index][1]
         
 
 class LocalUpdateOption(Option):
@@ -427,6 +441,8 @@ class Options:
         Add an option.
 
         Backwards compatible with standard scons options.
+        Note: This means you can add any option that you can add to standard scons options
+              include the standard scons option helpers.
         
         key - the name of the variable
         help - optional help text for the options
@@ -445,7 +461,7 @@ class Options:
             raise SCons.Errors.UserError, "Illegal Options.Add() key `%s'" % key
 
         if None == name:            
-            name = "unamed_opt_" + str(key)
+            name = key
             
         option = SimpleOption(name, key, help, default, converter, None, validator)
 
@@ -455,13 +471,15 @@ class Options:
         """ Add a single option object"""
         for k in option.keys:
             if not SCons.Util.is_valid_construction_var(k):
-                raise SCons.Errors.UserError, "Illegal Options.AddOption(): opt: '%s' -- key `%s'" % (option.name, k)
+                raise SCons.Errors.UserError, "Illegal construction var: Options.AddOption(): opt: '%s' -- key `%s'" % (option.name, k)
 
         self.options.append(option)
      
         
     def GetOption(self, name):
-        """ Return the named option or None if not found"""
+        """ Return the named option or None if not found.
+            See also: Option.getValue()
+        """
         for option in self.options:
             if name == option.name:
                 return option
