@@ -164,7 +164,7 @@ class Boost(SConsAddons.Options.PackageOption):
       """ Called when there is config problem.  If required, then exit with error message """
       print msg
       if self.required:
-         sys.exit(0)
+         raise SConsAddons.Options.OptionError(self,"Check required failed")
 
    def startProcess(self):
       """ Called at beginning of processing.  Perform any intialization or notification here. """
