@@ -159,21 +159,11 @@ class Boost(SConsAddons.Options.PackageOption):
          fullname += "-" + self.libVersionStr
 
       return fullname
-      
-   def checkRequired(self, msg):
-      """ Called when there is config problem.  If required, then exit with error message """
-      print msg
-      if self.required:
-         raise SConsAddons.Options.OptionError(self,"Check required failed")
-
+         
    def startProcess(self):
       """ Called at beginning of processing.  Perform any intialization or notification here. """
       print "Updating ", self.name
-    
-   def isAvailable(self):
-      " If true, then validation passed and we should be able to use boost. "
-      return self.available
-
+       
    def setInitial(self, optDict):
       " Set initial values from given options dictionary. "
       print "Loading initial settings for boost"
