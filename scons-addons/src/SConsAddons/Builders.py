@@ -24,7 +24,7 @@ Small custom builders useful for scons-addons
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-import os, sys, re
+import os, sys, re, types, string, random
 import SConsAddons.Util as sca_util
 import SConsAddons.EnvironmentBuilder as sca_envbldr
 import SCons.Defaults
@@ -46,7 +46,7 @@ def CreateSubst(target, source, env):
          '@version@'                   : version_str
       }
 
-         my_file = env.ConfigBuilder('file.out','file.in', submap=submap)
+         my_file = env.SubstBuilder('file.out','file.in', submap=submap)
          env.AddPostAction (my_file, Chmod('$TARGET', 0644))
          env.Depends(my_file, 'version.h')
    """
@@ -57,7 +57,7 @@ def CreateSubst(target, source, env):
 
    # Build each target from its source
    for i in range(len(targets)):
-      print "Generating config file " + targets[i]
+      #print "Generating file " + targets[i]
       contents = open(sources[i], 'r').read()
 
       # Go through the substitution dictionary and modify the contents read in
@@ -69,7 +69,116 @@ def CreateSubst(target, source, env):
       open(targets[0], 'w').write(contents)
       os.chmod(targets[0], 0755)
 
+def generate_builder_str(target, source, env):
+   return "generating: %s"%target[0]
+
 def registerSubstBuilder(env):
    env["BUILDERS"]["SubstBuilder"] = \
             SCons.Builder.Builder(action=SCons.Action.Action(CreateSubst, 
+                                                             generate_builder_str,
                                                              varlist=['submap',]))
+
+
+def CreateStringFormatBuilder(target, source, env):
+   """ Custom builder helpful for creating just about anything that can use
+       standard string substitutation.
+
+       The builder works by replacing standard string replacement variables
+       ( %(example)s ) within a string with values from a map.
+      
+      Example:
+         submap = {
+         'prefix'    : my_prefix,
+         'version'   : version_str
+      }
+
+         my_file = env.StringFormatBuilder('file.out','file.in', submap=submap)
+         env.AddPostAction (my_file, Chmod('$TARGET', 0644))
+         env.Depends(my_file, 'version.h')
+   """
+   targets = map(lambda x: str(x), target)
+   sources = map(lambda x: str(x), source)
+
+   submap = env['submap']
+
+   # Build each target from its source
+   for i in range(len(targets)):
+      #print "Generating file " + targets[i]
+      contents = open(sources[i], 'r').read()
+
+      # Perform string subsittution
+      new_contents = contents % submap       
+
+      # Write out the target file with the new contents
+      open(targets[0], 'w').write(new_contents)
+      os.chmod(targets[0], 0755)
+
+def registerStringFormatBuilder(env):
+   env["BUILDERS"]["StringFormatBuilder"] = \
+            SCons.Builder.Builder(action=SCons.Action.Action(CreateStringFormatBuilder,
+                                                             generate_builder_str,
+                                                             varlist=['submap',]))
+
+
+def randomHeaderGuard(length):
+   chars = string.letters
+   random_str = ""
+   for i in range(length):
+      random_str += random.choice(chars)
+   return random_str
+   
+def CreateDefineBuilder(target, source, env):
+   """ Custom builder for creating a define file.
+
+      The builder works by creating "#define" values in a file.      
+      If value is a list, then first entry is the value and second is help text.
+      There is a special case when the value is 'False' as a bool.  In this case
+      the variable is not even defined.
+      
+      Example:
+      definemap = {
+         'USES_OPTION1'   : True,
+         'USES_OPTION2'   : (5,"Value to set something")
+      }
+      
+      my_file = env.StringFormatBuilder('file.out','file.in', definemap=definemap, headerguard="MY_FILE_H")
+      env.AddPostAction (my_file, Chmod('$TARGET', 0644))
+      env.Depends(my_file, 'version.h')
+   """
+   targets = map(lambda x: str(x), target)
+   sources = map(lambda x: str(x), source)
+   definemap = env['definemap']
+
+   # Build each target from its source
+   for i in range(len(targets)):
+      #print "Generating file " + targets[i]
+      content = ""
+      for (define,value) in definemap.iteritems():
+         help_text = None
+         if isinstance(value, (types.ListType,types.TupleType)):
+            help_text = value[1]
+            value = value[0]
+         if help_text:
+            content += "/* %s */\n"%help_text
+         if isinstance(value, types.BooleanType):     # Convert from bool to int
+            value = int(value)
+            if not value:
+               content += "/* #define %s %s */\n\n"%(define,str(value))
+               continue            
+         content += "#define %s %s\n\n"%(define,str(value))
+      guard = "_GUARD_%s_"%randomHeaderGuard(8) 
+      if env.has_key("headerguard"):
+         guard = env["headerguard"]
+      content = "#ifndef %(guard)s\n#define %(guard)s\n\n%(content)s\n\n#endif\n"%vars()
+      
+      # Write out the target file with the new contents
+      open(targets[0], 'w').write(content)      
+
+def define_builder_str(target, source, env):
+   return "generating: %s"%target[0]
+
+def registerDefineBuilder(env):
+   env["BUILDERS"]["DefineBuilder"] = \
+            SCons.Builder.Builder(action=SCons.Action.Action(CreateDefineBuilder,
+                                                             define_builder_str,
+                                                             varlist=['definemap',]))
