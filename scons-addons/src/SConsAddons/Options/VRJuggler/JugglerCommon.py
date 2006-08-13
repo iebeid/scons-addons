@@ -62,7 +62,7 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
       #self.configCmdName = 'vrj-config'
       #self.filesToCheckRelBase = [pj('include','vpr','vprConfig.h'), ... ]
       
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, helpText);
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, helpText);
             
       # Local options
       self.baseDir = None
@@ -89,7 +89,7 @@ class JugglerCommon(SConsAddons.Options.PackageOption):
          self.baseDir = optDict[self.baseDirKey];
          self.configCmdFullPath = pj(self.baseDir, 'bin', self.configCmdName)
          if self.verbose:
-            print "   %s specified or cached. [%s]."% (self.baseDirKey,self.baseDir);
+            print "   %s specified or cached. [%s]."% (self.baseDirKey,self.baseDir)
         
    def find(self, env):
       # Quick exit if nothing to find

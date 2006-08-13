@@ -28,15 +28,38 @@ __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 import SCons.Environment   # Get the environment crap
 import SCons
 import SConsAddons.Options   # Get the modular options stuff
+import SConsAddons.Options.FlagPollBasedOption as FlagPollBasedOption
 import JugglerCommon
 import SCons.Util
 import sys, os, re, string
 
 from SCons.Util import WhereIs
-pj = os.path.join;
+pj = os.path.join
 
 
-class VRJ(JugglerCommon.JugglerCommon):
+class VRJ(FlagPollBasedOption.FlagPollBasedOption):
+   """ 
+   Options object for capturing vapor options and dependencies.
+   """
+
+   def __init__(self, name, requiredVersion, required=True, useCppPath=True):
+      """
+         name - The name to use for this option
+         requiredVersion - The version of VRJ required (ex: "0.16.7")
+         required - Is the dependency required?  (if so we exit on errors)
+         useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
+      """
+      help_text = """Base directory for VRJ. bin, include, and lib should be under this directory""";
+      self.baseDirKey = "VrjBaseDir"
+      self.filesToCheckRelBase = [pj('include','vpr','vprConfig.h'),
+                                  pj('include','jccl','jcclConfig.h'),
+                                  pj('include','gadget','gadgetConfig.h'),
+                                  pj('include','vrj','vrjConfig.h')]
+
+      FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'vrjuggler', requiredVersion,required, useCppPath, help_text);
+      
+
+class VRJ_config(JugglerCommon.JugglerCommon):
    """ 
    Options object for capturing vapor options and dependencies.
    """

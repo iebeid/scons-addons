@@ -37,6 +37,7 @@ import string
 import SCons.Environment
 import SCons
 import SCons.Platform
+from SCons.Util import WhereIs
 
 pj = os.path.join
 
@@ -233,6 +234,72 @@ class ConfigCmdParser:
       if not self.valid:
          return ""
       return os.popen(self.config_cmd + " " + arg).read().strip()
+   
+class FlagPollParser:
+   """  
+   Helper class for calling flagpoll and extracting
+   various paths and other information from it.
+   """
+   
+   def __init__(self, moduleName):
+      " moduleName: The config command to call "
+      self.moduleName = moduleName
+      self.valid = True
+      
+      self.flagpoll_cmd = WhereIs('flagpoll')
+      if None == self.flagpoll_cmd:
+         print "FlagPollParser: %s  Could not find flagpoll."
+         self.valid = False
+      else:
+         self.flagpoll_cmd += " %s"%self.moduleName      
+         self.callFlagPoll("--exists")         
+
+      # Initialize regular expressions
+      # Res that when matched against config output should match the options we want
+      # In future could try to use INCPREFIX and other platform neutral stuff
+      self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
+      self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
+      self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
+      
+   def findLibs(self, arg="--libs-only-l"):
+      if not self.valid:
+         return ""
+      return self.lib_re.findall(self.callFlagPoll(arg))
+   
+   def findLibPaths(self, arg="--libs-only-L"):
+      if not self.valid:
+         return ""
+      return self.lib_path_re.findall(self.callFlagPoll(arg))
+   
+   def findLinkFlags(self, arg="--libs-only-other"):
+      if not self.valid:
+         return ""
+      return self.callFlagPoll(arg)
+
+   def findIncludes(self, arg="--cflags-only-I"):
+      if not self.valid:
+         return ""
+      return self.inc_re.findall(self.callFlagPoll(arg))
+
+   def getVersion(self, arg="--modversion"):
+      if not self.valid:
+         return ""
+      return self.callFlagPoll(arg)
+   
+   def callFlagPoll(self, cmdFlags):
+      """ Return result of calling flagpoll.
+          Checks for error state and outputs error and returns ''
+      """
+      cur_cmd = "%s %s"%(self.flagpoll_cmd, cmdFlags)
+      print "Calling: ", cur_cmd
+      cmd_call = os.popen(cur_cmd)
+      cmd_str = cmd_call.read().strip()
+      if None != cmd_call.close():
+         self.valid = False 
+         print "FlagPollParser: call failed: %s"%cur_cmd
+      return cmd_str
+
+
    
 # -------------------- #
 # Path utils

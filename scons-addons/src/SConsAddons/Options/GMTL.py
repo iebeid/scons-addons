@@ -129,7 +129,7 @@ class GMTL(SConsAddons.Options.PackageOption):
 
       # --- Check version requirement --- #
       req_ver = [int(n) for n in self.requiredVersion.split(".")]
-      version_header = pj(inc_dir,'gmtl','version.h')
+      version_header = pj(inc_dir,'gmtl','Version.h')
       if not os.path.isfile(version_header):
          passed = False
          self.checkRequired("%s does not exist.  Can not determine gmtl version."%version_header)
@@ -145,7 +145,7 @@ class GMTL(SConsAddons.Options.PackageOption):
       # --- Build flag settings --- #         
       if has_config_cmd:
          # Returns lists of the options we want
-         self.found_incs = inc_dir + cfg_cmd_parser.findIncludes(" --cxxflags")
+         self.found_incs = [inc_dir,] + cfg_cmd_parser.findIncludes(" --cxxflags")
       else:
          self.found_incs = [inc_dir,]         
 

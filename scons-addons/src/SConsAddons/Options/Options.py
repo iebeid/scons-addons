@@ -52,6 +52,11 @@ import types, string, os.path
 import SCons.Errors
 import SCons.Util
 import textwrap
+pj = os.path.join
+
+import SCons.SConf
+Configure = SCons.SConf.SConf
+
 
 # TODO: Port more standard SCons options over to this interface.
 #
@@ -150,6 +155,7 @@ class PackageOption(LocalUpdateOption):
     def __init__(self, name, keys, help):
         LocalUpdateOption.__init__(self,name,keys,help)
         self.available = False
+        self.required = False
         
     def isAvailable(self):
         " Return true if the package is available "
@@ -158,7 +164,104 @@ class PackageOption(LocalUpdateOption):
     def setAvailable(self, val):
         self.available = val
 
+    def checkRequired(self, msg):
+        """ Called when there is config problem.  If required, then exit with error message """
+        print msg
+        if self.required:
+            raise OptionError(self,"Check required failed: %s"%msg)
+
+
         
+class StandardPackageOption(PackageOption):
+    """ Simple package option that is meant for library and header checking with very
+        little customization.  Just uses Configure.CheckXXX methods behind the scenes
+        for verification.
+    """
+    def __init__(self, name, help, header=None, library=None, symbol="main", required=False):
+        self.baseKey = name
+        self.incDirKey = name + "_incdir"
+        self.libDirKey = name + "_libdir"
+        
+        PackageOption.__init__(self,name,[self.baseKey,self.incDirKey,self.libDirKey],help)
+        self.available = False        
+        self.baseDir = None 
+        self.incDir = None
+        self.libDir = None
+        self.header = header
+        self.library = library
+        self.symbol = symbol
+        self.required = required
+
+    def startProcess(self):
+        print "Checking for: ", self.name
+    
+    def setInitial(self, optDict):
+        " Set initial values from given dict "
+        if self.verbose:
+            print "   Setting initial %s settings."%self.name
+        if optDict.has_key(self.baseKey):
+            self.baseDir = optDict[self.baseKey]
+            if self.verbose:
+                print "   %s specified or cached. [%s]."% (self.baseKey, self.baseDir)
+        if optDict.has_key(self.incDirKey):
+            self.incDir = optDict[self.incDirKey]
+            if self.verbose:
+                print "   %s specified or cached. [%s]."% (self.incDirKey, self.incDir)
+        if optDict.has_key(self.libDirKey):
+            self.libDir = optDict[self.libDirKey]
+            if self.verbose:
+                print "   %s specified or cached. [%s]."% (self.libDirKey, self.libDir)
+    
+    def find(self,env):
+        # Don't try to find it for now.  Just use configure tests
+        if self.baseDir:
+            if os.path.exists(pj(self.baseDir,'include')):
+                self.incDir = pj(self.baseDir,'include')
+            if os.path.exists(pj(self.baseDir,'lib')):
+                self.libDir = pj(self.baseDir,'lib')
+    
+    def validate(self, env):
+        passed = True
+    
+        conf_env = env.Copy()
+        self.apply(conf_env)
+        
+        conf_ctx = Configure(conf_env)
+        if self.library and self.header:
+            result = conf_ctx.CheckLibWithHeader(self.library, self.header, "C++")
+        elif self.library:
+            result = conf_ctx.CheckLib(library=self.library, symbol=self.symbol, language="C++")
+        elif self.header:
+            result = conf_ctx.CheckCXXHeader(self.header)
+        
+        if not result:
+            passed = False
+            self.checkRequired("Validation failed for option: %s"%self.name)
+        conf_ctx.Finish()
+
+        if not passed:
+            self.baseDir = None
+            self.incDir = None
+            self.libDir = None
+        else:
+            self.available = True
+
+    def apply(self, env):
+        if self.incDir:
+            env.Append(CPPPATH = self.incDir)
+        if self.libDir:
+            env.Append(LIBPATH = self.libDir)
+            
+    def getSettings(self):
+        """ Return list sequence of ((key,value),(key,value),).
+            dict.iteritems() should work.
+            Used to save out settings for persistent options.
+        """
+        return [(self.baseKey,self.baseDir),
+                (self.incDirKey, self.incDir),
+                (self.libDirKey, self.libDir)]
+
+
 class SimpleOption(Option):
     """
     Implementation of a simple option wrapper.  This is used by Options.Add()
