@@ -167,6 +167,7 @@ class CppDom(SConsAddons.Options.PackageOption):
       # --- Build flag settings --- #         
       if has_config_cmd:
          # Returns lists of the options we want
+         print "%s %s" % (inc_dir, cfg_cmd_parser.findIncludes(" --cxxflags"))
          self.found_incs = [inc_dir,] + cfg_cmd_parser.findIncludes(" --cxxflags")
          self.found_libs = cfg_cmd_parser.findLibs()
          self.found_lib_paths = cfg_cmd_parser.findLibPaths()
