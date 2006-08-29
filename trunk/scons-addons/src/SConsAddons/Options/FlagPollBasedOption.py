@@ -136,7 +136,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       else:
          found_ver_str = self.flagpoll_parser.getVersion()
          if not self.flagpoll_parser.valid:
-            self.checkRequired("   version call failed: %s"%ver_cmd)
+            self.checkRequired("   version call failed: %s"%self.flagpoll_parser.flagpoll_cmd)
             passed = False
          else:            
             req_ver = [int(n) for n in self.requiredVersion.split(".")]

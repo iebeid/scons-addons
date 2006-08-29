@@ -39,13 +39,12 @@ import SCons.Node.FS
 import SCons.Scanner
 
 #### SCANNER ######
-def PysteScan(fs = SCons.Node.FS.default_fs):    
+def PysteScan():    
     """Return a prototype Scanner instance for scanning IDL source files"""
     ps = SCons.Scanner.Classic("PysteScan",
                                [".pyste",".Pyste"],
                                "CPPPATH",
-                               """["'](\S*?\.h)["']""",
-                               fs = fs)
+                               """["'](\S*?\.h)["']""")
     return ps
     
 def PysteMainEmitter(target, source, env):
