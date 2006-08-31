@@ -260,6 +260,7 @@ class FlagPollParser:
       self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
       self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
       self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
+      self.link_flag_re = re.compile(r'(?: |^)(-\S*)', re.MULTILINE);
       
    def findLibs(self, arg="--libs-only-l"):
       if not self.valid:
@@ -274,7 +275,7 @@ class FlagPollParser:
    def findLinkFlags(self, arg="--libs-only-other"):
       if not self.valid:
          return ""
-      return self.callFlagPoll(arg)
+      return self.link_flag_re.findall(self.callFlagPoll(arg))
 
    def findIncludes(self, arg="--cflags-only-I"):
       if not self.valid:

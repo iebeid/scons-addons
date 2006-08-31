@@ -125,8 +125,8 @@ class Boost(SConsAddons.Options.PackageOption):
          self.thread_extra_libs = []
       else:
          # Link flags that may be needed on unix for the embedded case
-         self.python_embedded_link_flags = [distutils.sysconfig.get_config_var('LINKFORSHARED'),]
-         #self.python_embedded_link_flags = "-Wl,-export-dynamic"
+         #self.python_embedded_link_flags = [distutils.sysconfig.get_config_var('LINKFORSHARED'),]
+         self.python_embedded_link_flags = ["-Wl,-export-dynamic"]
          self.python_lib_path = [pj(sys.prefix,'lib'),]
          self.python_static_lib_path = distutils.sysconfig.get_python_lib(standard_lib=True) + "/config"         
          lib_python_fname = 'python' + self.python_version
