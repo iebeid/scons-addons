@@ -42,7 +42,7 @@ class VRJ(FlagPollBasedOption.FlagPollBasedOption):
    Options object for capturing vapor options and dependencies.
    """
 
-   def __init__(self, name, requiredVersion, required=True, useCppPath=True):
+   def __init__(self, name, requiredVersion, required=True, useCppPath=True, drawManagers=['GL']):
       """
          name - The name to use for this option
          requiredVersion - The version of VRJ required (ex: "0.16.7")
@@ -55,9 +55,32 @@ class VRJ(FlagPollBasedOption.FlagPollBasedOption):
                                   pj('include','jccl','jcclConfig.h'),
                                   pj('include','gadget','gadgetConfig.h'),
                                   pj('include','vrj','vrjConfig.h')]
+      self.mDrawManagers = drawManagers
 
       FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'vrjuggler', requiredVersion,required, useCppPath, help_text);
+
+   def validate(self, env):
+      passed = FlagPollBasedOption.FlagPollBasedOption.validate(self, env)
       
+      self.found_draw_mgr_libs = []
+      
+      if passed:
+         ogl_libs = self.flagpoll_parser.findLibs("--get-vrj-ogl-libs")
+         pf_libs = self.flagpoll_parser.findLibs("--get-vrj-pf-libs")
+         for man in self.mDrawManagers:
+            if man.lower() == 'gl':
+               self.found_draw_mgr_libs.extend(ogl_libs)
+            if man.lower() == 'pf':
+               self.found_draw_mgr_libs.extend(pf_libs)
+
+         #print "-----------------------"
+         #print "self.found_draw_mgr_libs:", self.found_draw_mgr_libs
+
+   def apply(self, env, useCppPath=False):
+      """ Add environment options for building against vrj-based library"""
+      passed = FlagPollBasedOption.FlagPollBasedOption.apply(self, env, useCppPath)
+      if self.found_draw_mgr_libs:
+         env.AppendUnique(LIBS = self.found_draw_mgr_libs)
 
 class VRJ_config(JugglerCommon.JugglerCommon):
    """ 

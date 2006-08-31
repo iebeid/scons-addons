@@ -157,7 +157,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       #print "self.found_libs:", self.found_libs
       #print "self.found_lib_paths:", self.found_lib_paths
       #print "self.found_link_from_libs:", self.found_link_from_libs
-   
+
       if not passed:
          # Clear everything and remove the key from the environment
          self.baseDir = None         
@@ -169,6 +169,8 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
       self.available = True
       print "   %s version: %s [OK]" % (self.moduleName,found_ver_str)
+
+      return passed
 
 
    def apply(self, env, useCppPath=False):
