@@ -430,6 +430,12 @@ class Boost(SConsAddons.Options.PackageOption):
       if(sca_util.GetPlatform() == "linux"):
          env['CXXCOM'] += " ; objcopy --set-section-flags .debug_str=contents,debug $TARGET"
          env['SHCXXCOM'] += " ; objcopy -v --set-section-flags .debug_str=contents,debug $TARGET $TARGET"
+      
+      # Add visibility flags for gcc 4.0 and greater
+      if "g++" in env["CXX"]:
+         gcc_version = env["CXXVERSION"].split(".")
+         if int(gcc_version[0]) >= 4:         
+            env.AppendUnique(CXXFLAGS = ['-fvisibility=hidden', '-fvisibility-inlines-hidden'])
 
    def getSettings(self):
       return [(self.baseDirKey, self.baseDir), (self.incDirKey, self.incDir)]
