@@ -134,7 +134,7 @@ class Boost(SConsAddons.Options.PackageOption):
          self.python_link_flags = []
          self.thread_extra_libs = ["pthread","dl"]
       
-   def buildFullLibName(self, libname, env):
+   def buildFullLibName(self, libname, env, useDebug=None):
       """ Returns the full name of the boost library.
           TODO: Do a better job of finding the libraries naming convention
           in the validate method above.
@@ -148,12 +148,16 @@ class Boost(SConsAddons.Options.PackageOption):
          if self.use_mt:
             fullname += "-mt"
 
-         if env and env.has_key("variant") and env["variant"].has_key("type"):
-            var_type = env["variant"]["type"]
-            if "debug" == var_type:
-               fullname += debug_ext                        
-         elif self.use_debug:
+         if useDebug is None:
+            if self.use_debug:
+               fullname += debug_ext
+            elif env and env.has_key("variant") and env["variant"].has_key("type"):
+               var_type = env["variant"]["type"]
+               if "debug" == var_type:
+                  fullname += debug_ext
+         elif useDebug is True:
             fullname += debug_ext
+
 
       if self.use_ver and self.libVersionStr is not None:
          fullname += "-" + self.libVersionStr
@@ -376,7 +380,7 @@ class Boost(SConsAddons.Options.PackageOption):
          self.available = True
 
 
-   def apply(self, env, libs=None, useCppPath=False):
+   def apply(self, env, libs=None, useCppPath=False, useDebug=None):
       """ Add environment options for building against Boost libraries """
       if self.found_incs:
          if self.useCppPath or useCppPath:
@@ -386,37 +390,37 @@ class Boost(SConsAddons.Options.PackageOption):
       env.AppendUnique(CPPDEFINES = self.found_defines,
                        LIBPATH = self.found_lib_paths)
       if not self.autoLink:
-         full_libs = [self.buildFullLibName(l,env) for l in self.lib_names if 'python' != l]         
+         full_libs = [self.buildFullLibName(l,env, useDebug) for l in self.lib_names if 'python' != l]         
          env.AppendUnique(LIBS = full_libs)      
 
 
    def updatePythonEmbeddedEnv(self,env):
       self.applyPythonEmbeddedEnv(env)
 
-   def applyPythonEmbeddedEnv(self,env):
+   def applyPythonEmbeddedEnv(self,env, useDebug=None):
       """ Update the environment for building python embedded. 
           XXX: may need python_static_lib_path.
       """
       self.apply(env)
       #print "Full python lib name:", self.buildFullLibName('python')
-      env.AppendUnique(LIBS = [self.buildFullLibName('python',env)])
+      env.AppendUnique(LIBS = [self.buildFullLibName('python',env, useDebug)])
       env.AppendUnique(CPPPATH = [self.python_inc_dir,],
                        LINKFLAGS = self.python_embedded_link_flags + self.python_link_flags,
                        LIBPATH = self.python_lib_path,
                        LIBS = self.python_extra_libs)
 
    
-   def updatePythonModEnv(self, env):
-      self.applyPythonModEnv(env)
+   def updatePythonModEnv(self, env, useDebug=None):
+      self.applyPythonModEnv(env, useDebug)
    
-   def applyPythonModEnv(self, env):
+   def applyPythonModEnv(self, env, useDebug=None):
       """ Update the environment for building python modules """
       if not "python" in self.lib_names:
          print "Tried to updatePythonModEnv with boost option object not configured with python library.\n"
          sys.exit(0)
          
       self.apply(env)
-      env.AppendUnique(LIBS = [self.buildFullLibName("python",env),] )    # Add on the boost python library
+      env.AppendUnique(LIBS = [self.buildFullLibName("python",env, useDebug),] )    # Add on the boost python library
       env.AppendUnique(CPPPATH = [self.python_inc_dir,],
                        LINKFLAGS = self.python_link_flags,
                        LIBPATH = self.python_lib_path,
