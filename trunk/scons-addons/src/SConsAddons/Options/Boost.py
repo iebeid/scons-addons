@@ -381,7 +381,10 @@ class Boost(SConsAddons.Options.PackageOption):
 
 
    def apply(self, env, libs=None, useCppPath=False, useDebug=None):
-      """ Add environment options for building against Boost libraries """
+      """ Add environment options for building against Boost libraries.
+          Apply the options and take into account any variant information
+          in the environment.
+      """
       if self.found_incs:
          if self.useCppPath or useCppPath:
             env.AppendUnique(CPPPATH = self.found_incs)

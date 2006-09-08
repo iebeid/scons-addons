@@ -155,7 +155,7 @@ class VariantsHelper(object):
       import SConsAddons.Options as sca_opts      
       assert isinstance(opts, sca_opts.Options)
       
-      known_help_text = {"type":"Types of tun-times to build.",
+      known_help_text = {"type":"Types of run-times to build.",
                          "libtype":"Library types to build.",
                          "arch":"Target processor architectures to build."}
 
