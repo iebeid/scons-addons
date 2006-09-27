@@ -727,7 +727,8 @@ class Options:
                     k_help = option.help
                     if SCons.Util.is_List(option.help):
                         k_help = option.help[ki]
-                    option_help = '%*s: %s\n' % (max_key_len, k, k_help)
+                    format_spacing = ' '*(max_key_len - len(k))
+                    option_help = '%s: %s%s\n' % (k, format_spacing, k_help)
                     help_text = help_text + wrapper.fill(option_help) + "\n"
     
                     if env.has_key(k):
