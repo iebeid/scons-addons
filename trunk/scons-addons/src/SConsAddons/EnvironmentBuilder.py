@@ -442,7 +442,7 @@ def msvc_debug(bldr, env):
    """ TODO: Update to handle PDB debug database files. 
        TODO: Add support for run-time error checking.
    """
-   print "Calling gcc_debug."
+   #print "Calling msvc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
    env.Append(CCFLAGS=['/Od','/Ob0','/Z7'],
