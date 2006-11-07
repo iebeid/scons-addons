@@ -292,7 +292,7 @@ class FlagPollParser:
           Checks for error state and outputs error and returns ''
       """
       cur_cmd = "%s %s"%(self.flagpoll_cmd, cmdFlags)
-      print "Calling: ", cur_cmd
+      #print "Calling: ", cur_cmd
       cmd_call = os.popen(cur_cmd)
       cmd_str = cmd_call.read().strip()
       if None != cmd_call.close():
