@@ -168,13 +168,13 @@ def getHeaders():
  
 def getSources():
    """ get the source files in the current directory"""
-   exts = ['.cpp','.c']
+   exts = ['.cpp','.c','.C','.cxx']
    files = os.listdir('.')
    ret = []
    for x in files:
-      print "checking if"+x+"is a header"
+      print "checking if"+x+"is a source file"
       for e in exts:
-         print "wither header suffix: "+e
+         print "wither source suffix: "+e
          if x.endswith(e):
             ret.append(x)
    return ret
@@ -188,7 +188,7 @@ def getFilesRecursiveByExt(tree_root, fexts):
 
 def getSourcesRecursive(tree_root):
    """ Return list of sources recursively """
-   return getFilesRecursiveByExt(tree_root, ['.cpp','.C'])
+   return getFilesRecursiveByExt(tree_root, ['.cpp','.c','.C','.cxx'])
 
 def getHeadersRecursive(tree_root):
    """ Return list of headers recursively """
