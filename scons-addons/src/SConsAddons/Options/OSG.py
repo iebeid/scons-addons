@@ -45,7 +45,7 @@ class OSG(SConsAddons.Options.PackageOption):
    """
 
    def __init__(self, name, requiredVersion, required=True,
-                useCppPath = False):
+                useCppPath = False, libList = None):
       """
          name - The name to use for this option
          requiredVersion - The version of vapor required (ex: "0.16.7")
@@ -63,7 +63,12 @@ class OSG(SConsAddons.Options.PackageOption):
 
       # configurable options
       self.baseDir = None
-
+      if libList == None:
+         self.libList=['osgText', 'osgProducer', 'Producer', 'osgText',
+                         'osgGA', 'osgDB', 'osgUtil', 'osg', 'OpenThreads']
+      else:
+         self.libList=libList
+         
       # Settings to use
       self.found_libs = None
       self.found_cflags = None
@@ -101,10 +106,11 @@ class OSG(SConsAddons.Options.PackageOption):
       # Check that path exists
       # Check that an include file (include/osg/Version) exists
       # Update the temps for later usage
-      passed = True
+      passed = False
       self.available = False
 
       if self.baseDir is None:
+         self.checkRequired("OSG base dir (OsgBaseDir) was not specified")
          return
 
       if not os.path.isdir(self.baseDir):
@@ -115,6 +121,8 @@ class OSG(SConsAddons.Options.PackageOption):
       if not os.path.isfile(osg_version_file):
          self.checkRequired("%s not found" % osg_version_file)
          return
+      else:
+         passed = True
 
       # TODO: Check version requirement
 
@@ -148,8 +156,7 @@ class OSG(SConsAddons.Options.PackageOption):
       if distutils.util.get_platform().find('x86_64') != -1:
          env.Append(LIBPATH = [os.path.join(self.baseDir, 'lib64')])
 
-      env.Append(LIBS = ['osgText', 'osgProducer', 'Producer', 'osgText',
-                         'osgGA', 'osgDB', 'osgUtil', 'osg', 'OpenThreads'])
+      env.Append(LIBS = self.libList)
 
    def getSettings(self):
       return [(self.baseDirKey, self.baseDir),]
