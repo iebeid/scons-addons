@@ -732,7 +732,7 @@ class Package:
                self.extra_dist.append(file)
 
 
-   def build(self):
+   def build(self, install = True):
       """
       Sets up the build and install for this package. This will build all
       assemblies contained therein that have not already been built and set 
@@ -743,8 +743,9 @@ class Package:
             assembly.build()
 
       # Build the file bundles for this package
-      for fb in self.fileBundles:
-         fb.buildInstall(self.env, self.prefix)
+      if install:
+         for fb in self.fileBundles:
+            fb.buildInstall(self.env, self.prefix)
       #self.env.Alias('install', self.prefix)            
       
       # Setup all packagers
