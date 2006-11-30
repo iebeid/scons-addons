@@ -214,6 +214,7 @@ class ConfigCmdParser:
       self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
       self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
       self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
+      self.cxx_flags_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE);
       
    def findLibs(self, arg="--libs"):
       if not self.valid:
@@ -229,6 +230,11 @@ class ConfigCmdParser:
       if not self.valid:
          return ""
       return self.inc_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+
+   def findCXXFlags(self, arg="--cflags"):
+      if not self.valid:
+         return ""
+      return self.cxx_flags_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
 
    def getVersion(self, arg="--version"):
       if not self.valid:
