@@ -231,9 +231,9 @@ class EnvironmentBuilder(object):
    
    def readOptions(self, optEnv):
       """ Read the processed options from the given environment. """
-      self.defaultDebugLevel   = optEnv["default_debug_level"]
-      self.defaultOptLevel     = optEnv["default_opt_level"]
-      self.defaultWarningLevel = optEnv["default_warning_level"]
+      self.debugLevel   = optEnv["default_debug_level"]
+      self.optLevel     = optEnv["default_opt_level"]
+      self.warningLevel = optEnv["default_warning_level"]
 
       if GetPlatform() == "darwin":
          self.darwinUniversalEnabled = optEnv["darwin_universal"]
