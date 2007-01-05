@@ -735,6 +735,12 @@ class Options:
                         help_text += key_spacing
                         if isinstance(value,types.ListType):
                             help_text += '%s\n'%value
+                        elif isinstance(option, EnumOption):
+                            enum_text = str(value)
+                            for (k,v) in option.map.iteritems():
+                               if value == v:
+                                  enum_text = k
+                            help_text += '[%s]\n'%enum_text
                         else:
                             help_text += '[%s]\n'%value
                     
