@@ -53,6 +53,9 @@ class Boost(SConsAddons.Options.PackageOption):
                    "Include directory for boost (if not under base)."]
       self.baseDirKey = "BoostBaseDir"
       self.incDirKey = "BoostIncludeDir"
+      SConsAddons.Options.PackageOption.__init__(self, name, 
+                                                 [self.baseDirKey, self.incDirKey], 
+                                                 help_text)      
       self.requiredVersion = requiredVersion
       self.libVersionStr = None
       self.lib_names = libs
@@ -63,9 +66,6 @@ class Boost(SConsAddons.Options.PackageOption):
       self.autoLink = autoLink
       if sca_util.GetPlatform() != "win32":
          self.autoLink = False
-      SConsAddons.Options.PackageOption.__init__(self, name, 
-                                                 [self.baseDirKey, self.incDirKey], 
-                                                 help_text)
       self.available = False            # Track availability
       
       self.found_incs = []
