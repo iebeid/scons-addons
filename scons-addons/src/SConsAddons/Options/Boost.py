@@ -253,14 +253,17 @@ class Boost(SConsAddons.Options.PackageOption):
       print "   searching for boost..."
       
       # May be able to use configure context here...
-      directories_to_check = [env.Dictionary().get("CPPPATH"), pj("usr","include"),
-                              pj("usr","local","include")]
+      directories_to_check = [env.Dictionary().get("CPPPATH"), pj("/","usr","include"),
+                              pj("/","usr","local","include")]
+
       for d in directories_to_check:
          if None != d:
             ver_header = env.FindFile(boost_header, d)
+            if ver_header:
+               break
 
       if None == ver_header:
-         self.checkRequired("   could not find boost header: ")
+         self.checkRequired("   could not find boost header [%s] in paths: %s"%(boost_header,directories_to_check))
       else:
          ver_header = str(ver_header)
          print "   found at: %s\n"%ver_header
@@ -408,7 +411,7 @@ class Boost(SConsAddons.Options.PackageOption):
             
          if not found_fullname:
             passed = False
-            self.checkRequired("Uname to find library: lib: %s"%libname)
+            self.checkRequired("Unable to find library: %s tried: %s"%(libname,possible_lib_names))
          else:
             self.found_libs[libname] = found_fullname
             print "  %s: %s"%(libname, found_fullname)
