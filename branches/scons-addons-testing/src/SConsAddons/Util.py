@@ -39,6 +39,9 @@ import SCons
 import SCons.Platform
 from SCons.Util import WhereIs
 
+import SCons.SConf
+Configure = SCons.SConf.SConf     # Use same alias as SConsctruct sees
+
 pj = os.path.join
 
 def GetPlatform():
@@ -304,7 +307,26 @@ class FlagPollParser:
       if None != cmd_call.close():
          self.valid = False 
          print "FlagPollParser: call failed: %s"%cur_cmd
+      #else:
+      #   print "FlagPollParser: call succeeded: %s"%cur_cmd
       return cmd_str
+      
+   def validate(self, env, headerToCheck, libToCheck):
+      # Try to build against the library
+      conf_env = env.Copy()                 # Make a copy of the env
+      cur_cmd = "%s %s --libs-only-L --cflags"%(self.flagpoll_cmd, self.moduleName)
+      conf_env.ParseConfig(cur_cmd)
+      conf_ctxt = Configure(conf_env);
+      if not conf_ctxt.CheckCXXHeader(headerToCheck):
+         print "Can't compile with %s" %headerToCheck
+         return False
+      if len(self.findLibs()):
+         if not conf_ctxt.CheckLib(libToCheck, autoadd=0):
+            print "Can't compile with %s" %self.moduleName
+            return False
+         
+      conf_ctxt.Finish()
+      return True
 
 
    
