@@ -146,6 +146,10 @@ class OSG(SConsAddons.Options.PackageOption):
       useCppPath: If true, then put the include paths into the CPPPATH
                   variable.
       """
+      if self.baseDir is None:
+         self.checkRequired("OSG base dir (OsgBaseDir) was not specified")
+         return
+
       inc_dir = os.path.join(self.baseDir, 'include')
       if self.useCppPath or useCppPath:
          env.Append(CPPPATH = [inc_dir])

@@ -147,6 +147,10 @@ class VTK(SConsAddons.Options.PackageOption):
       useCppPath: If true, then put the include paths into the CPPPATH
                   variable.
       """
+      if self.baseDir is None:
+         self.checkRequired("VTK base dir (VtkBaseDir) was not specified")
+         return
+
       inc_dir = os.path.join(self.baseDir, 'include',self.vtkVersion )
       if self.useCppPath or useCppPath:
          env.Append(CPPPATH = [inc_dir])
