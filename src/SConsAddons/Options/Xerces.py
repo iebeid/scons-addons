@@ -141,6 +141,10 @@ class Xerces(SConsAddons.Options.PackageOption):
       useCppPath: If true, then put the include paths into the CPPPATH
                   variable.
       """
+      if self.baseDir is None:
+         self.checkRequired("Xerces base dir (XercesBaseDir) was not specified")
+         return
+
       inc_dir = os.path.join(self.baseDir, 'include' )
       if self.useCppPath or useCppPath:
          env.Append(CPPPATH = [inc_dir])
