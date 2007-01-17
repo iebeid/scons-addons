@@ -1,6 +1,0 @@
-Import('env')
-
-source = Split('code.cpp')
-
-env.Library('A', source)
-#env.SharedLibrary('A', source)
