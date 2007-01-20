@@ -34,6 +34,7 @@ import sys
 import re
 import distutils.util
 import string
+import commands
 import SCons.Environment
 import SCons
 import SCons.Platform
@@ -311,12 +312,20 @@ class FlagPollParser:
       #   print "FlagPollParser: call succeeded: %s"%cur_cmd
       return cmd_str
       
-   def validate(self, env, headerToCheck, libToCheck):
+   def validate(self, env, headerToCheck, libToCheck, version):
       # Try to build against the library
       conf_env = env.Copy()                 # Make a copy of the env
+      conf_ctxt = Configure(conf_env);
+      #check the version first
+      print "Checking for %s  >= %s..." %(self.moduleName, version)
+      fp = "%s %s --atleast-version=%s" %(self.flagpoll_cmd,self.moduleName,version)
+      ret = conf_ctxt.TryAction(fp)[0]
+      if not ret:
+         print commands.getstatusoutput( fp )[1]
+         return False   
+      # now check that the requested library and header can build
       cur_cmd = "%s %s --libs-only-L --cflags"%(self.flagpoll_cmd, self.moduleName)
       conf_env.ParseConfig(cur_cmd)
-      conf_ctxt = Configure(conf_env);
       if not conf_ctxt.CheckCXXHeader(headerToCheck):
          print "Can't compile with %s" %headerToCheck
          return False
