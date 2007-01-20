@@ -245,14 +245,14 @@ class ConfigCmdParser:
          return ""
       return os.popen(self.config_cmd + " " + arg).read().strip()
    
-def CheckPackageVersion(context, fp, module, version): 
-   message = "Checking for %s >= %s..." %(module, version)
+def CheckPackageVersion(context,fp,module,version): 
+   message = "Checking for %s >= %s..." %(module,version)
    context.Message(message) 
-   fp = "%s %s --atleast-version=%s" %(fp, module,version)
-   ret = context.TryAction(fp)[0] 
+   fpCmd = "%s %s --atleast-version=%s" %(fp,module,version)
+   ret = context.TryAction(fpCmd)[0] 
    if not ret: 
-      print commands.getstatusoutput( fp )[1] 
-   context.Result( ret ) 
+      print commands.getstatusoutput(fpCmd)[1] 
+   context.Result(ret) 
    return ret
 
 class FlagPollParser:
