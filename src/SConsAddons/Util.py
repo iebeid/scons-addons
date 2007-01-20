@@ -245,6 +245,16 @@ class ConfigCmdParser:
          return ""
       return os.popen(self.config_cmd + " " + arg).read().strip()
    
+def CheckPackageVersion(context, fp, module, version): 
+   message = "Checking for %s >= %s..." %(module, version)
+   context.Message(message) 
+   fp = "%s %s --atleast-version=%s" %(fp, module,version)
+   ret = context.TryAction(fp)[0] 
+   if not ret: 
+      print commands.getstatusoutput( fp )[1] 
+   context.Result( ret ) 
+   return ret
+
 class FlagPollParser:
    """  
    Helper class for calling flagpoll and extracting
@@ -311,18 +321,15 @@ class FlagPollParser:
       #else:
       #   print "FlagPollParser: call succeeded: %s"%cur_cmd
       return cmd_str
-      
+
    def validate(self, env, headerToCheck, libToCheck, version):
       # Try to build against the library
-      conf_env = env.Copy()                 # Make a copy of the env
-      conf_ctxt = Configure(conf_env);
+      conf_env = env.Copy()          
+      conf_ctxt = Configure(conf_env, custom_tests = {'CheckPackageVersion':CheckPackageVersion})
       #check the version first
-      print "Checking for %s  >= %s..." %(self.moduleName, version)
-      fp = "%s %s --atleast-version=%s" %(self.flagpoll_cmd,self.moduleName,version)
-      ret = conf_ctxt.TryAction(fp)[0]
+      ret = conf_ctxt.CheckPackageVersion(self.flagpoll_cmd,self.moduleName,version)
       if not ret:
-         print commands.getstatusoutput( fp )[1]
-         return False   
+         return False
       # now check that the requested library and header can build
       cur_cmd = "%s %s --libs-only-L --cflags"%(self.flagpoll_cmd, self.moduleName)
       conf_env.ParseConfig(cur_cmd)
@@ -336,8 +343,6 @@ class FlagPollParser:
          
       conf_ctxt.Finish()
       return True
-
-
    
 # -------------------- #
 # Path utils
