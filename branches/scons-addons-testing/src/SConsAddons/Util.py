@@ -322,7 +322,7 @@ class FlagPollParser:
       #   print "FlagPollParser: call succeeded: %s"%cur_cmd
       return cmd_str
 
-   def validate(self, env, headerToCheck, libToCheck, version):
+   def validate(self, env, headerToCheck, version):
       # Try to build against the library
       conf_env = env.Copy()          
       conf_ctxt = Configure(conf_env, custom_tests = {'CheckPackageVersion':CheckPackageVersion})
@@ -331,7 +331,7 @@ class FlagPollParser:
       if not ret:
          return False
       # now check that the requested library and header can build
-      cur_cmd = "%s %s --libs-only-L --cflags"%(self.flagpoll_cmd, self.moduleName)
+      cur_cmd = "%s %s --libs --cflags"%(self.flagpoll_cmd, self.moduleName)
       conf_env.ParseConfig(cur_cmd)
       if not conf_ctxt.CheckCXXHeader(headerToCheck):
          print "Can't compile with %s" %headerToCheck
