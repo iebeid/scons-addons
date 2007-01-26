@@ -337,7 +337,7 @@ class FlagPollParser:
          print "Can't compile with %s" %headerToCheck
          return False
       if len(self.findLibs()):
-         if not conf_ctxt.CheckLib(libToCheck, autoadd=0):
+         if not conf_ctxt.CheckLib(self.findLibs(), autoadd=0):
             print "Can't compile with %s" %self.moduleName
             return False
          
