@@ -201,46 +201,70 @@ class ConfigCmdParser:
    various paths and other information from it.
    """
    
-   def __init__(self, config_cmd):
-      " config_cmd: The config command to call "
-      self.config_cmd = config_cmd
+   def __init__(self, configCmd, configScript=None):
+      " configCmd: The config command to call "
+
+      self.configCmd = configCmd
       self.valid = True
-      if not os.path.isfile(config_cmd):
+      # Ensure that command is valid.
+      if not os.path.isfile(self.configCmd):
          self.valid = False
+
+      # If we have a config script, change the command to
+      # contain both the interpreter command and script.
+      if configScript:
+         self.configCmd = configCmd + ' ' + configScript
+         if not os.path.isfile(configScript):
+            self.valid = False
+
 
       # Initialize regular expressions
       # Res that when matched against config output should match the options we want
       # In future could try to use INCPREFIX and other platform neutral stuff
-      self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE);
-      self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE);
-      self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE);
-      self.cxx_flags_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE);
+
+      if 'win32' == GetPlatform():
+         self.inc_re = re.compile(r'(?: |^)/I(\S*)', re.MULTILINE)
+         self.lib_re = re.compile(r'(?: |^)(\S*\.lib)', re.MULTILINE)
+         self.lib_path_re = re.compile(r'(?: |^)/LIBPATH:(\S*)', re.MULTILINE)
+         self.cxx_flags_re = re.compile(r'(?: |^)/D(\S*)', re.MULTILINE)
+      else:
+         self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE)
+         self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE)
+         self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
+         self.cxx_flags_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
+
       
    def findLibs(self, arg="--libs"):
       if not self.valid:
          return ""
-      return self.lib_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+      print self.configCmd + " " + arg
+      print os.popen(self.configCmd + " " + arg).read().strip()
+      return self.lib_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
    
    def findLibPaths(self, arg="--libs"):
       if not self.valid:
          return ""
-      return self.lib_path_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+      return self.lib_path_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
 
    def findIncludes(self, arg="--cflags"):
       if not self.valid:
          return ""
-      return self.inc_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+      return self.inc_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
 
    def findCXXFlags(self, arg="--cflags"):
       if not self.valid:
          return ""
-      return self.cxx_flags_re.findall(os.popen(self.config_cmd + " " + arg).read().strip())
+      return self.cxx_flags_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
 
    def getVersion(self, arg="--version"):
       if not self.valid:
          return ""
-      return os.popen(self.config_cmd + " " + arg).read().strip()
+      return os.popen(self.configCmd + " " + arg).read().strip()
    
+class PythonScriptParser(ConfigCmdParser):
+   def __init__(self, configScript):
+      ConfigCmdParser.__init__(self, sys.executable, configScript)
+
 class FlagPollParser:
    """  
    Helper class for calling flagpoll and extracting
