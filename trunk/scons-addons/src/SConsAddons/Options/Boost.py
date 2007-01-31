@@ -159,7 +159,8 @@ class Boost(SConsAddons.Options.PackageOption):
          version_part = "-" + self.libVersionStr
             
       if sca_util.GetPlatform() != 'darwin':
-         toolset_part = "-" + self.toolset
+         if self.toolset:
+            toolset_part = "-" + self.toolset
          if self.use_mt:
             threading_part = "-mt"
 
