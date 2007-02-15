@@ -155,7 +155,8 @@ class PackageOption(LocalUpdateOption):
     def __init__(self, name, keys, help):
         LocalUpdateOption.__init__(self,name,keys,help)
         self.available = False
-        self.required = False
+        if not hasattr(self,"required"):
+           self.required = False
         
     def isAvailable(self):
         " Return true if the package is available "
