@@ -146,7 +146,7 @@ class EnvironmentBuilder(object):
       self.enableProfiling(False)
    
    def enableWarnings(self, level=None, tags=[]):
-      if not level:
+      if level is None:
          level = self.defaultWarningLevel
       self.warningLevel = level
       self.warningTags = tags
@@ -298,7 +298,7 @@ def gcc_warnings(bldr, env):
    
    if EnvironmentBuilder.NONE == bldr.warningLevel:
       CCFLAGS.append(['-w',])
-   if bldr.warningLevel == EnvironmentBuilder.MINIMAL:
+   elif bldr.warningLevel == EnvironmentBuilder.MINIMAL:
       pass
    elif bldr.warningLevel == EnvironmentBuilder.STANDARD:
       CCFLAGS.append(['-Wall',])
