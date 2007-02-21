@@ -237,8 +237,6 @@ class ConfigCmdParser:
    def findLibs(self, arg="--libs"):
       if not self.valid:
          return ""
-      print self.configCmd + " " + arg
-      print os.popen(self.configCmd + " " + arg).read().strip()
       return self.lib_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
    
    def findLibPaths(self, arg="--libs"):
