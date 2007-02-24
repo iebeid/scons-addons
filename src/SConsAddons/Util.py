@@ -246,7 +246,9 @@ class ConfigCmdParser:
       return os.popen(self.config_cmd + " " + arg).read().strip()
    
 def CheckPackageVersion(context,fp,module,version): 
-   message = "Checking for %s >= %s..." %(module,version)
+   fpCmd = "%s %s --get-prefix" %(fp,module)
+   pkgPrefix = os.popen(fpCmd).read().strip()
+   message = "Checking for %s >= %s in [%s]..." %(module,version,pkgPrefix)
    context.Message(message) 
    fpCmd = "%s %s --atleast-version=%s" %(fp,module,version)
    ret = context.TryAction(fpCmd)[0] 
