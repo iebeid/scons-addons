@@ -35,7 +35,7 @@ class Boost(SConsAddons.Options.PackageOption):
                 required=True, useCppPath=False, 
                 toolset="auto", useVersion=False,
                 preferDynamic=True, autoLink = False,
-                allowLibNameFallbacks=False):
+                allowLibNameFallbacks=True):
       """
          name - The name to use for this option
          requiredVersion - The version of Boost required (ex: "1.30.0")
@@ -45,6 +45,7 @@ class Boost(SConsAddons.Options.PackageOption):
          required - Is the dependency required?  (if so we exit on errors)
          useCppPath - If true, then include path is added to CPPPATH if not, then added to CPPFLAGS directly
 	 toolset - The toolset name to use (ex: "auto","gcc", "il")
+         useVersion - Attempt to use version in the library naming.
          preferDynamic - If true, prefer linking against a dynamic library.
          autoLink - If true and using msvc, then attempt to use boost's autolinking capabilies.
          allowLibNameFallbacks - If true, then we can fallback on less explicit names for libraries.
