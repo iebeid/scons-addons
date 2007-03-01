@@ -134,13 +134,25 @@ class Boost(SConsAddons.Options.PackageOption):
       else:
          # Link flags that may be needed on unix for the embedded case
          #self.python_embedded_link_flags = [distutils.sysconfig.get_config_var('LINKFORSHARED'),]
-         self.python_embedded_link_flags = ["-Wl,-export-dynamic"]
-         self.python_lib_path = [pj(sys.prefix,'lib'),]
-         self.python_static_lib_path = distutils.sysconfig.get_python_lib(standard_lib=True) + "/config"         
-         lib_python_fname = 'python' + self.python_version
-         self.python_extra_libs = [lib_python_fname, "util", "pthread", "dl"]  # See SHLIBS
+         self.python_embedded_link_flags = \
+            distutils.sysconfig.get_config_var('LINKFORSHARED').split(' ')
+         self.python_lib_path = \
+            [distutils.sysconfig.get_config_var('LIBPL')]
+         self.python_static_lib_path = self.python_lib_path
          self.python_link_flags = []
-         self.thread_extra_libs = ["pthread","dl"]
+         self.python_extra_libs = \
+            distutils.sysconfig.get_config_var('LIBS').split(' ')
+
+         # TODO: Figure out a more portable way (ideally extracting this
+         # information from distutils.sysconfig).
+         if sca_util.GetPlatform() == 'darwin':
+            self.python_link_flags = ['-framework', 'Python'] + \
+                                        self.python_link_flags
+         else:
+            lib_python_fname = 'python' + self.python_version
+            self.python_extra_libs.insert(0, lib_python_fname)
+
+         self.thread_extra_libs = []
       
    def buildFullLibNamePossibilities(self, libname, env):
       """ Returns a list of possible library names for the given library.
@@ -184,7 +196,6 @@ class Boost(SConsAddons.Options.PackageOption):
       
       return name_list
 
-      
    def getFullLibName(self, libname, env, useDebug=False):
       """ Return the full name of the library we should link against
           to get the symbols for the library named "libname" """
@@ -384,6 +395,7 @@ class Boost(SConsAddons.Options.PackageOption):
          if "python" == libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
+                            LINKFLAGS = self.python_link_flags,
                             #LIBS = [lib_filename,] + self.python_extra_libs
                             LIBS = self.python_extra_libs
                          )
