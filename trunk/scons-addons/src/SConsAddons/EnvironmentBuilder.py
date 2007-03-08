@@ -250,6 +250,16 @@ class EnvironmentBuilder(object):
       linker = env["LINK"]
       # one of: ['cygwin','irix','sunos','linux','freebsd','darwin','win32']
       platform = GetPlatform()
+
+      # Special case for compiler callers like distcc
+      # XXX: This is a bit of a hack, but it will work for now
+      for x in ["distcc",]:
+         if c_compiler.startswith(x):
+            c_compiler = c_compiler.split()[-1]
+         if cxx_compiler.startswith(x):
+            cxx_compiler = cxx_compiler.split()[-1]
+         if linker.startswith(x):
+            linker = linker.split()[-1]
       
       # Based on compiler and platform
       for f in self.funcList:
