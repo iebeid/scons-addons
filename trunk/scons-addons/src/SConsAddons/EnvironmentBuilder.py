@@ -346,6 +346,7 @@ def gcc_linux_misc(bldr, env):
 
 def gcc_darwin_misc(bldr,env):
    assert isinstance(bldr, EnvironmentBuilder)
+   env.Append(CCFLAGS = ['-pipe'])
 
    if bldr.darwinUniversalEnabled:
       env.Append(CXXFLAGS = ['-arch', 'ppc', '-arch', 'i386', '-arch', 'ppc64'],
