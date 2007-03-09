@@ -332,6 +332,8 @@ def gcc_misc(bldr, env):
 
 def gcc_linux_misc(bldr, env):
    assert isinstance(bldr, EnvironmentBuilder)
+   env.Append(CCFLAGS = ['-pipe',])    # Add pipe to speed up compiles on Linux
+
    if bldr.cpuArch:
       if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
          env.Append(CCFLAGS = ['-m32'],
