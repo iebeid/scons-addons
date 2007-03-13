@@ -132,7 +132,7 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       req_ver = req_ver + [0]*(3-len(req_ver))
       if found_ver < req_ver:
          passed = False;
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));
+         self.checkRequired("   OpenSG version is too old! Required %s but found %s"%(self.requiredVersion,found_ver_str))
       elif self.verbose:
          print "   Found OpenSG version [%s] required [%s]" % (found_ver_str, self.requiredVersion)
 

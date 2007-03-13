@@ -156,7 +156,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
          found_ver = found_ver_str.split(".");
          if found_ver < req_ver:
             passed = False;
-            self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str));
+            self.checkRequired("   OpenSG version is too old! Required %s but found %s"%(self.requiredVersion,found_ver_str))
          
       osgconfig_file = pj(self.baseDir, 'include', 'OpenSG', 'OSGConfig.h');
       if not os.path.isfile(osgconfig_file):

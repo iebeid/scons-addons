@@ -106,7 +106,7 @@ class Plexus(SConsAddons.Options.PackageOption):
       found_ver = [int(n) for n in found_ver_str.split(".")]
       if found_ver < req_ver:
          passed = False
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion, found_verStr))
+         self.checkRequired("   Plexus version is too old! Required %s but found %s"%(self.requiredVersion, found_verStr))
 
       plx_header_file = pj(self.baseDir, 'include', 'plx', 'plxConfig.h')
       if not os.path.isfile(plx_header_file):
