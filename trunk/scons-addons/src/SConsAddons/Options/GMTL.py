@@ -140,7 +140,7 @@ class GMTL(SConsAddons.Options.PackageOption):
       print "   Found GMTL version: ", found_ver_str
       if found_ver < req_ver:
          passed = False
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion, found_ver_str))
+         self.checkRequired("   GMTL version is too old! Required %s but found %s"%(self.requiredVersion, found_ver_str))
 
       # --- Build flag settings --- #         
       if has_config_cmd:

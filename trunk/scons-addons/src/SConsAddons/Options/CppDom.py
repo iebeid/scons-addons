@@ -161,7 +161,7 @@ class CppDom(SConsAddons.Options.PackageOption):
       print "   Found cppdom version: ", found_ver_str
       if found_ver < req_ver:
          passed = False
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str))
+         self.checkRequired("   CppDOM version is too old! Required %s but found %s"%(self.requiredVersion,found_ver_str))
       lib_ver_str = '_'.join([str(i) for i in found_ver])         
       
       # --- Build flag settings --- #         

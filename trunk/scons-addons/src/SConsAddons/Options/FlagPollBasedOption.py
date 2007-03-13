@@ -143,7 +143,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
             found_ver = [int(n) for n in found_ver_str.split(".")]
             if found_ver < req_ver:
                passed = False
-               self.checkRequired("   found version is to old: required:%s found:%s"%
+               self.checkRequired("   Flagpoll version is too old! Required %s but found %s"%
                                   (self.requiredVersion,found_ver_str))
       
          if passed:                              

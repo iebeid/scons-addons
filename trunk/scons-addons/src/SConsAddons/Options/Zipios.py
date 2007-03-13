@@ -147,7 +147,7 @@ class Zipios(SConsAddons.Options.PackageOption):
       req_ver = [int(n) for n in self.requiredVersion.split('.')]
       found_ver = [int(n) for n in found_ver_str.split('.')]
       if found_ver < req_ver:
-         self.checkRequired("   found version is to old: required:%s found:%s"%(self.requiredVersion,found_ver_str))
+         self.checkRequired("   Zipios version is too old! Required %s but found %s"%(self.requiredVersion,found_ver_str))
          return
 
          
