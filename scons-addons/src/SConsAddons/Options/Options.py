@@ -252,11 +252,11 @@ class StandardPackageOption(PackageOption):
         if self.incDir:
             if self.verbose:
                 print "Appending inc_dir:", self.incDir
-            env.Append(CPPPATH = self.incDir)
+            env.Append(CPPPATH = [self.incDir,])
         if self.libDir:
             if self.verbose:
                 print "Appending lib_dir:", self.libDir
-            env.Append(LIBPATH = self.libDir)
+            env.Append(LIBPATH = [self.libDir,])
         if self.library:
             if self.verbose:
                 print "Adding lib:", self.library
