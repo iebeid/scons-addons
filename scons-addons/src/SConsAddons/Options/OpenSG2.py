@@ -159,20 +159,27 @@ class OpenSG2(SConsAddons.Options.PackageOption):
    def apply(self, env, libs=['system',], optimize=None):
       """ Add environment options for building against OpenSG"""
       # Auto-set optimize
-      if not optimize:         
+      if optimize is None:
+         # Default to debug            
+         opt_option = " --dbg"
          if env.has_key("variant") and env["variant"].has_key("type"):
             var_type = env["variant"]["type"]
-            optimize = ("debug" != "var_type")            
-         else:            
-            optimize = False   # Default to debug            
+
+            if SConsAddons.Util.GetPlatform() == "win32" and 'hybrid' == var_type:
+               opt_option = ' --hybrid'
+            elif "debug" != var_type:
+               opt_option = " --opt"
+            else:
+               opt_option = " --dbg"
+      else:
+         # Default to debug            
+         opt_option = " --dbg"
+         if optimize:
+            opt_option = " --opt"
 
       # Ensure that libs is a list.
       if not isinstance(libs, list):
          libs = [libs,]
-
-      opt_option = " --dbg"
-      if optimize:
-         opt_option = " --opt"
 
       cfg_cmd_parser = SConsAddons.Util.PythonScriptParser(self.config_script)
 
