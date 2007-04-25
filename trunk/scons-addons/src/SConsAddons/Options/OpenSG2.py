@@ -156,10 +156,16 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       else:
          self.available = True
 
-   def apply(self, env, libs=['system',], optimize=None):
+   def apply(self, env, libs=['system',], buildType=None):
       """ Add environment options for building against OpenSG"""
-      # Auto-set optimize
-      if optimize is None:
+
+      if 'dbg' == buildType or 'debug' == buildType:
+         opt_option = " --dbg"
+      elif 'opt' == buildType or 'optimized' == buildType:
+         opt_option = " --opt"
+      elif SConsAddons.Util.GetPlatform() == "win32" and 'hybrid' == buildType:
+         opt_option = ' --hybrid'
+      else:
          # Default to debug            
          opt_option = " --dbg"
          if env.has_key("variant") and env["variant"].has_key("type"):
@@ -171,11 +177,6 @@ class OpenSG2(SConsAddons.Options.PackageOption):
                opt_option = " --opt"
             else:
                opt_option = " --dbg"
-      else:
-         # Default to debug            
-         opt_option = " --dbg"
-         if optimize:
-            opt_option = " --opt"
 
       # Ensure that libs is a list.
       if not isinstance(libs, list):
