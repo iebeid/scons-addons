@@ -63,13 +63,16 @@ class VRJ(FlagPollBasedOption.FlagPollBasedOption):
       passed = FlagPollBasedOption.FlagPollBasedOption.validate(self, env)
       
       self.found_draw_mgr_libs = []
-      
+      self.found_draw_mgr_fwks = []
+
       if passed:
          ogl_libs = self.flagpoll_parser.findLibs("--get-vrj-ogl-libs")
+         ogl_fwks = self.flagpoll_parser.findFrameworks("--get-vrj-ogl-libs")
          pf_libs = self.flagpoll_parser.findLibs("--get-vrj-pf-libs")
          for man in self.mDrawManagers:
             if man.lower() == 'gl':
                self.found_draw_mgr_libs.extend(ogl_libs)
+               self.found_draw_mgr_fwks.extend(ogl_fwks)
             if man.lower() == 'pf':
                self.found_draw_mgr_libs.extend(pf_libs)
 
@@ -81,6 +84,7 @@ class VRJ(FlagPollBasedOption.FlagPollBasedOption):
       passed = FlagPollBasedOption.FlagPollBasedOption.apply(self, env, useCppPath)
       if self.found_draw_mgr_libs:
          env.AppendUnique(LIBS = self.found_draw_mgr_libs)
+         env.AppendUnique(FRAMEWORKS = self.found_draw_mgr_fwks)
 
 class VRJ_config(JugglerCommon.JugglerCommon):
    """ 
