@@ -287,6 +287,7 @@ class FlagPollParser:
       # In future could try to use INCPREFIX and other platform neutral stuff
       self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE)
       self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE)
+      self.framework_re = re.compile(r'(?: |^)-framework (\S+)', re.MULTILINE)
       self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
       self.link_flag_re = re.compile(r'(?: |^)(-\S*)', re.MULTILINE)
       
@@ -294,7 +295,12 @@ class FlagPollParser:
       if not self.valid:
          return ""
       return self.lib_re.findall(self.callFlagPoll(arg))
-   
+
+   def findFrameworks(self, arg="--libs-only-l"):
+      if not self.valid:
+         return ""
+      return self.framework_re.findall(self.callFlagPoll(arg))
+
    def findLibPaths(self, arg="--libs-only-L"):
       if not self.valid:
          return ""
