@@ -49,6 +49,12 @@ def GetPlatform():
       return 'linux'
    elif string.find(sys.platform, 'freebsd') != -1:
       return 'freebsd'
+   elif string.find(sys.platform, 'netbsd') != -1:
+      return 'netbsd'
+   elif string.find(sys.platform, 'openbsd') != -1:
+      return 'openbsd'
+   elif string.find(sys.platform, 'dragonfly') != -1:
+      return 'dragonfly'
    elif string.find(sys.platform, 'cygwin') != -1:
       return 'win32'
    elif string.find(sys.platform, 'sunos') != -1:
