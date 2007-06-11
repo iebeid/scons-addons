@@ -62,8 +62,8 @@ class EnvironmentBuilder(object):
    IA64_ARCH          = "ia64"
    PPC_ARCH           = "ppc"
    PPC64_ARCH         = "ppc64"
+   UNIVERSAL_ARCH     = "universal"
 
-   
    def __init__(self):
       """ Initialize the class with defaults. """
       global default_funcs
@@ -348,12 +348,19 @@ def gcc_darwin_misc(bldr,env):
    assert isinstance(bldr, EnvironmentBuilder)
    env.Append(CCFLAGS = ['-pipe'])
 
+   # XXX: This list should be hard coded. It should contain the architectures
+   # that have been detected as being valid.
+   universal_arch_list = ['ppc', 'i386', 'ppc64']
+
    if bldr.darwinUniversalEnabled:
-      env.Append(CXXFLAGS = ['-arch', 'ppc', '-arch', 'i386', '-arch', 'ppc64'],
-                 LINKFLAGS = ['-arch', 'ppc', '-arch', 'i386', '-arch', 'ppc64'])
+      for a in universal_arch_list:
+         env.Append(CXXFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
    else:
       if bldr.cpuArch != None:
-         if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
+         if bldr.cpuArch == EnvironmentBuilder.UNIVERSAL_ARCH:
+            for a in universal_arch_list:
+               env.Append(CXXFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
+         elif bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
             env.Append(CCFLAGS = ['-arch', 'i386'],
                        LINKFLAGS = ['-arch', 'i386'])
          elif bldr.cpuArch == EnvironmentBuilder.PPC_ARCH:
@@ -559,7 +566,8 @@ def detectValidArchs():
    if GetPlatform() == "darwin":    # Treat Darwin specially
       arch_checks = [EnvironmentBuilder.PPC_ARCH,
                      EnvironmentBuilder.PPC64_ARCH,
-                     EnvironmentBuilder.IA32_ARCH]
+                     EnvironmentBuilder.IA32_ARCH,
+                     EnvironmentBuilder.UNIVERSAL_ARCH]
    elif cur_arch in ["ia32","x64"]: # Check x86 platforms
       arch_checks = [EnvironmentBuilder.IA32_ARCH,
                      EnvironmentBuilder.X64_ARCH]
