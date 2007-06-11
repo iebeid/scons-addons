@@ -346,6 +346,11 @@ def gcc_linux_misc(bldr, env):
 
 def gcc_darwin_misc(bldr,env):
    assert isinstance(bldr, EnvironmentBuilder)
+
+   # We use libtool(1) here instead of ar(1) to ensure that we can build
+   # static universal binaries.
+   env['AR'] = 'libtool'
+   env['ARFLAGS'] = ['-static', '-o']
    env.Append(CCFLAGS = ['-pipe'])
 
    # XXX: This list should be hard coded. It should contain the architectures
