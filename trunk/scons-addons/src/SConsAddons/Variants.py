@@ -64,7 +64,7 @@ class VariantsHelper(object):
             self.variants["type"][0].append("hybrid")
       
       if "libtype" in varKeys:
-         self.variants["libtype"] = [["shared","static"], False]
+         self.variants["libtype"] = [["shared","static"], True]
       
       if "arch" in varKeys:
          valid_archs = detectValidArchs()
