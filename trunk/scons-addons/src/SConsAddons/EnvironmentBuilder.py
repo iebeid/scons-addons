@@ -530,8 +530,6 @@ default_funcs.append([['cl'],[],msvc_misc])
 def default_debug_define(bldr,env):
    if EnvironmentBuilder.NONE != bldr.optLevel and EnvironmentBuilder.NONE == bldr.debugLevel:
       env.Append(CPPDEFINES=["NDEBUG",])
-   elif EnvironmentBuilder.NONE == bldr.optLevel and EnvironmentBuilder.NONE != bldr.debugLevel:
-      env.Append(CPPDEFINES=["_DEBUG",])
 
 default_funcs.append([[],[],default_debug_define])
 
