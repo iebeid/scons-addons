@@ -71,10 +71,10 @@ def GetArch():
    if not hasattr(os, 'uname'):
       platform = distutils.util.get_platform()
       arch = ""
-      if re.search(r'i.86', platform):
+      if re.search(r'i.86', platform) or platform == "win32":
          arch = 'ia32'
       # x86_64 (aka, x64, EM64T)
-      elif re.search(r'x86_64', platform):
+      elif re.search(r'x86_64', platform) or platform == "win64":
          arch = 'x64'
          # PowerPC
       elif re.search(r'Power_Mac', platform):
