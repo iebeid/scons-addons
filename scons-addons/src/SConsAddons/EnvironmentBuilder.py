@@ -395,7 +395,6 @@ default_funcs.append([['gcc','g++'],[],gcc_misc])
 default_funcs.append([['gcc','g++'],['linux'],gcc_linux_misc])
 default_funcs.append([['gcc','g++'],['darwin'],gcc_darwin_misc])
 
-
 # ---- Irix ---- #
 # XXX: Irix support is very minimal at this time.  
 #      I don't have access to an Irix box anymore and I don't compile
@@ -518,7 +517,34 @@ def msvc_misc(bldr, env):
       env.Append(CCFLAGS=["/GR"])
       
    # Default defines
-   env.Append(CPPDEFINES=["WIN32","_WINDOWS"])
+   env.AppendUnique(CPPDEFINES = ["_WINDOWS"])
+
+   if bldr.cpuArch == 'x64':
+#      if float(msvs_version[:3]) < 8.0:
+#         pass
+
+      env.AppendUnique(CCFLAGS = ['/Wp64'])
+      env.AppendUnique(CPPDEFINES = ['WIN64'])
+      msvs_version = env['MSVS']['VERSION']
+      platform = 'amd64'
+
+      # The following is a hack to deal with SCons versions up to and
+      # including 0.97 not supporting the use of the 64-bit cl.exe to build
+      # 64-bit software on Windows.
+      env['LINK'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/link.exe" '
+      env['AR'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/lib.exe" '
+      env['CC'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe" '
+      env['CXX'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe" '
+      env['LIBPATH'] = ['C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\lib\\amd64',
+                        'C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\PlatformSDK\\Lib\\AMD64']
+      env['ARFLAGS'] = '/MACHINE:X64'
+      env['LINKFLAGS'] = '/MACHINE:X64'
+   else:
+      env.AppendUnique(CPPDEFINES = ['WIN32'])
+      platform = 'x86'
+
+   if env.has_key('MSVS8_PLATFORM'):
+      env['MSVS8_PLATFORM'] = platform
 
 # MSVC functions
 default_funcs.append([['cl'],[],msvc_optimizations])
@@ -558,9 +584,11 @@ def detectValidArchs():
    elif "ppc64" == cur_arch:
       valid_archs.append(EnvironmentBuilder.PPC64_ARCH)      
    
-   # Only handle case of non-windows and using gcc compiler for now
+   # Only handle case of using Visual C++ or GCC as the compiler for now.
    test_env = EnvironmentBuilder().buildEnvironment()
-   if GetPlatform() == "win32" or test_env["CC"] != 'gcc':
+   # XXX: This is bad: GCC is not always called 'gcc'. It may also exist as
+   # cc or as gcc-X.Y if multiple versions are installed.
+   if test_env["CC"] != 'gcc' and test_env["CC"] != 'cl':
       return valid_archs
 
    # We are going to try to compile a program targetting potential valid architectures
