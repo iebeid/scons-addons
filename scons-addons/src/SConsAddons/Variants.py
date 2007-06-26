@@ -64,8 +64,17 @@ class VariantsHelper(object):
             self.variants["type"][0].append("hybrid")
       
       if "libtype" in varKeys:
-         self.variants["libtype"] = [["shared","static"], True]
-      
+         libtype_is_alternative = False
+
+         # On Windows, SCons does not use the object file extension to
+         # distinguish between object files compiled for static and dynamic
+         # libraries. We help out by distinguishing the two by directory.
+         if sca_util.GetPlatform() == "win32":
+            libtype_is_alternative = True
+
+         self.variants["libtype"] = [["shared","static"], 
+                                     libtype_is_alternative]
+
       if "arch" in varKeys:
          valid_archs = detectValidArchs()
          if len(valid_archs) == 0:
