@@ -226,7 +226,8 @@ class EnvironmentBuilder(object):
                                           'extensive':EnvironmentBuilder.EXTENSIVE,
                                           'maximum':EnvironmentBuilder.MAXIMUM}))            
       if GetPlatform() == "darwin":
-         opts.Add(sca_opts.BoolOption('darwin_universal', 'Build universal binaries.',True))
+         opts.Add(sca_opts.BoolOption('darwin_universal',
+                                      'Build universal binaries.', False))
          opts.Add('darwin_sdk', 'Darwin Platform SDK.', '')
    
    def readOptions(self, optEnv):
