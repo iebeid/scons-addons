@@ -121,6 +121,12 @@ class VariantsHelper(object):
             env_bldr.setCpuArch(EnvironmentBuilder.IA32_ARCH)
          elif "x64" == combo["arch"]:
             env_bldr.setCpuArch(EnvironmentBuilder.X64_ARCH)
+         elif "ppc" == combo["arch"]:
+            env_bldr.setCpuArch(EnvironmentBuilder.PPC_ARCH)
+         elif "ppc64" == combo["arch"]:
+            env_bldr.setCpuArch(EnvironmentBuilder.PPC64_ARCH)
+         elif "universal" == combo["arch"]:
+            env_bldr.setCpuArch(EnvironmentBuilder.UNIVERSAL_ARCH)
 
          # Build up library name and paths to use
          # xxx: common
