@@ -359,12 +359,12 @@ def gcc_darwin_misc(bldr,env):
 
    if bldr.darwinUniversalEnabled:
       for a in universal_arch_list:
-         env.Append(CXXFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
+         env.Append(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
    else:
       if bldr.cpuArch != None:
          if bldr.cpuArch == EnvironmentBuilder.UNIVERSAL_ARCH:
             for a in universal_arch_list:
-               env.Append(CXXFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
+               env.Append(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
          elif bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
             env.Append(CCFLAGS = ['-arch', 'i386'],
                        LINKFLAGS = ['-arch', 'i386'])
@@ -378,14 +378,14 @@ def gcc_darwin_misc(bldr,env):
             assert False, "Invalid arch used for darwin gcc."
 
    if bldr.darwinSdk != '':
-      env.Append(CXXFLAGS = ['-isysroot', bldr.darwinSdk],
+      env.Append(CCFLAGS = ['-isysroot', bldr.darwinSdk],
                  LINKFLAGS = ['-isysroot', bldr.darwinSdk])
 
       sdk_re = re.compile('MacOSX(10\..*?)u?\.sdk')
       match = sdk_re.search(bldr.darwinSdk)
       if match is not None:
          min_osx_ver = '-mmacosx-version-min=' + match.group(1)
-         env.Append(CXXFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])
+         env.Append(CCFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])
 
 # GCC functions
 default_funcs.append([['gcc','g++'],[],gcc_optimizations])
