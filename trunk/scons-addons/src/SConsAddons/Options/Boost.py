@@ -483,8 +483,11 @@ class Boost(SConsAddons.Options.PackageOption):
    def updatePythonModEnv(self, env, useDebug=None):
       self.applyPythonModEnv(env, useDebug)
    
-   def applyPythonModEnv(self, env, useDebug=None):
-      """ Update the environment for building python modules """
+   def applyPythonModEnv(self, env, useDebug=None, **kwds):
+      """ Update the environment for building python modules 
+          kwds - Dictionary of customization flags
+             use_visibility - if true, then try to use visibility flags on g++
+      """
       if not "python" in self.lib_names:
          print "Tried to updatePythonModEnv with boost option object not configured with python library.\n"
          sys.exit(0)
@@ -508,7 +511,7 @@ class Boost(SConsAddons.Options.PackageOption):
       
       # Add visibility flags for gcc 4.0 and greater
       # XXX: It seems that this may not work on Mac OS X.
-      if platform != "darwin" and "g++" in env["CXX"]:
+      if platform != "darwin" and "g++" in env["CXX"] and kwds.get("use_visibility",True):
          gcc_version = env["CXXVERSION"].split(".")
          if int(gcc_version[0]) >= 4:         
             env.AppendUnique(CXXFLAGS = ['-fvisibility=hidden', '-fvisibility-inlines-hidden'])
