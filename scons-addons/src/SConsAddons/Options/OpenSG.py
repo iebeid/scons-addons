@@ -175,7 +175,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
       else:
          self.available = True         
          print "[OK]"
-         
+
    def apply(self, env, libs=['system',], optimize=None, useCppPath=False):
       """ Add environment options for building against vapor.
           lib: One of: base, system, glut, x, qt.
@@ -269,10 +269,19 @@ class OpenSG(SConsAddons.Options.PackageOption):
       # If on Windows, just make some very lame assumptions and hope they are correct
       elif sca_util.GetPlatform() == "win32":
          lib_map = {"Base":["OSGBase",],
-                    "System":["OSGSystem","OSGBase"],
                     "GLUT":["OSGWindowGLUT","OSGSystem","OSGBase"],
-                    "WIN32":["OSGWIN32",],
-                    "Contrib":["OSGContrib","OSGSystem","OSGBase"]}         
+                    "FileIO":["OSGFileIO",],
+                    "Drawable":["OSGDrawable",],
+                    "Group":["OSGGroup",],
+                    "ImageFileIO":["OSGImageFileIO",],
+                    "RenderTraversal":["OSGRenderTraversal",],
+                    "State":["OSGState",],
+                    "System":["OSGSystem","OSGBase"],
+                    "Text":["OSGText",],
+                    "Util":["OSGUtil",],
+                    "WIN32":["OSGWindowWIN32",],
+                    "Window":["OSGWindow",],
+                    "Contrib":["OSGContrib","OSGSystem","OSGBase"]}
          
          found_libs = []
          lib_suffix = ""
@@ -301,7 +310,7 @@ class OpenSG(SConsAddons.Options.PackageOption):
                        ("_WIN32_WINNT","0x0400"), "_OSG_HAVE_CONFIGURED_H_",
 		                  "OSG_BUILD_DLL",  "OSG_WITH_TIF", "OSG_WITH_JPG",
 		                  "OSG_WITH_PNG", "OSG_WITH_GIF"]
-         debug_cppdefines = ["_DEBUG","OSG_DEBUG"]   
+         debug_cppdefines = ["OSG_DEBUG"]   
          glut_cppdefines = ["OSG_WITH_GLUT",]
          common_libs = ["tif32","libjpeg","libpng","opengl32","glu32",
                         "gdi32","user32","kernel32","winmm","wsock32"]
