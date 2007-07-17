@@ -112,7 +112,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       self.found_link_from_libs = None
       
       # Try using basedir
-      if self.baseDir:      
+      if self.baseDir:
          if not os.path.isdir(self.baseDir):
             passed = False
             self.checkRequired("vrj base dir does not exist:%s"%self.baseDir)
@@ -192,8 +192,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
    
    def dumpSettings(self):
       "Write out the settings"
-      print "%s: %s", (self.baseDirKey, self.baseDir)
-      print "%s: %s"%(self.configCmdName,self.configCmdFullPath)
+      print "%s: %s" % (self.baseDirKey, self.baseDir)
       print "CPPPATH:", self.found_incs
       print "CPPPATH as flags:", self.found_incs_as_flags
       print "LIBS:", self.found_libs

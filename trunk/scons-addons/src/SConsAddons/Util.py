@@ -291,12 +291,18 @@ class FlagPollParser:
       # Initialize regular expressions
       # Res that when matched against config output should match the options we want
       # In future could try to use INCPREFIX and other platform neutral stuff
-      self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE)
-      self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE)
+      self.inc_re = re.compile(r'(?: |^)[-/]I\s*("[^"]+"|\S+)', re.MULTILINE)
       self.framework_re = re.compile(r'(?: |^)-framework (\S+)', re.MULTILINE)
-      self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
-      self.link_flag_re = re.compile(r'(?: |^)(-\S*)', re.MULTILINE)
-      
+      self.link_flag_re = re.compile(r'(?: |^)([-/]\S*)', re.MULTILINE)
+
+      if 'win32' == GetPlatform():
+         self.lib_re = re.compile(r'(?: |^)(\S*\.lib)', re.MULTILINE)
+         #self.lib_path_re = re.compile(r'(?: |^)/(LIBPATH|libpath):(\S*)', re.MULTILINE)
+         self.lib_path_re = re.compile(r'(?: |^)/(?:LIBPATH|libpath):("[^"]+"|\S+)', re.MULTILINE)
+      else:
+         self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE)
+         self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
+
    def findLibs(self, arg="--libs-only-l"):
       if not self.valid:
          return ""
@@ -310,7 +316,8 @@ class FlagPollParser:
    def findLibPaths(self, arg="--libs-only-L"):
       if not self.valid:
          return ""
-      return self.lib_path_re.findall(self.callFlagPoll(arg))
+      libs = self.lib_path_re.findall(self.callFlagPoll(arg))
+      return [l.strip('"') for l in libs]
    
    def findLinkFlags(self, arg="--libs-only-other"):
       if not self.valid:
@@ -320,7 +327,8 @@ class FlagPollParser:
    def findIncludes(self, arg="--cflags-only-I"):
       if not self.valid:
          return ""
-      return self.inc_re.findall(self.callFlagPoll(arg))
+      incs = self.inc_re.findall(self.callFlagPoll(arg))
+      return [r.strip('"') for r in incs]
 
    def getVersion(self, arg="--modversion"):
       if not self.valid:
