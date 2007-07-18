@@ -43,7 +43,7 @@ class VariantsHelper(object):
        this is simply because it is trying to reuse code across multiple builds.
        
        variantKeys - List of default variant keys to use.  Valid values include:
-          type - runtime type (debug,optimized,hybrid)
+          type - runtime type (debug,optimized,debugrt)
           libtype - shared,static
           arch - ia32, x64, ppc, ppc64, etc
    """
@@ -61,7 +61,7 @@ class VariantsHelper(object):
       if "type" in varKeys:
          self.variants["type"] = [["debug","optimized"], True]
          if sca_util.GetPlatform() == "win32":
-            self.variants["type"][0].append("hybrid")
+            self.variants["type"][0].append("debugrt")
       
       if "libtype" in varKeys:
          libtype_is_alternative = False
@@ -107,13 +107,13 @@ class VariantsHelper(object):
          env_bldr = baseEnvBuilder.clone()
             
          # Process modifications for variant combo            
-         if combo["type"] == "debug":
+         if combo["type"] == "debugrt":
             env_bldr.enableDebug()
             env_bldr.setMsvcRuntime(EnvironmentBuilder.MSVC_MT_DBG_DLL_RT)
          elif combo["type"] == "optimized":
             env_bldr.enableOpt()
             env_bldr.setMsvcRuntime(EnvironmentBuilder.MSVC_MT_DLL_RT)
-         elif combo["type"] == "hybrid":
+         elif combo["type"] == "debug":
             env_bldr.enableDebug()
             env_bldr.setMsvcRuntime(EnvironmentBuilder.MSVC_MT_DLL_RT)
          
@@ -133,11 +133,24 @@ class VariantsHelper(object):
          (static_lib_suffix,shared_lib_suffix) = ("","")
          if GetPlatform() == "win32":   
             if combo["type"] == "debug":
-               (static_lib_suffix,shared_lib_suffix) = ("_d_s","_d")
+               (static_lib_suffix,shared_lib_suffix) = ("","")
             elif combo["type"] == "optimized":
                (static_lib_suffix,shared_lib_suffix) = ("_s","")
-            elif combo["type"] == "hybrid":
-               (static_lib_suffix,shared_lib_suffix) = ("_h_s","_h")
+            elif combo["type"] == "debugrt":
+               (static_lib_suffix,shared_lib_suffix) = ("_d_s","_d")
+
+         # Set the directory to install libraries into.
+         if combo["type"] == "debug":
+            lib_subdir = "debug"
+         else:
+            lib_subdir = ""
+
+         # Suffix to add to the end of apps.
+         runtime_suffix = ""
+         if combo["type"] == "debug":
+            runtime_suffix = "_d"
+         elif combo["type"] == "debugrt":
+            runtime_suffix = "_drt"
 
          # Determine the build dir for this variant
          combo_dir = "--".join(['%s-%s'%(i[0],i[1]) for i in combo.iteritems() if not isinstance(i[1],(types.ListType))])
@@ -154,6 +167,8 @@ class VariantsHelper(object):
          vars["shared_lib_suffix"] = shared_lib_suffix
          vars["env_builder"] = env_bldr
          vars["build_env"] = build_env
+         vars["lib_subdir"] = lib_subdir
+         vars["runtime_suffix"] = runtime_suffix
          
          yield combo
          # Yield the combo
