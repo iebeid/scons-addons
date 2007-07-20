@@ -41,7 +41,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
    Options object for capturing common options and deps for flagpoll based options
    """
 
-   def __init__(self, name, moduleName, requiredVersion, required, useCppPath, helpText,):
+   def __init__(self, name, moduleName, requiredVersion, required, useCppPath, helpText=None):
       """
          name - The name to use for this option
          moduleName - The name of the module to look for.
@@ -50,29 +50,21 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
          useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
          helpText - The help text to use for it all.
       """
+      self.optionKey = name.replace(' ', '')+"FpcFile"
+
+      if helpText is None:
+         helpText = "Location of the " + name + " fpc file."
+
       # Common settings needed for all tools (these must be setup in derived classes
-      required_attrs = ['baseDirKey',                        
-                        'filesToCheckRelBase']
-      for a in required_attrs:
-         assert hasattr(self,a), "FlagPollBasedOption needs attribute [%s] set before calling its init."%a
-         
-      #self.baseDirKey = "NoneBaseDir"
-      #self.optionName = "No option name"
-      #self.configCmdName = 'vrj-config'
-      #self.filesToCheckRelBase = [pj('include','vpr','vprConfig.h'), ... ]
-      
-      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, helpText);
+      SConsAddons.Options.PackageOption.__init__(self, name, self.optionKey, helpText);
             
       # Local options
-      self.baseDir = None
+      self.fpcFile = None
       self.moduleName = moduleName      
       self.requiredVersion = requiredVersion
       self.required = required
       self.useCppPath = useCppPath      
    
-      self.flagpoll_parser = sca_util.FlagPollParser(self.moduleName)
-      if not self.flagpoll_parser.valid:
-         print "Option: %s  Could not init flagpoll parser."%self.moduleName
    
    def startProcess(self):
       print "Checking for %s..."%self.moduleName,
@@ -81,16 +73,16 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       " Set initial values from given dict "
       if self.verbose:
          print "   Setting initial %s settings."%self.moduleName
-      if optDict.has_key(self.baseDirKey):
-         self.baseDir = optDict[self.baseDirKey]
+      if optDict.has_key(self.optionKey):
+         self.fpcFile = optDict[self.optionKey]
          if self.verbose:
-            print "   %s specified or cached. [%s]."% (self.baseDirKey,self.baseDir)
+            print "   %s specified or cached. [%s]."% (self.optionKey, self.fpcFile)
+
+      self.flagpoll_parser = sca_util.FlagPollParser(self.moduleName, self.fpcFile)
+      if not self.flagpoll_parser.valid:
+         print "Option: %s  Could not init flagpoll parser."%self.moduleName
         
    def find(self, env):
-      # Quick exit if nothing to find
-      if (self.baseDir != None):
-         return
-      
       # Call flagpoll for information
       # Find cmd-config and call it to get the other arguments
       print "   searching...",
@@ -105,71 +97,41 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       # Check that an include file: include/vpr/vprConfig.h  exists
       # Update the temps for later usage
       passed = True
-      
+
       self.found_incs = None
       self.found_libs = None
       self.found_lib_paths = None
       self.found_link_from_libs = None
       
-      # Try using basedir
-      if self.baseDir:
-         if not os.path.isdir(self.baseDir):
+      found_ver_str = self.flagpoll_parser.getVersion()
+      if not self.flagpoll_parser.valid:
+         self.checkRequired("   version call failed: %s"%self.flagpoll_parser.flagpoll_cmd)
+         passed = False
+      else:            
+         req_ver = [int(n) for n in self.requiredVersion.split(".")]
+         found_ver = [int(n) for n in found_ver_str.split(".")]
+         if found_ver < req_ver:
             passed = False
-            self.checkRequired("vrj base dir does not exist:%s"%self.baseDir)
-      
-         found_ver_str = "unknown"
-         print "Skipping version check..."
-         
-         # Set of files to check for
-         for f in self.filesToCheckRelBase:
-            check_file = pj(self.baseDir, f)
-            if not os.path.isfile(check_file):
-               passed = False
-               self.checkRequired("%s not found:%s"%(f,check_file))
-
-         if passed:
-            # Just guess
-            self.found_incs = [pj(self.baseDir,'include'),]
-            self.found_libs = []
-            self.found_lib_paths = [pj(self.baseDir,'lib'),]
-      # Use flagpoll
-      else:
-         found_ver_str = self.flagpoll_parser.getVersion()
-         if not self.flagpoll_parser.valid:
-            self.checkRequired("   version call failed: %s"%self.flagpoll_parser.flagpoll_cmd)
-            passed = False
-         else:            
-            req_ver = [int(n) for n in self.requiredVersion.split(".")]
-            found_ver = [int(n) for n in found_ver_str.split(".")]
-            if found_ver < req_ver:
-               passed = False
-               self.checkRequired("   Flagpoll version is too old! Required %s but found %s"%
-                                  (self.requiredVersion,found_ver_str))
-      
-         if passed:                              
-            # Returns lists of the options we want
-            self.found_incs           = self.flagpoll_parser.findIncludes()
-            self.found_libs           = self.flagpoll_parser.findLibs()
-            self.found_lib_paths      = self.flagpoll_parser.findLibPaths()
-            self.found_link_from_libs = self.flagpoll_parser.findLinkFlags()      
+            self.checkRequired("   Version is too old! Required %s but found %s"%
+                               (self.requiredVersion,found_ver_str))
+   
+      if passed:                              
+         # Returns lists of the options we want
+         self.found_incs           = self.flagpoll_parser.findIncludes()
+         self.found_libs           = self.flagpoll_parser.findLibs()
+         self.found_lib_paths      = self.flagpoll_parser.findLibPaths()
+         self.found_link_from_libs = self.flagpoll_parser.findLinkFlags()      
 
       #print "-----------------------"
       #print "self.found_libs:", self.found_libs
       #print "self.found_lib_paths:", self.found_lib_paths
       #print "self.found_link_from_libs:", self.found_link_from_libs
 
-      if not passed:
-         # Clear everything and remove the key from the environment
-         self.baseDir = None         
-         edict = env.Dictionary()
-         if edict.has_key(self.baseDirKey):
-            del edict[self.baseDirKey]
-            
       # Create list of flags that may be needed later
       self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
-      self.available = True
       print "   %s version: %s [OK]" % (self.moduleName,found_ver_str)
 
+      self.available = passed
       return passed
 
 
@@ -188,11 +150,11 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
          env.AppendUnique(LINKFLAGS = self.found_link_from_libs)
    
    def getSettings(self):
-      return [(self.baseDirKey, self.baseDir),]
+      return [(self.optionKey, self.fpcFile),]
    
    def dumpSettings(self):
       "Write out the settings"
-      print "%s: %s" % (self.baseDirKey, self.baseDir)
+      print "%s: %s" % (self.optionKey, self.fpcFile)
       print "CPPPATH:", self.found_incs
       print "CPPPATH as flags:", self.found_incs_as_flags
       print "LIBS:", self.found_libs

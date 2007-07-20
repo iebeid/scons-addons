@@ -50,11 +50,6 @@ class VRJ(FlagPollBasedOption.FlagPollBasedOption):
          useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
       """
       help_text = """Base directory for VRJ. bin, include, and lib should be under this directory""";
-      self.baseDirKey = "VrjBaseDir"
-      self.filesToCheckRelBase = [pj('include','vpr','vprConfig.h'),
-                                  pj('include','jccl','jcclConfig.h'),
-                                  pj('include','gadget','gadgetConfig.h'),
-                                  pj('include','vrj','vrjConfig.h')]
       self.mDrawManagers = drawManagers
 
       FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'vrjuggler', requiredVersion,required, useCppPath, help_text);
