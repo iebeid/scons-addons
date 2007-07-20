@@ -363,6 +363,10 @@ class Boost(SConsAddons.Options.PackageOption):
          self.checkRequired("   Boost version is too old! Required %s but found %s"%(self.requiredVersion,found_ver_str))
          return
 
+      # XXX: If we are using boost 1.34 or newer with gcc we need to append version.
+      if "gcc" == self.toolset and found_ver_str > 103400:
+         self.toolset += "".join(env["CXXVERSION"].split('.')[:2])
+
       # Set lists of the options we want
       self.found_incs = [self.incDir]
       self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
