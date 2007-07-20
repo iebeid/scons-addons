@@ -275,14 +275,20 @@ class FlagPollParser:
    various paths and other information from it.
    """
    
-   def __init__(self, moduleName):
+   def __init__(self, moduleName, fpcFile=None):
       " moduleName: The config command to call "
       self.moduleName = moduleName
+      self.fpcFile = fpcFile
+      if self.fpcFile is not None:
+         self.fpcFile = self.fpcFile.strip()
       self.valid = True
       
       self.flagpoll_cmd = WhereIs('flagpoll')
       if None == self.flagpoll_cmd:
-         print "FlagPollParser: %s  Could not find flagpoll."
+         print "FlagPollParser: Could not find flagpoll."
+         self.valid = False
+      elif self.fpcFile is not None and not os.path.isfile(self.fpcFile):
+         print "FlagPollParser: Could not find fpc file:", self.fpcFile
          self.valid = False
       else:
          self.flagpoll_cmd += " %s"%self.moduleName      
@@ -339,6 +345,9 @@ class FlagPollParser:
       """ Return result of calling flagpoll.
           Checks for error state and outputs error and returns ''
       """
+      if self.fpcFile is not None:
+         cmdFlags = "--from-file=%s %s" % (self.fpcFile.strip(), cmdFlags)
+
       cur_cmd = "%s %s"%(self.flagpoll_cmd, cmdFlags)
       #print "Calling: ", cur_cmd
       cmd_call = os.popen(cur_cmd)
