@@ -103,17 +103,17 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       self.found_lib_paths = None
       self.found_link_from_libs = None
       
-      found_ver_str = self.flagpoll_parser.getVersion()
+      self.found_ver_str = self.flagpoll_parser.getVersion()
       if not self.flagpoll_parser.valid:
          self.checkRequired("   version call failed: %s"%self.flagpoll_parser.flagpoll_cmd)
          passed = False
       else:            
          req_ver = [int(n) for n in self.requiredVersion.split(".")]
-         found_ver = [int(n) for n in found_ver_str.split(".")]
+         found_ver = [int(n) for n in self.found_ver_str.split(".")]
          if found_ver < req_ver:
             passed = False
             self.checkRequired("   Version is too old! Required %s but found %s"%
-                               (self.requiredVersion,found_ver_str))
+                               (self.requiredVersion, self.found_ver_str))
    
       if passed:                              
          # Returns lists of the options we want
@@ -129,7 +129,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
 
       # Create list of flags that may be needed later
       self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
-      print "   %s version: %s [OK]" % (self.moduleName,found_ver_str)
+      print "   %s version: %s [OK]" % (self.moduleName, self.found_ver_str)
 
       self.available = passed
       return passed
