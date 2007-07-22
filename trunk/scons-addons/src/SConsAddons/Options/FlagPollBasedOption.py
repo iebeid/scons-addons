@@ -56,7 +56,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
          helpText = "Location of the " + name + " fpc file."
 
       # Common settings needed for all tools (these must be setup in derived classes
-      SConsAddons.Options.PackageOption.__init__(self, name, self.optionKey, helpText);
+      SConsAddons.Options.PackageOption.__init__(self, name, self.optionKey, helpText)
             
       # Local options
       self.fpcFile = None
@@ -128,7 +128,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       #print "self.found_link_from_libs:", self.found_link_from_libs
 
       # Create list of flags that may be needed later
-      self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
+      self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs]
       print "   %s version: %s [OK]" % (self.moduleName, self.found_ver_str)
 
       self.available = passed
