@@ -287,12 +287,20 @@ class FlagPollParser:
       if None == self.flagpoll_cmd:
          print "FlagPollParser: Could not find flagpoll."
          self.valid = False
-      elif self.fpcFile is not None and not os.path.isfile(self.fpcFile):
+         return
+      if self.fpcFile is not None and not os.path.isfile(self.fpcFile):
          print "FlagPollParser: Could not find fpc file:", self.fpcFile
          self.valid = False
-      else:
-         self.flagpoll_cmd += " %s"%self.moduleName      
-         self.callFlagPoll("--exists")         
+         return
+
+      # All calls to flagpoll need module name now.
+      self.flagpoll_cmd += " %s"%self.moduleName
+
+      # Find out if the module exists.
+      exists_resp = self.callFlagPoll("--exists")
+      if "yes" != exists_resp.strip().lower():
+         self.valid = False
+         return
 
       # Initialize regular expressions
       # Res that when matched against config output should match the options we want

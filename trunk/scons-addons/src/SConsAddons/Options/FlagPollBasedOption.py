@@ -127,9 +127,10 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       #print "self.found_lib_paths:", self.found_lib_paths
       #print "self.found_link_from_libs:", self.found_link_from_libs
 
-      # Create list of flags that may be needed later
-      self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs]
-      print "   %s version: %s [OK]" % (self.moduleName, self.found_ver_str)
+      if passed:
+         # Create list of flags that may be needed later
+         self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs]
+         print "   %s version: %s [OK]" % (self.moduleName, self.found_ver_str)
 
       self.available = passed
       return passed
