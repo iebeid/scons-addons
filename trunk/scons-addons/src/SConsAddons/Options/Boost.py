@@ -364,7 +364,7 @@ class Boost(SConsAddons.Options.PackageOption):
          return
 
       # XXX: If we are using boost 1.34 or newer with gcc we need to append version.
-      if "gcc" == self.toolset and found_ver_str > 103400:
+      if "gcc" == self.toolset and found_ver[1] >= 34:
          self.toolset += "".join(env["CXXVERSION"].split('.')[:2])
 
       # Set lists of the options we want
