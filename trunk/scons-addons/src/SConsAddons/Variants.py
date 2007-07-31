@@ -132,9 +132,7 @@ class VariantsHelper(object):
          # xxx: common
          (static_lib_suffix,shared_lib_suffix) = ("","")
          if GetPlatform() == "win32":   
-            if combo["type"] == "debug":
-               (static_lib_suffix,shared_lib_suffix) = ("","")
-            elif combo["type"] == "optimized":
+            if combo["type"] == "debug" or  combo["type"] == "optimized":
                (static_lib_suffix,shared_lib_suffix) = ("_s","")
             elif combo["type"] == "debugrt":
                (static_lib_suffix,shared_lib_suffix) = ("_d_s","_d")
