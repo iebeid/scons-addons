@@ -414,26 +414,27 @@ class Boost(SConsAddons.Options.PackageOption):
          conf_ctxt.Finish()         
          return result
       
-
-      # For each lib we are supposed to have
-      #  - Search through possible names for that library
-      #     - If we find one that works, store it
-      for libname in self.lib_names:
-         possible_lib_names = self.buildFullLibNamePossibilities(libname,env)
-         
-         found_fullname = None
-         for testname in possible_lib_names:
-            result = check_lib(libname, testname, env)
-            if result:
-               found_fullname = testname
-               break
+      if not self.autoLink:
+         # For each lib we are supposed to have
+         #  - Search through possible names for that library
+         #     - If we find one that works, store it
+         for libname in self.lib_names:
+            possible_lib_names = self.buildFullLibNamePossibilities(libname,env)
             
-         if not found_fullname:
-            passed = False
-            self.checkRequired("Unable to find library: %s tried: %s"%(libname,possible_lib_names))
-         else:
-            self.found_libs[libname] = found_fullname
-            print "  %s: %s"%(libname, found_fullname)
+            found_fullname = None
+            for testname in possible_lib_names:
+               result = check_lib(libname, testname, env)
+               if result:
+                  found_fullname = testname
+                  break
+               
+            if not found_fullname:
+               passed = False
+               self.checkRequired("Unable to find library: %s tried: %s" % \
+                                  (libname, possible_lib_names))
+            else:
+               self.found_libs[libname] = found_fullname
+               print "  %s: %s"%(libname, found_fullname)
 
       # --- Handle final settings ---- #     
       if not passed:
