@@ -532,14 +532,28 @@ def msvc_misc(bldr, env):
       # The following is a hack to deal with SCons versions up to and
       # including 0.97 not supporting the use of the 64-bit cl.exe to build
       # 64-bit software on Windows.
-      env['LINK'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/link.exe" '
-      env['AR'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/lib.exe" '
-      env['CC'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe" '
-      env['CXX'] = ' "C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe" '
-      env['LIBPATH'] = ['C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\lib\\amd64',
-                        'C:\\Program Files (x86)\\Microsoft Visual Studio 8\\VC\\PlatformSDK\\Lib\\AMD64']
-      env['ARFLAGS'] = '/MACHINE:X64'
-      env['LINKFLAGS'] = '/MACHINE:X64'
+      vc_dir = r"C:\Program Files (x86)\Microsoft Visual Studio 8\VC"
+      # Extend PATH instead of using absolute paths to the executables. We do
+      # this because SCons doesn't expect to see commands with spaces, and it
+      # behaves badly when it does. In particular, with a long link line, it
+      # will use a linker command file, but it will try to use it in the
+      # following way:
+      #
+      #    "C:\Program @commandfile"
+      #
+      # That results in this error message:
+      #
+      #    The filename, directory name, or volume label syntax is incorrect.
+      os.environ['PATH'] = vc_dir + r"\bin\amd64;" + os.environ['PATH']
+      # These still have to be specified as absolute paths to ensure that
+      # SCons does not do anything to PATH behind our back that would prevent
+      # the proper compiler from being used.
+      env['CC'] = '"C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe"'
+      env['CXX'] = '"C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe"'
+      env.Append(LIBPATH = [vc_dir + r'\lib\amd64',
+                            vc_dir + r'\PlatformSDK\Lib\AMD64'],
+                 ARFLAGS = '/MACHINE:X64',
+                 LINKFLAGS = '/MACHINE:X64')
    else:
       env.AppendUnique(CPPDEFINES = ['WIN32'])
       platform = 'x86'
