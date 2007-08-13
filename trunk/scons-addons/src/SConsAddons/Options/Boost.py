@@ -355,17 +355,18 @@ class Boost(SConsAddons.Options.PackageOption):
          print "WARNING: Could not determine library version string"
          self.libVersionStr = None
 
-      found_ver_str = int(ver_match.group(1))
-      found_ver_str = str(found_ver_str / 100000) + '.' + str(found_ver_str / 100 % 1000) + '.' + str(found_ver_str % 100)
+      self.version_int = int(ver_match.group(1))
+      self.version_str = str(self.version_int / 100000) + '.' + \
+         str(self.version_int / 100 % 1000) + '.' + str(self.version_int % 100)
       req_ver = [int(n) for n in self.requiredVersion.split('.')]
-      found_ver = [int(n) for n in found_ver_str.split('.')]
-      print "   boost version:", ".".join([str(x) for x in found_ver])
-      if found_ver < req_ver:
-         self.checkRequired("   Boost version is too old! Required %s but found %s"%(self.requiredVersion,found_ver_str))
+      self.version_int_list = [int(n) for n in self.version_str.split('.')]
+      print "   boost version:", self.version_str
+      if self.version_int_list < req_ver:
+         self.checkRequired("   Boost version is too old! Required %s but found %s"%(self.requiredVersion,self.version_str))
          return
 
       # XXX: If we are using boost 1.34 or newer with gcc we need to append version.
-      if "gcc" == self.toolset and found_ver[1] >= 34:
+      if "gcc" == self.toolset and self.version_int_list[1] >= 34:
          self.toolset += "".join(env["CXXVERSION"].split('.')[:2])
 
       # Set lists of the options we want
@@ -413,28 +414,35 @@ class Boost(SConsAddons.Options.PackageOption):
          result = conf_ctxt.CheckLibWithHeader(lib_filename, header_to_check, "c++")
          conf_ctxt.Finish()         
          return result
-      
+
+      # XXX: Hack to account for the fact that boost_python did not support
+      #      auto-linking until Boost 1.34.
+      libs_to_find = []
       if not self.autoLink:
-         # For each lib we are supposed to have
-         #  - Search through possible names for that library
-         #     - If we find one that works, store it
-         for libname in self.lib_names:
-            possible_lib_names = self.buildFullLibNamePossibilities(libname,env)
+         libs_to_find += self.lib_names
+      elif 'python' in self.lib_names and self.version_str < "1.34":
+         libs_to_find.append('python')
+
+      # For each lib we are supposed to find.
+      #  - Search through possible names for that library
+      #     - If we find one that works, store it
+      for libname in libs_to_find:
+         possible_lib_names = self.buildFullLibNamePossibilities(libname,env)
+         
+         found_fullname = None
+         for testname in possible_lib_names:
+            result = check_lib(libname, testname, env)
+            if result:
+               found_fullname = testname
+               break
             
-            found_fullname = None
-            for testname in possible_lib_names:
-               result = check_lib(libname, testname, env)
-               if result:
-                  found_fullname = testname
-                  break
-               
-            if not found_fullname:
-               passed = False
-               self.checkRequired("Unable to find library: %s tried: %s" % \
-                                  (libname, possible_lib_names))
-            else:
-               self.found_libs[libname] = found_fullname
-               print "  %s: %s"%(libname, found_fullname)
+         if not found_fullname:
+            passed = False
+            self.checkRequired("Unable to find library: %s tried: %s" % \
+                               (libname, possible_lib_names))
+         else:
+            self.found_libs[libname] = found_fullname
+            print "  %s: %s"%(libname, found_fullname)
 
       # --- Handle final settings ---- #     
       if not passed:
@@ -478,8 +486,9 @@ class Boost(SConsAddons.Options.PackageOption):
           XXX: may need python_static_lib_path.
       """
       self.apply(env)
-      #print "Full python lib name:", self.buildFullLibName('python')
-      env.AppendUnique(LIBS = [self.getFullLibName('python',env, useDebug)])
+      if not self.autoLink or self.version_str < "1.34":
+         #print "Full python lib name:", self.buildFullLibName('python')
+         env.AppendUnique(LIBS = [self.getFullLibName('python',env, useDebug)])
       env.AppendUnique(CPPPATH = [self.python_inc_dir,],
                        LINKFLAGS = self.python_embedded_link_flags + self.python_link_flags,
                        LIBPATH = self.python_lib_path,
@@ -499,7 +508,9 @@ class Boost(SConsAddons.Options.PackageOption):
          sys.exit(0)
          
       self.apply(env)
-      env.AppendUnique(LIBS = [self.getFullLibName("python",env, useDebug),] )    # Add on the boost python library
+
+      if not self.autoLink or self.version_str < "1.34":
+         env.AppendUnique(LIBS = [self.getFullLibName("python",env, useDebug),] )    # Add on the boost python library
       env.AppendUnique(CPPPATH = [self.python_inc_dir,],
                        LINKFLAGS = self.python_link_flags,
                        LIBPATH = self.python_lib_path,
