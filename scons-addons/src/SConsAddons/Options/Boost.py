@@ -369,11 +369,16 @@ class Boost(SConsAddons.Options.PackageOption):
       if "gcc" == self.toolset and self.version_int_list[1] >= 34:
          self.toolset += "".join(env["CXXVERSION"].split('.')[:2])
 
+      arch_str = SConsAddons.Util.GetArch()
+
       # Set lists of the options we want
       self.found_incs = [self.incDir]
-      self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
-      self.found_lib_paths = [pj(self.baseDir, 'lib')]
+      self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];      
       self.found_defines = []
+      if re.search(r'64', arch_str): 
+         self.found_lib_paths = [pj(self.baseDir, 'lib64')] 
+      else: 
+         self.found_lib_paths = [pj(self.baseDir, 'lib')] 
       # Note: This doesn't work because the configure context uses the static
       #       run-time and this makes boost error out.
       #if self.preferDynamic:
