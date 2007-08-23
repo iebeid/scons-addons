@@ -375,10 +375,12 @@ class Boost(SConsAddons.Options.PackageOption):
       self.found_incs = [self.incDir]
       self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];      
       self.found_defines = []
-      if re.search(r'64', arch_str): 
-         self.found_lib_paths = [pj(self.baseDir, 'lib64')] 
-      else: 
-         self.found_lib_paths = [pj(self.baseDir, 'lib')] 
+      self.found_lib_paths = [pj(self.baseDir, 'lib')] 
+      if re.search(r'64', arch_str):
+         lib64_dir = pj(self.baseDir, 'lib64')
+         if os.path.exists(lib64_dir):
+            self.found_lib_paths = [lib64_dir]
+
       # Note: This doesn't work because the configure context uses the static
       #       run-time and this makes boost error out.
       #if self.preferDynamic:
