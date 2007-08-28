@@ -235,6 +235,10 @@ class StandardPackageOption(PackageOption):
             result = conf_ctx.CheckLib(library=self.library, symbol=self.symbol, language="C++")
         elif self.header:
             result = conf_ctx.CheckCXXHeader(self.header)
+        elif self.baseDir is not None:
+            result = os.path.exists(self.baseDir)
+        else:
+            result = False
 
         if not result:
             passed = False
