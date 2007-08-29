@@ -122,8 +122,11 @@ def hasHelpFlag():
    """ Return true if the help flag was passed to scons. """
    try: 
       has_help_flag = SCons.Script.Main.options.help_msg
-   except AttributeError: 
-      has_help_flag = SCons.Script.options.help_msg
+   except AttributeError:
+      try: 
+         has_help_flag = SCons.Script.options.help_msg
+      except AttributeError:
+         has_help_flag = SCons.Script.GetOption("help")
       
    return has_help_flag
 
