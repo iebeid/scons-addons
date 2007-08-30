@@ -113,21 +113,20 @@ def GetCpuType():
       platform = distutils.util.get_platform()
       if re.search(r'i.86', platform):
          cpu_type = 'i386'
-   
+
    return cpu_type
 
 
 
 def hasHelpFlag():
    """ Return true if the help flag was passed to scons. """
-   try: 
+   try:
       has_help_flag = SCons.Script.Main.options.help_msg
    except AttributeError:
-      try: 
+      try:
          has_help_flag = SCons.Script.options.help_msg
       except AttributeError:
          has_help_flag = SCons.Script.GetOption("help")
-      
    return has_help_flag
 
 
@@ -160,7 +159,7 @@ def fileExtensionMatches(f, fexts):
       if f.endswith(ext):
          return True
    return False
-      
+
 def getPredFilesRecursive(tree_root, predicateMethod):
    """ Return list of sources recursively.  Returned paths are related to the tree_root """
    def dir_method(f_list, dirpath, namelist):
@@ -185,7 +184,7 @@ def getHeaders():
          if x.endswith(e):
             ret.append(x)
    return ret
- 
+
 def getSources():
    """ get the source files in the current directory"""
    exts = ['.cpp','.c','.C','.cxx']
@@ -199,8 +198,7 @@ def getSources():
             ret.append(x)
    return ret
 
- 
-         
+
 def getFilesRecursiveByExt(tree_root, fexts):
    def hasExtension(f):
       return fileExtensionMatches(f, fexts)
@@ -216,11 +214,11 @@ def getHeadersRecursive(tree_root):
 
 
 class ConfigCmdParser:
-   """  
+   """
    Helper class for calling a given *-config command and extracting
    various paths and other information from it.
    """
-   
+
    def __init__(self, configCmd, configScript=None):
       " configCmd: The config command to call "
 
@@ -253,12 +251,12 @@ class ConfigCmdParser:
          self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
          self.cxx_flags_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
 
-      
+
    def findLibs(self, arg="--libs"):
       if not self.valid:
          return ""
       return self.lib_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
-   
+
    def findLibPaths(self, arg="--libs"):
       if not self.valid:
          return ""
@@ -278,17 +276,17 @@ class ConfigCmdParser:
       if not self.valid:
          return ""
       return os.popen(self.configCmd + " " + arg).read().strip()
-   
+
 class PythonScriptParser(ConfigCmdParser):
    def __init__(self, configScript):
       ConfigCmdParser.__init__(self, sys.executable, configScript)
 
 class FlagPollParser:
-   """  
+   """
    Helper class for calling flagpoll and extracting
    various paths and other information from it.
    """
-   
+
    def __init__(self, moduleName, fpcFile=None):
       " moduleName: The config command to call "
       self.moduleName = moduleName
@@ -296,7 +294,7 @@ class FlagPollParser:
       if self.fpcFile is not None:
          self.fpcFile = self.fpcFile.strip()
       self.valid = True
-      
+
       self.flagpoll_cmd = WhereIs('flagpoll')
       if None == self.flagpoll_cmd:
          print "FlagPollParser: Could not find flagpoll."
@@ -346,7 +344,7 @@ class FlagPollParser:
          return ""
       libs = self.lib_path_re.findall(self.callFlagPoll(arg))
       return [l.strip('"') for l in libs]
-   
+
    def findLinkFlags(self, arg="--libs-only-other"):
       if not self.valid:
          return ""
@@ -362,7 +360,7 @@ class FlagPollParser:
       if not self.valid:
          return ""
       return self.callFlagPoll(arg)
-   
+
    def callFlagPoll(self, cmdFlags):
       """ Return result of calling flagpoll.
           Checks for error state and outputs error and returns ''
@@ -380,7 +378,7 @@ class FlagPollParser:
       return cmd_str
 
 
-   
+
 # -------------------- #
 # Path utils
 # -------------------- #
@@ -392,7 +390,7 @@ def getFullSrcPath(env=SCons.Environment.Environment()):
    ldir_node = env.Dir('.')                                   # .
    ldir_srcnode = ldir_node.srcnode()                     # /home/.../XXX/src/plx
    return str(ldir_srcnode)
-   
+
 
 def getRelativeSourcePath(env=SCons.Environment.Environment()):
    """ Return the local source path relative to the base build directory
@@ -469,7 +467,7 @@ def Glob(match, env=SCons.Environment.Environment()):
     while here.srcnode() != here:
         here = here.srcnode()
         add(here)
-	
+
     print "children: ", [str(c) for c in children]
 
     nodes = map(env.File, filter(fn_filter, children))
@@ -490,19 +488,19 @@ def Globber( pattern = '*.*', dir = '.', env=SCons.Environment.Environment() ):
         if fnmatch.fnmatch(file, pattern) :
             files.append( os.path.join( dir, file ) )
     return files
-    
+   
 def WalkBuildFromSourceOld(dir='.', env=SCons.Environment.Environment() ):
     """ Something similar to os.walk() but it is called
         in the build directory and walks over the stuff in the source
-	but makes it look like it is relative to the build directory.
+        but makes it look like it is relative to the build directory.
     """
     srcdir_abs_path = env.Dir(dir).srcnode().abspath
     #print "src dir abs: ", srcdir_abs_path
-    
+
     # Each dirpath is going to start with the top of the walk
     for dirpath, dirs, filenames in os.walk(srcdir_abs_path):
        if dirpath.startswith(srcdir_abs_path):
-          dirpath = dirpath[len(srcdir_abs_path)+1:]   
+          dirpath = dirpath[len(srcdir_abs_path)+1:]
        bdirpath = os.path.join(dir, dirpath)
        bfiles = filenames
        bdirs = dirs
@@ -511,12 +509,12 @@ def WalkBuildFromSourceOld(dir='.', env=SCons.Environment.Environment() ):
 def WalkBuildFromSource(dir='.', env=SCons.Environment.Environment() ):
     """ Something similar to os.walk() but it is called
         in the build directory and walks over the stuff in the source
-	but makes it look like it is relative to the build directory.
+        but makes it look like it is relative to the build directory.
     """
     srcdir_abs_path = env.Dir(dir).srcnode().abspath
     #print "src dir abs: ", srcdir_abs_path
     ret_args = []
-    
+
     def collect_args(junk, dir_path, name_list):
         dirs = []
         files = []
@@ -532,7 +530,7 @@ def WalkBuildFromSource(dir='.', env=SCons.Environment.Environment() ):
     # Each dirpath is going to start with the top of the walk
     for dirpath, dirs, filenames in ret_args:
        if dirpath.startswith(srcdir_abs_path):
-          dirpath = dirpath[len(srcdir_abs_path)+1:]   
+          dirpath = dirpath[len(srcdir_abs_path)+1:]
        bdirpath = os.path.join(dir, dirpath)
        bfiles = filenames
        bdirs = dirs
@@ -550,7 +548,7 @@ def GlobA(pathname):
     def glob_has_magic(s):
        " Does the glob string contain magic characters."
        return magic_check.search(s) is not None
-    
+
     def find_node(node_name):
        """ Returns node if the given node names exists in the default file system.
            Otherwise returns 0.
@@ -560,7 +558,7 @@ def GlobA(pathname):
        except SCons.Errors.UserError:
           return 0
        return node
-    
+
     # If no magic, then just check for the specified file
     if not has_magic(pathname):
        node = find_node(pathname)
@@ -577,8 +575,8 @@ def GlobA(pathname):
         list = glob(dirname)
     else:
         list = [dirname]
-    
-    # Assert: list contains full list of directories to search for file   
+
+    # Assert: list contains full list of directories to search for file
     if not has_magic(basename):
         result = []
         for dirname in list:
@@ -597,13 +595,13 @@ def GlobA(pathname):
 def Glob_FilesInDir(dirnode, pattern):
    """ Return list of files in directory dirname that match the pattern. """
    children = dirnode.all_children()
-        
+
    #if pattern[0]!='.':
    #   names=filter(lambda x: x[0]!='.',names)
    def fn_filter(node):
       filename = str(node)
       return fnmatch.fnmatch(filename, pattern)
-   
+
    ret_list = [child for child in children if fn_filter(child)]
    return ret_list
 
@@ -615,9 +613,9 @@ def GlobB(match):
     def fn_filter(node):
         fn = str(node)
         return fnmatch.fnmatch(os.path.basename(fn), match)
-    
+
     here = Dir('.')
-    
+
     children = here.all_children()
     nodes = map(File, filter(fn_filter, children))
     node_srcs = [n.srcnode() for n in nodes]
