@@ -134,11 +134,22 @@ def hasHelpFlag():
 def symlinkInstallFunc(dest, source, env):
     """Install a source file into a destination by sym linking it.
        Ex:
-         common_env['INSTALL'] = symlinkInstallFunc         
+         common_env['INSTALL'] = symlinkInstallFunc
+    """
+    rel_path = ""
+    dirs = os.path.dirname(dest)
+    for d in dirs.split(os.path.sep):
+      rel_path = os.path.join(rel_path, "..")
+    os.symlink(os.path.join(rel_path, source), dest)
+    return 0
+
+def absoluteSymlinkInstallFunc(dest, source, env):
+    """Install a source file into a destination by sym linking it.
+       Ex:
+         common_env['INSTALL'] = symlinkInstallFunc
     """
     os.symlink(pj(os.getcwd(), source), dest)
     return 0
-
 
 # ----------------------------------
 # File extension retrieval methods
