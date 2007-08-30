@@ -64,7 +64,7 @@ def GetPlatform():
    elif os.name == 'os2':
       return 'os2'
    else:
-      return sys.platform   
+      return sys.platform
 
 def GetArch():
    """ Return identifier for CPU architecture. """
@@ -116,6 +116,31 @@ def GetCpuType():
 
    return cpu_type
 
+def GetVersionFromHeader(name, header_file_path):
+   """ Pulls PACKAGE_VERSION_MAJOR...etc from specified
+       header file and returns as a tuple.
+       Ex:
+         res = GetVersionFromHeader('MY_PKG', '/path/to/my_pkg/Version.h')
+   """
+   if os.path.exists(header_file_path):
+      ver_file_contents = file(header_file_path).read()
+      major_ver_match = re.search(r'define\s+' + name + r'_VERSION_MAJOR\s+(\d+)',
+                                  ver_file_contents)
+      minor_ver_match = re.search(r'define\s+' + name + r'_VERSION_MINOR\s+(\d+)',
+                                  ver_file_contents)
+      patch_ver_match = re.search(r'define\s+' + name + r'_VERSION_PATCH\s+(\d+)',
+                                  ver_file_contents)
+      if not major_ver_match:
+         print "WARNING: Could not find %s_VERSION_MAJOR in" % name, header_file_path
+      else:
+         major = int(major_ver_match.group(1))
+         minor = int(minor_ver_match.group(1))
+         patch = int(patch_ver_match.group(1))
+         return (major, minor, patch)
+   else:
+      print str(header_file_path) + " does not exist!"
+
+   return (0, 0, 0)
 
 
 def hasHelpFlag():
