@@ -99,6 +99,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       passed = True
 
       self.found_incs = None
+      self.found_cxxflags = None
       self.found_libs = None
       self.found_lib_paths = None
       self.found_link_from_libs = None
@@ -118,9 +119,10 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       if passed:                              
          # Returns lists of the options we want
          self.found_incs           = self.flagpoll_parser.findIncludes()
+         self.found_cxxflags       = self.flagpoll_parser.findCXXFlags()
          self.found_libs           = self.flagpoll_parser.findLibs()
          self.found_lib_paths      = self.flagpoll_parser.findLibPaths()
-         self.found_link_from_libs = self.flagpoll_parser.findLinkFlags()      
+         self.found_link_from_libs = self.flagpoll_parser.findLinkFlags()
 
       #print "-----------------------"
       #print "self.found_libs:", self.found_libs
@@ -143,6 +145,8 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
             env.AppendUnique(CPPPATH = self.found_incs)
          else:
             env.AppendUnique(CXXFLAGS = self.found_incs_as_flags)
+      if self.found_cxxflags:
+            env.AppendUnique(CPPDEFINES = self.found_cxxflags)
       if self.found_libs:
          env.AppendUnique(LIBS = self.found_libs)
       if self.found_lib_paths:

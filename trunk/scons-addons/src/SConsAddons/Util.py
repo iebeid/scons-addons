@@ -348,12 +348,14 @@ class FlagPollParser:
 
       if 'win32' == GetPlatform():
          self.lib_re = re.compile(r'(?: |^)(\S*\.lib)', re.MULTILINE)
+         self.cxx_flags_re = re.compile(r'(?: |^)/D(\S*)', re.MULTILINE)
          #self.lib_path_re = re.compile(r'(?: |^)/LIBPATH:(\S*)', re.M | re.I)
          self.lib_path_re = re.compile(r'(?: |^)/LIBPATH:("[^"]+"|\S+)',
                                        re.M | re.I)
       else:
          self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE)
          self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
+         self.cxx_flags_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
 
    def findLibs(self, arg="--libs-only-l"):
       if not self.valid:
@@ -381,6 +383,11 @@ class FlagPollParser:
          return ""
       incs = self.inc_re.findall(self.callFlagPoll(arg))
       return [r.strip('"') for r in incs]
+
+   def findCXXFlags(self, arg="--cflags"):
+      if not self.valid:
+         return ""
+      return self.cxx_flags_re.findall(self.callFlagPoll(arg))
 
    def getVersion(self, arg="--modversion"):
       if not self.valid:
