@@ -267,8 +267,8 @@ class ConfigCmdParser:
 
       if 'win32' == GetPlatform():
          self.inc_re = re.compile(r'(?: |^)/I(\S*)', re.MULTILINE)
-         self.lib_re = re.compile(r'(?: |^)(\S*\.lib)', re.MULTILINE)
-         self.lib_path_re = re.compile(r'(?: |^)/LIBPATH:(\S*)', re.MULTILINE)
+         self.lib_re = re.compile(r'(?: |^)(\S*\.lib)', re.M | re.I)
+         self.lib_path_re = re.compile(r'(?: |^)/LIBPATH:(\S*)', re.M | re.I)
          self.cxx_flags_re = re.compile(r'(?: |^)/D(\S*)', re.MULTILINE)
       else:
          self.inc_re = re.compile(r'(?: |^)-I(\S*)', re.MULTILINE)
@@ -348,8 +348,9 @@ class FlagPollParser:
 
       if 'win32' == GetPlatform():
          self.lib_re = re.compile(r'(?: |^)(\S*\.lib)', re.MULTILINE)
-         #self.lib_path_re = re.compile(r'(?: |^)/(LIBPATH|libpath):(\S*)', re.MULTILINE)
-         self.lib_path_re = re.compile(r'(?: |^)/(?:LIBPATH|libpath):("[^"]+"|\S+)', re.MULTILINE)
+         #self.lib_path_re = re.compile(r'(?: |^)/LIBPATH:(\S*)', re.M | re.I)
+         self.lib_path_re = re.compile(r'(?: |^)/LIBPATH:("[^"]+"|\S+)',
+                                       re.M | re.I)
       else:
          self.lib_re = re.compile(r'(?: |^)-l(\S*)', re.MULTILINE)
          self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
