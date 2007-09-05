@@ -63,7 +63,10 @@ def CreateSubst(target, source, env):
       # Go through the substitution dictionary and modify the contents read in
       # from the source file
       for key, value in submap.items():
-         contents = contents.replace(key, value);
+         try:
+            contents = contents.replace(key, value);
+         except TypeError:
+            print "Type error for value in key: %s" % key
 
       # Write out the target file with the new contents
       open(targets[i], 'w').write(contents)
