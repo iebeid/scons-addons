@@ -331,7 +331,10 @@ class FlagPollParser:
          return
 
       # All calls to flagpoll need module name now.
-      self.flagpoll_cmd += " %s"%self.moduleName
+      if 'win32' == GetPlatform():
+         self.flagpoll_cmd = '"%s" %s' % (self.flagpoll_cmd, self.moduleName)
+      else:
+         self.flagpoll_cmd += " %s"%self.moduleName
 
       # Find out if the module exists.
       exists_resp = self.callFlagPoll("--exists")
