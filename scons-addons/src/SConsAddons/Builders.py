@@ -73,12 +73,7 @@ def CreateSubst(target, source, env):
       os.chmod(targets[i], 0755)
 
 def generate_builder_str(target, source, env):
-   builderStr = "generating: ";
-   for i in range(len(target)):
-      if i > 0:
-         builderStr += ", " + str(target)
-      else:
-         builderStr += str(target);
+   builderStr = "generating: %s"%[str(t) for t in target]
    return builderStr
 
 def registerSubstBuilder(env):
@@ -175,7 +170,10 @@ def CreateDefineBuilder(target, source, env):
                content += "/* #define %s %s */\n\n"%(define,str(value))
                continue            
          content += "#define %s %s\n\n"%(define,str(value))
-      guard = "_GUARD_%s_"%randomHeaderGuard(8) 
+      #guard = "_GUARD_%s_"%randomHeaderGuard(8) 
+      # Compute a guard that will remain stable when file contents don't change
+      import md5
+      guard = "_GUARD_%s_"%md5.new(content).hexdigest()      
       if env.has_key("headerguard"):
          guard = env["headerguard"]
       content = "#ifndef %(guard)s\n#define %(guard)s\n\n%(content)s\n\n#endif\n"%vars()
@@ -187,4 +185,4 @@ def registerDefineBuilder(env):
    env["BUILDERS"]["DefineBuilder"] = \
             SCons.Builder.Builder(action=SCons.Action.Action(CreateDefineBuilder,
                                                              generate_builder_str,
-                                                             varlist=['definemap',]))
+                                                             varlist=['definemap','headerguard']))
