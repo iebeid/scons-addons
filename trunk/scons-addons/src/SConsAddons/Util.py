@@ -245,21 +245,23 @@ class ConfigCmdParser:
    """
 
    def __init__(self, configCmd, configScript=None):
-      " configCmd: The config command to call "
+      " configCmd: The config command to call (python/flagpoll/etc)"
 
       self.configCmd = configCmd
       self.valid = True
       # Ensure that command is valid.
       if not os.path.isfile(self.configCmd):
          self.valid = False
+         raise ValueError("ConfigCmd not found: %s"%self.configCmd)
+
+      if configScript and not os.path.isfile(configScript):
+         self.valid = False
+         raise ValueError("configScript not found: %s"%configScript)
 
       # If we have a config script, change the command to
       # contain both the interpreter command and script.
       if configScript:
-         self.configCmd = configCmd + ' ' + configScript
-         if not os.path.isfile(configScript):
-            self.valid = False
-
+         self.configCmd = configCmd + ' ' + configScript         
 
       # Initialize regular expressions
       # Res that when matched against config output should match the options we want
