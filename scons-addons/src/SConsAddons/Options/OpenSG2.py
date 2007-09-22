@@ -32,8 +32,8 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       SConsAddons.Options.LocalUpdateOption.__init__(self, name,
                                                      self.baseDirKey, help_text)
 
-      self.baseDir = None;
-      self.config_script = None;
+      self.baseDir = None
+      self.config_script = None
 
    def isAvailable(self):
       return self.available
@@ -50,7 +50,7 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       if self.verbose:
          print "   Loading initial OpenSG settings."
       if optDict.has_key(self.baseDirKey):
-         self.baseDir = optDict[self.baseDirKey];
+         self.baseDir = os.path.abspath(optDict[self.baseDirKey])
          if self.verbose:
             print "   %s specified or cached. [%s]."% (self.baseDirKey, self.baseDir);
          self.config_script = pj(self.baseDir, 'bin', 'osg2-config')
