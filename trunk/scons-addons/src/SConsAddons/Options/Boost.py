@@ -530,8 +530,8 @@ class Boost(SConsAddons.Options.PackageOption):
          env["SHLIBSUFFIX"] = ".pyd"
          
       if platform == "linux":
-         env['CXXCOM'] += " ; objcopy --set-section-flags .debug_str=contents,debug $TARGET"
-         env['SHCXXCOM'] += " ; objcopy -v --set-section-flags .debug_str=contents,debug $TARGET $TARGET"
+         env['CXXCOM'] += " && objcopy --set-section-flags .debug_str=contents,debug $TARGET"
+         env['SHCXXCOM'] += " && objcopy -v --set-section-flags .debug_str=contents,debug $TARGET $TARGET"
       
       # Add visibility flags for gcc 4.0 and greater
       # XXX: It seems that this may not work on Mac OS X.
