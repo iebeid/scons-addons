@@ -121,6 +121,8 @@ class VariantsHelper(object):
             env_bldr.setCpuArch(EnvironmentBuilder.IA32_ARCH)
          elif "x64" == combo["arch"]:
             env_bldr.setCpuArch(EnvironmentBuilder.X64_ARCH)
+         elif "ia64" == combo["arch"]:
+            env_bld.setCpuArch(EnvironmentBuilder.IA64_ARCH)
          elif "ppc" == combo["arch"]:
             env_bldr.setCpuArch(EnvironmentBuilder.PPC_ARCH)
          elif "ppc64" == combo["arch"]:
