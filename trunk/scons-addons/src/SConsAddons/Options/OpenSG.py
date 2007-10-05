@@ -176,13 +176,17 @@ class OpenSG(SConsAddons.Options.PackageOption):
          self.available = True         
          print "[OK]"
 
-   def apply(self, env, libs=['system',], optimize=None, useCppPath=False):
+   def apply(self, env, libs = ['system'], optimize = None, useCppPath = False,
+             buildType = None):
       """ Add environment options for building against vapor.
           lib: One of: base, system, glut, x, qt.
           optimize: If true use --opt option, if None, then try to autoset based on
                     env["variant"].  It will default to False
           useCppPath: If true, then put the include paths into the CPPPATH variable.
       """
+      if buildType is not None:
+         optimize = buildType == 'optimized'
+
       # Auto-set optimize
       if not optimize:         
          if env.has_key("variant") and env["variant"].has_key("type"):
