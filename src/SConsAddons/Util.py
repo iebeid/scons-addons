@@ -273,7 +273,7 @@ class FlagPollParser:
          print "FlagPollParser: %s  Could not find flagpoll."
          self.valid = False
       else:
-         self.flagpoll_cmd += " %s"%self.moduleName      
+         self.flagpoll_cmd = "flagpoll %s"%self.moduleName      
          self.callFlagPoll("--exists")         
 
       # Initialize regular expressions
