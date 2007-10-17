@@ -27,6 +27,7 @@ __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
 import SCons.Environment     # Get the environment stuff
 import SCons
+import SCons.SConf
 import SConsAddons.Options   # Get the modular options stuff
 import SCons.Util
 import sys, os, re, string
@@ -41,7 +42,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
    Options object for capturing common options and deps for flagpoll based options
    """
 
-   def __init__(self, name, moduleName, requiredVersion, required, useCppPath, helpText=None):
+   def __init__(self, name, moduleName, requiredVersion, required, useCppPath, helpText=None, compileTest=False, headerToCheck=None):
       """
          name - The name to use for this option
          moduleName - The name of the module to look for.
@@ -64,6 +65,8 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion
       self.required = required
       self.useCppPath = useCppPath      
+      self.compileTest = compileTest
+      self.headerToCheck = headerToCheck
    
    
    def startProcess(self):
@@ -81,7 +84,27 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       self.flagpoll_parser = sca_util.FlagPollParser(self.moduleName, self.fpcFile)
       if not self.flagpoll_parser.valid:
          print "Option: %s  Could not init flagpoll parser."%self.moduleName
-        
+
+   def validateCompile(self, env):
+      # Try to build against the library
+      conf_env = env.Copy()
+      self.apply(conf_env)
+      conf_ctxt = SCons.SConf.SConf(conf_env)
+
+      if self.headerToCheck:
+         if not conf_ctxt.CheckCXXHeader(self.headerToCheck):
+            print "Can't compile with %s" %self.headerToCheck
+            return False
+
+      if self.found_libs:
+         for lib in self.found_libs:
+            if not conf_ctxt.CheckLib(lib, autoadd=0):
+               print "Can't link %s" % str(lib)
+               return False
+
+      conf_ctxt.Finish()
+      return True
+
    def find(self, env):
       # Call flagpoll for information
       # Find cmd-config and call it to get the other arguments
@@ -133,6 +156,9 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
          # Create list of flags that may be needed later
          self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs]
          print "   %s version: %s [OK]" % (self.moduleName, self.found_ver_str)
+
+      if self.compileTest:
+         passed = self.validateCompile(env)
 
       self.available = passed
       return passed
