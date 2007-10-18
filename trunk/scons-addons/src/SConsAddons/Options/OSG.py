@@ -163,9 +163,8 @@ class OSG(SConsAddons.Options.PackageOption):
          self.osgVersionMajor = osg_version_major
          self.osgVersionMinor = osg_version_minor
          if osg_version_patch is None:
-            self.osgVersionPatch = 0
-         else:
-            self.osgVersionPatch = osg_version_patch
+            osg_version_patch = 0
+         self.osgVersionPatch = osg_version_patch
 
          if self.requiredVersion is not None:
             osg_version = "%d.%d.%d" % (osg_version_major, osg_version_minor,
