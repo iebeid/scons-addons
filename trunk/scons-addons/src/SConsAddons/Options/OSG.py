@@ -63,11 +63,16 @@ class OSG(SConsAddons.Options.PackageOption):
 
       # configurable options
       self.baseDir = None
+
       if libList == None:
-         self.libList=['osgText', 'osgProducer', 'Producer', 'osgText',
-                         'osgGA', 'osgDB', 'osgUtil', 'osg', 'OpenThreads']
+         self.libList     = ['osgText', 'osgText', 'osgGA', 'osgDB',
+                             'osgUtil', 'osg', 'OpenThreads']
+         self.libListOsg1 = ['osgProducer', 'Producer']
+         self.libListOsg2 = ['osgViewer']
       else:
-         self.libList=libList
+         self.libList     = libList
+         self.libListOsg1 = []
+         self.libListOsg2 = []
          
       # Settings to use
       self.found_libs = None
@@ -124,7 +129,51 @@ class OSG(SConsAddons.Options.PackageOption):
       else:
          passed = True
 
-      # TODO: Check version requirement
+      osg_version_major = None
+      osg_version_minor = None
+      osg_version_patch = None
+
+      version_file = file(osg_version_file)
+      version_lines = version_file.readlines()
+      version_file.close()
+
+      major_ver_re = re.compile("OSG_VERSION_MAJOR\s+(\d+)\s*$")
+      minor_ver_re = re.compile("OSG_VERSION_MINOR\s+(\d+)\s*$")
+      patch_ver_re = re.compile("OSG_VERSION_PATCH\s+(\d+)\s*$")
+
+      for l in version_lines:
+         match_obj = major_ver_re.search(l)
+         if match_obj is not None:
+            osg_version_major = int(match_obj.group(1))
+            continue
+
+         match_obj = minor_ver_re.search(l)
+         if match_obj is not None:
+            osg_version_minor = int(match_obj.group(1))
+            continue
+
+         match_obj = patch_ver_re.search(l)
+         if match_obj is not None:
+            osg_version_patch = int(match_obj.group(1))
+            continue
+
+      if osg_version_major is None:
+         print "Failed to determine OSG version number from", osg_version_file
+      else:
+         self.osgVersionMajor = osg_version_major
+         self.osgVersionMinor = osg_version_minor
+         self.osgVersionPatch = osg_version_patch or 0
+
+         if self.requiredVersion is not None:
+            osg_version = "%d.%d.%d" % (osg_version_major, osg_version_minor,
+                                        osg_version_patch)
+
+            if self.requiredVersion > osg_version:
+               passed = False
+               self.checkRequired(
+                  "   OSG version is too old! Required %s but found %s." % \
+                     (self.requiredVersion,found_ver_str)
+               )
 
       # If not pass, then clear everything
       # Else we pass, set up the real data structures to use (initialized in
@@ -152,11 +201,16 @@ class OSG(SConsAddons.Options.PackageOption):
       else:
          env.Append(CXXFLAGS = [inc_dir])
 
+      if self.osgVersionMajor == 1:
+         lib_list = self.libList + self.libListOsg1
+      else:
+         lib_list = self.libList + self.libListOsg2
+
       env.Append(LIBPATH = [os.path.join(self.baseDir, 'lib')])
       if distutils.util.get_platform().find('x86_64') != -1:
          env.Append(LIBPATH = [os.path.join(self.baseDir, 'lib64')])
 
-      env.Append(LIBS = self.libList)
+      env.Append(LIBS = lib_list)
 
    def getSettings(self):
       return [(self.baseDirKey, self.baseDir),]
