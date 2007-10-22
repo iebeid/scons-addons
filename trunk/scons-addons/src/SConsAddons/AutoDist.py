@@ -323,6 +323,10 @@ class _CodeAssembly(_Assembly):
       self.libs          = []
       self.libpaths      = []
       self.headers       = []
+      self.targets       = []
+
+   def getTargets(self):
+      return self.targets
 
    def addSources(self, sources):
       """
@@ -433,6 +437,7 @@ class Library(_CodeAssembly):
          for lib_builder in self.builder_names:
             lib_filepath = self.fileNode.get_abspath()
             lib = self.env.__dict__[lib_builder](lib_filepath, self.sources)
+            self.targets = lib
 
             # Lib to file bundle
             fb.addFiles(lib, self.installPrefix, False)
@@ -476,6 +481,8 @@ class Program(_CodeAssembly):
       """
       # Build rule
       prog = self.env.Program(self.fileNode, source = self.sources)
+
+      self.targets = prog
 
       # Add executable to file bundle
       fb = self.package.createFileBundle()
@@ -912,6 +919,10 @@ def GenerateVisualStudioSolution( package, directory = 'VS_Files', variantType =
    vs_projects = []
 
    for a in package.getAssemblies():
+      if a.getTargets() == [] or a.getTargets() == None:
+         print "Skipping Project File generation for: " + a.getFilename()
+         continue
+
       vs_proj_name = os.path.basename( a.getFilename().replace('.', '_') + '.vcproj')
       vs_proj_name = pj( directory,vs_proj_name) 
 
@@ -923,10 +934,13 @@ def GenerateVisualStudioSolution( package, directory = 'VS_Files', variantType =
       for hdr_file in a.getHeaders():
          header_list.append( str(hdr_file.getFileNode().srcnode().get_abspath() ) )
 
+      # Only give buildtarget first target
+      # Use targets from CodeAssemblies because a.getFilename() does not
+      # return the suffix for libraries
       a.getEnv().MSVSProject( target = vs_proj_name,
                               srcs = source_list,
                               incs = header_list,
-                              buildtarget = a.getFilename(),
+                              buildtarget = a.getTargets()[0].get_abspath(),
                               variant = variantType,
                               auto_build_solution=[] )
 
