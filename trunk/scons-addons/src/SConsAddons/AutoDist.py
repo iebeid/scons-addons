@@ -212,10 +212,13 @@ class _Assembly:
 
    def getInstallPrefix(self):
       return self.installPrefix
-   
+
    def isBuilt(self):
       return self.built
-   
+
+   def getEnv(self):
+      return self.env
+
    def build(self):
       """
       Sets up the build targets for this assembly.
@@ -897,6 +900,45 @@ class RpmPackager(Packager):
                   Action( lambda target, source, env:  self.makeDistRpm(target, source, dist_dir, build_root_dir, target_rpm_dir, env),
                           self.makeDistRpm_print) 
                  )
+
+def GenerateVisualStudioSolution( package, directory = 'VS_Files', variantType = 'Debug' ):
+   """
+   Generates a Visual Studio Solution file for the package and a Project file for
+   each target(Program, SharedLibrary, etc).  Add this line after all of the options
+   have been processed.
+   """
+
+   env = package.getEnv()
+   vs_projects = []
+
+   for a in package.getAssemblies():
+      vs_proj_name = os.path.basename( a.getFilename().replace('.', '_') + '.vcproj')
+      vs_proj_name = pj( directory,vs_proj_name) 
+
+      source_list = []
+      for src_file in a.getSources():
+         source_list.append( str(src_file.srcnode().get_abspath()) )
+
+      header_list = []
+      for hdr_file in a.getHeaders():
+         header_list.append( str(hdr_file.getFileNode().srcnode().get_abspath() ) )
+
+      a.getEnv().MSVSProject( target = vs_proj_name,
+                              srcs = source_list,
+                              incs = header_list,
+                              buildtarget = a.getFilename(),
+                              variant = variantType,
+                              auto_build_solution=[] )
+
+      vs_projects.append( os.path.basename(vs_proj_name) )
+
+   solution_name = pj(directory, package.getName() + '.sln')
+
+   env.MSVSSolution( target = solution_name,
+                     projects = vs_projects,
+                     variant = [] )
+
+   package.addExtraDist(solution_name)
 
 def MakeSourceDist(package, baseEnv = None):
    """
