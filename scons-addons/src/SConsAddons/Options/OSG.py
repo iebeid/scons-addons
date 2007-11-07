@@ -63,6 +63,7 @@ class OSG(SConsAddons.Options.PackageOption):
 
       # configurable options
       self.baseDir = None
+      self.osgVersionMajor = 1
 
       if libList == None:
          self.libList     = ['osgText', 'osgText', 'osgGA', 'osgDB',
