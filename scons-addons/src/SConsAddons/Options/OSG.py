@@ -74,7 +74,7 @@ class OSG(SConsAddons.Options.PackageOption):
          self.libList     = libList
          self.libListOsg1 = []
          self.libListOsg2 = []
-         
+
       # Settings to use
       self.found_libs = None
       self.found_cflags = None
@@ -138,24 +138,24 @@ class OSG(SConsAddons.Options.PackageOption):
       version_lines = version_file.readlines()
       version_file.close()
 
-      major_ver_re = re.compile("OSG_VERSION_MAJOR\s+(\d+)\s*$")
-      minor_ver_re = re.compile("OSG_VERSION_MINOR\s+(\d+)\s*$")
-      patch_ver_re = re.compile("OSG_VERSION_PATCH\s+(\d+)\s*$")
+      major_ver_re = re.compile("(OSG|OPENSCENEGRAPH)_(VERSION|MAJOR)_(MAJOR|VERSION)\s+(\d+)\s*$")
+      minor_ver_re = re.compile("(OSG|OPENSCENEGRAPH)_(VERSION|MINOR)_(MINOR|VERSION)\s+(\d+)\s*$")
+      patch_ver_re = re.compile("(OSG|OPENSCENEGRAPH)_(VERSION|PATCH)_(PATCH|VERSION)\s+(\d+)\s*$")
 
       for l in version_lines:
          match_obj = major_ver_re.search(l)
          if match_obj is not None:
-            osg_version_major = int(match_obj.group(1))
+            osg_version_major = int(match_obj.group(4))
             continue
 
          match_obj = minor_ver_re.search(l)
          if match_obj is not None:
-            osg_version_minor = int(match_obj.group(1))
+            osg_version_minor = int(match_obj.group(4))
             continue
 
          match_obj = patch_ver_re.search(l)
          if match_obj is not None:
-            osg_version_patch = int(match_obj.group(1))
+            osg_version_patch = int(match_obj.group(4))
             continue
 
       if osg_version_major is None:
