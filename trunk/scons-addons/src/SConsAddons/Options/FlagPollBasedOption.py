@@ -157,7 +157,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
          self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs]
          print "   %s version: %s [OK]" % (self.moduleName, self.found_ver_str)
 
-      if self.compileTest:
+      if passed and self.compileTest:
          passed = self.validateCompile(env)
 
       self.available = passed
