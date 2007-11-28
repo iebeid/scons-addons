@@ -50,6 +50,7 @@ import re
 import time
 import glob
 import shutil
+import SConsAddons.Util as sca_util
 
 pj = os.path.join
 
@@ -469,11 +470,21 @@ class Program(_CodeAssembly):
    This object knows how to build (and install) an executable program from a
    given set of sources.
    """
-   def __init__(self, progname, pkg, baseEnv = None, installPrefix='bin'):
+   def __init__(self, progname, pkg, baseEnv = None, installPrefix='bin', 
+      isAppBundle=False, resources=[], infoPlist='', pkgInfo=''):
       """
       Creates a new program builder for a program of the given name.
       """
-      _CodeAssembly.__init__(self, progname, pkg, baseEnv, installPrefix)      
+      _CodeAssembly.__init__(self, progname, pkg, baseEnv, installPrefix)  
+      #Variables for Darwin only build
+      if not SCons.Util.is_List(resources):
+         self.resources = [resources]
+      else:
+         self.resources = resources
+         
+      self.infoPlist = infoPlist
+      self.isAppBundle = isAppBundle
+      self.pkgInfo = pkgInfo  
 
    def _buildImpl(self):
       """
@@ -486,8 +497,22 @@ class Program(_CodeAssembly):
 
       # Add executable to file bundle
       fb = self.package.createFileBundle()
-      fb.addFiles(prog, self.installPrefix, False)
       
+      if sca_util.GetPlatform() == 'darwin' and self.isAppBundle:
+         # create prefix beyond <prefix>/bin
+         appBundlePre = pj(self.installPrefix, self.fileNode.rstr() + '.app', 'Contents')
+         # install Info.plist
+         fb.addFiles(self.infoPlist, appBundlePre, False)
+         # install PkgInfo
+         fb.addFiles(self.pkgInfo, appBundlePre, False)
+         # install actual exectuable file 
+         fb.addFiles(prog, pj(appBundlePre,'MacOS') , False)
+         # install resource files
+         for res in self.resources:
+            fb.addFiles(res, pj(appBundlePre,'Resources'), False)
+      else:
+         fb.addFiles(prog, self.installPrefix, False)
+
       # Install the binary
       #inst_prefix = self.package.prefix
       #if self.installPrefix:
@@ -615,14 +640,16 @@ class Package:
       self.assemblies.append(lib)
       return lib
 
-   def createProgram(self, name, baseEnv = None, installPrefix='bin'):
+   def createProgram(self, name, baseEnv = None, installPrefix='bin',
+      isAppBundle=False, resources=[], infoPlist='', pkgInfo=''):
       """
       Creates a new executable program of the given name as a part of this
       package. The program will be built within the given environment.
       """
       if not baseEnv:
          baseEnv = self.env
-      prog = Program(name, self, baseEnv, installPrefix)
+      prog = Program(name, self, baseEnv, installPrefix, isAppBundle, 
+         resources, infoPlist, pkgInfo)
       self.assemblies.append(prog)
       return prog
    
