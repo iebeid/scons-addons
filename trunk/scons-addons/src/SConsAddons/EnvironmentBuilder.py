@@ -366,6 +366,9 @@ def gcc_darwin_misc(bldr,env):
          if bldr.cpuArch == EnvironmentBuilder.UNIVERSAL_ARCH:
             for a in universal_arch_list:
                env.Append(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
+         elif bldr.cpuArch == EnvironmentBuilder.X64_ARCH:
+            env.Append(CCFLAGS = ['-arch', 'x86_64'],
+                       LINKFLAGS = ['-arch', 'x86_64'])
          elif bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
             env.Append(CCFLAGS = ['-arch', 'i386'],
                        LINKFLAGS = ['-arch', 'i386'])
@@ -614,6 +617,8 @@ def detectValidArchs():
                      EnvironmentBuilder.PPC64_ARCH,
                      EnvironmentBuilder.IA32_ARCH,
                      EnvironmentBuilder.UNIVERSAL_ARCH]
+      if os.uname()[2][0] >= '9':
+         arch_checks.insert(3, EnvironmentBuilder.X64_ARCH)
    elif cur_arch in ["ia32","x64"]: # Check x86 platforms
       arch_checks = [EnvironmentBuilder.IA32_ARCH,
                      EnvironmentBuilder.X64_ARCH]
