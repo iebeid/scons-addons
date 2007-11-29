@@ -358,6 +358,9 @@ def gcc_darwin_misc(bldr,env):
    # that have been detected as being valid.
    universal_arch_list = ['ppc', 'i386', 'ppc64']
 
+   if os.uname()[2][0] >= '9':
+      universal_arch_list.append('x86_64')
+
    if bldr.darwinUniversalEnabled:
       for a in universal_arch_list:
          env.Append(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
