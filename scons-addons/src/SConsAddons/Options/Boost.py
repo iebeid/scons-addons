@@ -190,6 +190,10 @@ class Boost(SConsAddons.Options.PackageOption):
       name_list = [fullname]
       
       if self.allowLibNameFallbacks:
+         name_list.append( basename + toolset_part   + threading_part + runtime_part + version_part)
+         name_list.append( basename + threading_part + runtime_part + version_part)
+         name_list.append( basename + threading_part + runtime_part)
+
          name_list.append( basename + toolset_part + runtime_part + version_part)
          name_list.append( basename + runtime_part + version_part)
          name_list.append( basename + runtime_part)
@@ -434,8 +438,9 @@ class Boost(SConsAddons.Options.PackageOption):
       #  - Search through possible names for that library
       #     - If we find one that works, store it
       for libname in libs_to_find:
-         possible_lib_names = self.buildFullLibNamePossibilities(libname,env)
-         
+         possible_lib_names = self.buildFullLibNamePossibilities(libname,env)         
+         #print "Finding lib: %s\nPossibilities:%s"%(libname,possible_lib_names)
+
          found_fullname = None
          for testname in possible_lib_names:
             result = check_lib(libname, testname, env)
