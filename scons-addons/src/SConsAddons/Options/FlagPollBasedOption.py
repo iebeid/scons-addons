@@ -183,6 +183,9 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
    def getSettings(self):
       return [(self.optionKey, self.fpcFile),]
    
+   def getVersion(self):
+      return [int(n) for n in self.flagpoll_parser.getVersion().split(".")]
+      
    def dumpSettings(self):
       "Write out the settings"
       print "%s: %s" % (self.optionKey, self.fpcFile)
