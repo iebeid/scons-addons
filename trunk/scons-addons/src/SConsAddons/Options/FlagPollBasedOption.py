@@ -145,7 +145,8 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
          self.found_cxxflags       = self.flagpoll_parser.findCXXFlags()
          self.found_libs           = self.flagpoll_parser.findLibs()
          self.found_lib_paths      = self.flagpoll_parser.findLibPaths()
-         self.found_link_from_libs = self.flagpoll_parser.findLinkFlags()
+         self.found_link_from_libs = self.flagpoll_parser.findLinkFlags() +
+                                     self.flagpoll_parser.findFrameworks()
 
       #print "-----------------------"
       #print "self.found_libs:", self.found_libs
