@@ -54,6 +54,9 @@ import SCons.Util
 import textwrap
 pj = os.path.join
 
+import SConsAddons.Util as sca_util
+GetArch = sca_util.GetArch
+
 import SCons.SConf
 Configure = SCons.SConf.SConf
 
@@ -257,10 +260,26 @@ class StandardPackageOption(PackageOption):
             if self.verbose:
                 print "Appending inc_dir:", self.incDir
             env.Append(CPPPATH = [self.incDir,])
+        elif self.baseDir is not None:
+            self.incDir = pj(self.baseDir,'include')
+            if self.verbose:
+                print "Appending inc_dir:", self.incDir
+            env.Append(CPPPATH = [self.incDir,])
+
         if self.libDir:
             if self.verbose:
                 print "Appending lib_dir:", self.libDir
             env.Append(LIBPATH = [self.libDir,])
+        elif self.baseDir is not None:
+            if GetArch() == 'x86_64':
+                libdir = 'lib64'
+            else:
+                libdir = 'lib'
+            self.libDir = pj(self.baseDir,libdir)
+            if self.verbose:
+                print "Appending lib_dir:", self.libDir
+            env.Append(LIBPATH = [self.libDir,])
+
         if self.library:
             if self.verbose:
                 print "Adding lib:", self.library
