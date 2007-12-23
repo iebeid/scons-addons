@@ -373,7 +373,7 @@ class FlagPollParser:
          return ""
       return self.lib_re.findall(self.callFlagPoll(arg))
 
-   def findFrameworks(self, arg="--libs-only-l"):
+   def findFrameworks(self, arg="--libs"):
       if not self.valid:
          return ""
       return self.framework_re.findall(self.callFlagPoll(arg))
