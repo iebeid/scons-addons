@@ -222,9 +222,15 @@ class StandardPackageOption(PackageOption):
             # include dir was not given.
             if self.incDir is None and os.path.exists(pj(self.baseDir,'include')):
                 self.incDir = pj(self.baseDir,'include')
-            if self.libDir is None and os.path.exists(pj(self.baseDir,'lib')):
-                self.libDir = pj(self.baseDir,'lib')
-    
+            if self.libDir is None:
+                arch_type = GetArch()
+                if (arch_type == 'x64') or (arch_type == 'ia64'):
+                   if os.path.exists(pj(self.baseDir,'lib64')):
+                      self.libDir = pj(self.baseDir,'lib64')
+                
+                if self.libDir is None and os.path.exists(pj(self.baseDir,'lib')):
+                      self.libDir = pj(self.baseDir,'lib')
+ 
     def validate(self, env):
         passed = True
     
@@ -260,22 +266,8 @@ class StandardPackageOption(PackageOption):
             if self.verbose:
                 print "Appending inc_dir:", self.incDir
             env.Append(CPPPATH = [self.incDir,])
-        elif self.baseDir is not None:
-            self.incDir = pj(self.baseDir,'include')
-            if self.verbose:
-                print "Appending inc_dir:", self.incDir
-            env.Append(CPPPATH = [self.incDir,])
 
         if self.libDir:
-            if self.verbose:
-                print "Appending lib_dir:", self.libDir
-            env.Append(LIBPATH = [self.libDir,])
-        elif self.baseDir is not None:
-            if GetArch() == 'x86_64':
-                libdir = 'lib64'
-            else:
-                libdir = 'lib'
-            self.libDir = pj(self.baseDir,libdir)
             if self.verbose:
                 print "Appending lib_dir:", self.libDir
             env.Append(LIBPATH = [self.libDir,])
