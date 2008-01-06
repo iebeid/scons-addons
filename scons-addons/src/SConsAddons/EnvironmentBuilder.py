@@ -75,6 +75,7 @@ class EnvironmentBuilder(object):
       self.warningTags  = []
       self.profEnabled  = False
       self.exceptionsEnabled = True
+      self.structuredExceptionsEnabled = False
       self.rttiEnabled  = True            
       self.cpuArch      = None
       
@@ -157,6 +158,11 @@ class EnvironmentBuilder(object):
       self.exceptionsEnabled = val
    def disableExceptions(self):
       self.enableExceptions(False)
+      
+   def enableStructuredExceptions(self, val=True):
+      self.structuredExceptionsEnabled = val
+   def disableStructuredExceptions(self):
+      self.enableStructuredExceptions(False)
       
    def enableRTTI(self, val=True):
       self.rttiEnabled = val
@@ -515,7 +521,10 @@ def msvc_misc(bldr, env):
    # Exception handling
    if bldr.exceptionsEnabled:
       if env["MSVS"]["VERSION"] >= "7.1":
-         env.Append(CCFLAGS=['/EHsc',])
+         if bldr.structuredExceptionsEnabled:
+            env.Append(CCFLAGS=['/EHa'])
+         else:
+            env.Append(CCFLAGS=['/EHsc'])
       else:
          env.Append(CCFLAGS=['/GX',])
 
