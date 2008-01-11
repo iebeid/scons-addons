@@ -449,6 +449,11 @@ class Library(_CodeAssembly):
          fb.addFiles(headerNode, pj('include', h.getPrefix()) )
 
 
+class LoadableModule(Library):
+   """ Sets up Library assembly with 'LoadableModule' builder."""
+   def __init__(self, libname, pkg, baseEnv = None, installPrefix='lib'):
+      Library.__init__(self, libname, pkg, baseEnv, 'LoadableModule', installPrefix)
+
 class SharedLibrary(Library):
    """ Sets up Library assembly with 'SharedLibrary' builder."""
    def __init__(self, libname, pkg, baseEnv = None, installPrefix='lib'):
@@ -607,6 +612,17 @@ class Package:
       self.packagers.append(packager)
 
    # ###### Assembly factory methods ####### #
+   def createLoadableModule(self, name, baseEnv = None, installPrefix='lib'):
+      """
+      Creates a new shared library of the given name as a part of this package.
+      The library will be built within the given environment.
+      """
+      if not baseEnv:
+         baseEnv = self.env
+      lib = LoadableModule(name, self, baseEnv, installPrefix)
+      self.assemblies.append(lib)
+      return lib
+
    def createSharedLibrary(self, name, baseEnv = None, installPrefix='lib'):
       """
       Creates a new shared library of the given name as a part of this package.
