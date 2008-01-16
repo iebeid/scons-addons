@@ -385,10 +385,8 @@ class Boost(SConsAddons.Options.PackageOption):
          if os.path.exists(lib64_dir):
             self.found_lib_paths = [lib64_dir]
 
-      # Note: This doesn't work because the configure context uses the static
-      #       run-time and this makes boost error out.
-      #if self.preferDynamic:
-      #   self.found_defines.append("BOOST_ALL_DYN_LINK")      
+      if self.preferDynamic:
+         self.found_defines.append("BOOST_ALL_DYN_LINK")
       #if not self.autoLink:
       #   self.found_defines.append("BOOST_ALL_NO_LIB")
 
@@ -420,7 +418,14 @@ class Boost(SConsAddons.Options.PackageOption):
          # Thread library needs some additional libraries on Linux... (yuck)
          if "thread" == libname:
             conf_env.Append(LIBS = [lib_filename,] + self.thread_extra_libs)
-         
+
+         platform = sca_util.GetPlatform()
+
+         # We have to use the dynamic MSVC runtime in order to allow dynamic
+         # linking of Boost libraries during this phase of testing.
+         if self.preferDynamic and platform == "win32":
+            conf_env.Append(CXXFLAGS = ["/MD"])
+
          conf_ctxt = Configure(conf_env)
          result = conf_ctxt.CheckLibWithHeader(lib_filename, header_to_check, "c++")
          conf_ctxt.Finish()         
