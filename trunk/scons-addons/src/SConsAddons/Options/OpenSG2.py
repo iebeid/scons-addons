@@ -162,7 +162,7 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       # A build to be made with debugging symbols and linked against the MSVC
       # debug runtime. This really should apply only to Windows.
       if 'dbgrt' == buildType or 'debugrt' == buildType:
-         opt_option = " --dbg"
+         opt_option = " --dbg-rt"
       # A build to be made without debugging symbols. This is linked against
       # the regular C/C++ runtime implementation.
       elif 'opt' == buildType or 'optimized' == buildType:
@@ -170,21 +170,16 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       # A build to be made with debugging symbols. This is linked against the
       # regular C/C++ runtime implementation.
       elif "dbg" == buildType or "debug" == buildType:
-         # XXX: This is why the "hybrid" name is a problem. The same build has
-         # a different name on Windows as compared to all other platforms.
-         if SConsAddons.Util.GetPlatform() == "win32":
-            opt_option = ' --hybrid'
-         else:
-            opt_option = ' --dbg'
+         opt_option = " --dbg"
       else:
          # Default to debug            
          opt_option = " --dbg"
          if env.has_key("variant") and env["variant"].has_key("type"):
             var_type = env["variant"]["type"]
 
-            if SConsAddons.Util.GetPlatform() == "win32" and 'debug' == var_type:
-               opt_option = ' --hybrid'
-            elif "debugrt" != var_type:
+            if "debugrt" == var_type:
+               opt_option = " --dbg-rt"
+            elif "debug" != var_type:
                opt_option = " --opt"
             else:
                opt_option = " --dbg"
