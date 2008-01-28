@@ -181,7 +181,7 @@ class Boost(SConsAddons.Options.PackageOption):
             runtime_part = debug_ext
          elif env and env.has_key("variant") and env["variant"].has_key("type"):
             var_type = env["variant"]["type"]
-            if "debug" == var_type:
+            if "debugrt" == var_type:
                runtime_part = debug_ext
 
       basename = "boost_" + libname
@@ -213,7 +213,7 @@ class Boost(SConsAddons.Options.PackageOption):
          #      fullname += debug_ext
          #   elif env and env.has_key("variant") and env["variant"].has_key("type"):
          #      var_type = env["variant"]["type"]
-         #      if "debug" == var_type:
+         #      if "debugrt" == var_type:
          #         fullname += debug_ext
          #elif useDebug is True:
          #   fullname += debug_ext
