@@ -49,10 +49,11 @@ class VRJ(FlagPollBasedOption.FlagPollBasedOption):
          required - Is the dependency required?  (if so we exit on errors)
          useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
       """
-      help_text = """Base directory for VRJ. bin, include, and lib should be under this directory""";
       self.mDrawManagers = drawManagers
 
-      FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'vrjuggler', requiredVersion,required, useCppPath, help_text);
+      FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'vrjuggler',
+                                                       requiredVersion,
+                                                       required, useCppPath)
 
    def validate(self, env):
       passed = FlagPollBasedOption.FlagPollBasedOption.validate(self, env)
