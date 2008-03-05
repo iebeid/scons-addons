@@ -49,11 +49,7 @@ class Vapor(FlagPollBasedOption.FlagPollBasedOption):
          required - Is the dependency required?  (if so we exit on errors)
          useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
       """
-      help_text = """Base directory for vapor. bin, include, and lib should be under this directory""";
-      self.baseDirKey = "VprBaseDir"      
-      self.filesToCheckRelBase = [pj('include','vpr','vprConfig.h'),]
-      
-      FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'vpr', requiredVersion, required, useCppPath, help_text);
+      FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'vpr', requiredVersion, required, useCppPath)
 
 
 class Vapor_config(JugglerCommon.JugglerCommon):
