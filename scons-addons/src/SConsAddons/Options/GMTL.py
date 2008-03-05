@@ -6,19 +6,33 @@ Defines options for GMTL project
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-import SCons.Environment
-import SCons
-import SConsAddons.Options
-import SCons.Util
 import sys, os, re, string
-
-from SCons.Util import WhereIs
 pj = os.path.join
-
+import SCons
+import SCons.Environment
+import SCons.Util
+from SCons.Util import WhereIs
 import SCons.SConf
+import SConsAddons.Options
+import SConsAddons.Options.FlagPollBasedOption as FlagPollBasedOption
+
 Configure = SCons.SConf.SConf    # Use same alias as SConstruct sees
 
-class GMTL(SConsAddons.Options.PackageOption):
+class GMTL(FlagPollBasedOption.FlagPollBasedOption):
+   """ 
+   Options object for capturing GMTL options and dependencies.
+   """
+
+   def __init__(self, name, requiredVersion, required=True, useCppPath=True):
+      """
+         name - The name to use for this option
+         requiredVersion - The version of vapor required (ex: "0.16.7")
+         required - Is the dependency required?  (if so we exit on errors)
+         useCppPath - If true, put the include paths in cpppath else, put them in cxxflags.
+      """
+      FlagPollBasedOption.FlagPollBasedOption.__init__(self, name, 'gmtl', requiredVersion, required, useCppPath)
+
+class GMTL_config(SConsAddons.Options.PackageOption):
    """
    Options object for capturing gmtl options and dependencies
    """
