@@ -563,6 +563,15 @@ class Options:
         elif (files != None):
            self.files = files;
 
+        try:
+           # SCons 0.98+ name.
+           self._isValidConstructionVar = SCons.Environment.is_valid_construction_var
+        except AttributeError:
+           # Pre-0.98 name.
+           self._isValidConstructionVar = SCons.Util.is_valid_construction_var
+        except:
+           # XXX: This is not really the right way to do this.
+           self._isValidConstructionVar = lambda v: True
 
     def Add(self, key, help="", default=None, validator=None, converter=None, name=None):
         """
@@ -585,7 +594,7 @@ class Options:
             self.AddOption(key)
             return
 
-        if not SCons.Util.is_valid_construction_var(key):
+        if not self._isValidConstructionVar(key):
             raise SCons.Errors.UserError, "Illegal Options.Add() key `%s'" % key
 
         if None == name:            
@@ -598,7 +607,7 @@ class Options:
     def AddOption(self, option):
         """ Add a single option object"""
         for k in option.keys:
-            if not SCons.Util.is_valid_construction_var(k):
+            if not self._isValidConstructionVar(k):
                 raise SCons.Errors.UserError, "Illegal construction var: Options.AddOption(): opt: '%s' -- key `%s'" % (option.name, k)
 
         self.options.append(option)
