@@ -81,7 +81,9 @@ class VariantsHelper(object):
             valid_archs = ["default"]
          print "Valid archs: ", valid_archs
          self.variants["arch"] = [valid_archs[:], True]
-         
+      else:
+         self.variants["arch"] = [["default"], True]
+
    def iterate(self, vars, baseEnvBuilder, baseEnv=None):
       """
          vars: locals() to use
