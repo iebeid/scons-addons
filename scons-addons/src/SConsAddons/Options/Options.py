@@ -81,12 +81,17 @@ class Option:
       - Something(s) that can be set and found
       - Once set(found) has the ability to set an environment with those settings      
     """
-    def __init__(self, name, keys, help):
+    def __init__(self, name, keys, help, dependencies = None):
         """
-        Create an option
-        name - Name of the option
-        keys - the name (or names) of the commandline option
-        help - Help text about the option object. If different help per key, put help in a list.
+        Create an option.
+
+        @type  name: string
+        @param name: Name of the option.
+        @type  keys: string or list of strings
+        @param keys: The name (or names) of the command line option.
+        @type  help: string
+        @param help: Help text about the option object. If different help per key, put help in a
+                     list.
         """
         self.name = name
         if not SCons.Util.is_List(keys):
@@ -94,7 +99,7 @@ class Option:
         self.keys = keys
         self.help = help
         self.verbose = False      # If verbose, then output more information
-        
+
     def startProcess(self):
         """ Called at beginning of processing.  Perform any intialization or notification here. """
         #print "Updating ", self.name
@@ -141,11 +146,17 @@ class Option:
         """ 
         return self.getSettings()[index][1]
 
+    def canProcess(self):
+        """
+        Indicates whether this option is ready for processing. Subclasses can override this
+        method to influence the sorting behavior of Options.Process().
+        """
+        return True
 
 class LocalUpdateOption(Option):
     """ Extends the base option to have another method that allows updating of environment locally """
     def __init__(self, name, keys, help):
-        Option.__init__(self, name, keys, help)
+        Option.__init__(self,name,keys,help)
         
     def updateEnv(self, env, *pa, **kw):
         """ Deprecated. """
@@ -155,12 +166,31 @@ class LocalUpdateOption(Option):
 
 class PackageOption(LocalUpdateOption):
     """ Base class for options that are used for specifying options for installed software packages. """
-    def __init__(self, name, keys, help):
-        LocalUpdateOption.__init__(self,name,keys,help)
+    def __init__(self, name, keys, help, dependencies = None):
+        """
+        Create an option.
+
+        @type  name:         string
+        @param name:         Name of the option.
+        @type  keys:         string or list of strings
+        @param keys:         The name (or names) of the command line option.
+        @type  help:         string
+        @param help:         Help text about the option object. If different help per key, put
+                             help in a list.
+        @type  dependencies: list of SConsAddons.Options.PackageOption objects
+        @param dependencies: Other packages upon which this option depends. The availability of
+                             the dependencies is a prerequisite for this option to be processed.
+        """
+        LocalUpdateOption.__init__(self, name, keys, help)
         self.available = False
         if not hasattr(self,"required"):
            self.required = False
-        
+
+        if dependencies is None:
+           dependencies = []
+
+        self.dependencies = dependencies
+
     def isAvailable(self):
         " Return true if the package is available "
         return self.available
@@ -174,18 +204,50 @@ class PackageOption(LocalUpdateOption):
         if self.required:
             raise OptionError(self,"Check required failed: %s"%msg)
 
+    def depsSatisfied(self):
+        """
+        Indicates whether the dependencies of this package option are available.
+
+        @rtype: boolean
+        @return: True is returned if all dependencies are available. False is returned if any
+                 one dependency is not.
+        """
+        for dependency in self.dependencies:
+           if not dependency.isAvailable():
+              return False
+
+        return True
+
+    def canProcess(self):
+        """
+        Indicates that this option is ready for processing by Options.Process() if and only if
+        the dependencies are satisfied.
+        """
+        return self.depsSatisfied()
+
+    def _applyDependencies(self, env):
+        """
+        Applies the dependencies of this package option to the given environment object. This
+        is intended for internal use by this class and its subclasses.
+        """
+        for dependency in self.dependencies:
+            if dependency.isAvailable():
+                dependency.apply(env)
 
 class StandardPackageOption(PackageOption):
     """ Simple package option that is meant for library and header checking with very
         little customization.  Just uses Configure.CheckXXX methods behind the scenes
         for verification.
     """
-    def __init__(self, name, help, header=None, library=None, symbol="main", required=False):
+    def __init__(self, name, help, header = None, library = None, symbol = "main",
+                 required = False, dependencies = None):
         self.baseKey = name
         self.incDirKey = name + "_incdir"
         self.libDirKey = name + "_libdir"
         
-        PackageOption.__init__(self,name,[self.baseKey,self.incDirKey,self.libDirKey],help)
+        PackageOption.__init__(self, name, [self.baseKey, self.incDirKey, self.libDirKey], help,
+                               dependencies)
+
         self.available = False        
         self.baseDir = None 
         self.incDir = None
@@ -196,7 +258,7 @@ class StandardPackageOption(PackageOption):
         self.required = required
 
     def startProcess(self):
-        print "Checking for: ", self.name
+        print "Checking for:", self.name
     
     def setInitial(self, optDict):
         " Set initial values from given dict "
@@ -232,9 +294,11 @@ class StandardPackageOption(PackageOption):
                       self.libDir = pj(self.baseDir,'lib')
  
     def validate(self, env):
+
         passed = True
     
         conf_env = env.Copy()
+        self._applyDependencies(conf_env)
         self.apply(conf_env)
 
         conf_ctx = Configure(conf_env)
@@ -653,15 +717,28 @@ class Options:
         if args is None:
             args = self.args
         values.update(args)
-        
-        # Process each option in order
-        for option in self.options:
-            option.startProcess()         # Start processing
-            option.setInitial(values)     # Set initial values
-            option.find(env)              # Find values if needed
-            option.validate(env)          # Validate the settings
-            option.completeProcess(env)   # Signal processing completed
-    
+
+        pending      = self.options
+        last_pending = []
+
+        # Until the pending list is determined to be in a "stale" state (one iteration when no
+        # pending Option objects are processed), loop over the pending list and process all
+        # Option objects that are available to be processed.
+        while pending != last_pending:
+            new_pending = []
+            for option in pending:
+                if option.canProcess():
+                    option.startProcess()         # Start processing
+                    option.setInitial(values)     # Set initial values
+                    option.find(env)              # Find values if needed
+                    option.validate(env)          # Validate the settings
+                    option.completeProcess(env)   # Signal processing completed
+                else:
+                    new_pending.append(option)
+
+            last_pending = pending
+            pending = new_pending
+
         # Apply options if requested
         if True == applySimple:
             self.Apply(env, allowedTypes=(SimpleOption,BoolOption,ListOption,EnumOption))
