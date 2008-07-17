@@ -37,7 +37,7 @@ class SDL(SConsAddons.Options.PackageOption):
       self.baseDirKey = "sdlBaseDir"
       self.requiredVersion = requiredVersion
       self.required = required
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text)
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text)
 
       self.baseDir = None;
       self.sdlconfig_cmd = None;

@@ -53,7 +53,7 @@ class WxWidgets(SConsAddons.Options.PackageOption):
       self.available = False
       self.useCppPath = useCppPath
       self.found_cxxflags = None
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text)
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text)
       
       # configurable options
       self.baseDir = None

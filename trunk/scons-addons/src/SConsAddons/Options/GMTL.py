@@ -47,8 +47,7 @@ class GMTL_config(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion
       self.required = required
       self.available = False
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name,
-                                                     self.baseDirKey, help_text)
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text)
 
       self.baseDir = None;
       self.gmtlconfig_cmd = None;

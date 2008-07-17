@@ -57,9 +57,8 @@ class Xerces(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion
       self.required = required
       self.useCppPath = useCppPath
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name,
-                                                     self.baseDirKey,
-                                                     help_text)
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey,
+                                                 help_text)
 
       # configurable options
       self.baseDir = None
