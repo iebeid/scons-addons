@@ -265,12 +265,12 @@ class StandardPackageOption(PackageOption):
         if self.incDir:
             if self.verbose:
                 print "Appending inc_dir:", self.incDir
-            env.Append(CPPPATH = [self.incDir,])
+            env.Append(CPPPATH = [self.incDir])
 
         if self.libDir:
             if self.verbose:
                 print "Appending lib_dir:", self.libDir
-            env.Append(LIBPATH = [self.libDir,])
+            env.Append(LIBPATH = [self.libDir])
 
         if self.library:
             if self.verbose:
@@ -285,7 +285,6 @@ class StandardPackageOption(PackageOption):
         return [(self.baseKey,self.baseDir),
                 (self.incDirKey, self.incDir),
                 (self.libDirKey, self.libDir)]
-
 
 class SimpleOption(Option):
     """
@@ -306,7 +305,7 @@ class SimpleOption(Option):
         validator - Function called to validate the option value
                     called with (key, value, environment)
         """
-        Option.__init__(self, name, keys, help);
+        Option.__init__(self, name, keys, help)
         if None == finder:
             self.finder_cb = None
         elif type(bogus_func) == type(finder):
@@ -346,7 +345,7 @@ class SimpleOption(Option):
         env[self.keys[0]] = self.value
     
     def getSettings(self):
-        return [(self.keys[0],self.value),]
+        return [(self.keys[0], self.value)]
 
 
 class BoolOption(Option):
@@ -364,7 +363,7 @@ class BoolOption(Option):
         help - Help text about the option object
         default - Default truth value
         """
-        Option.__init__(self, key, key, "%s (yes|no)"%help);        
+        Option.__init__(self, key, key, "%s (yes|no)" % help)
         self.value = None
         self.default = default
     
@@ -402,7 +401,7 @@ class BoolOption(Option):
         env[self.keys[0]] = self.value
     
     def getSettings(self):
-        return [(self.keys[0],self.value),]
+        return [(self.keys[0], self.value)]
 
 
 class EnumOption(Option):
@@ -450,7 +449,7 @@ class EnumOption(Option):
         env[self.keys[0]] = self.map.get(self.value, self.value)
     
     def getSettings(self):
-        return [(self.keys[0],self.value),]
+        return [(self.keys[0], self.value)]
 
 
 class ListOption(Option):
@@ -501,7 +500,7 @@ class ListOption(Option):
             ret_val = 'all'
         else:
             ret_val = self.value
-        return [(self.keys[0],ret_val),]
+        return [(self.keys[0], ret_val)]
 
 
 class SeparatorOption(Option):
@@ -515,7 +514,7 @@ class SeparatorOption(Option):
         keys - the name (or names) of the commandline option
         help - Help text about the option object. If different help per key, put help in a list.
         """
-        Option.__init__(self, "separator","separator", helpText);                
+        Option.__init__(self, "separator", "separator", helpText)
         
     def startProcess(self):
         pass
@@ -559,9 +558,9 @@ class Options:
         self.verbose = False        # If true, then we will set all contained options to verbose before processing
         
         if SCons.Util.is_String(files):
-           self.files = [ files, ];
+           self.files = [files]
         elif (files != None):
-           self.files = files;
+           self.files = files
 
         try:
            # SCons 0.98+ name.
