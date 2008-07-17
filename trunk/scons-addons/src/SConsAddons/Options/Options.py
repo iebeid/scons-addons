@@ -74,7 +74,7 @@ class OptionError(Exception):
         Exception.__init__(self,msg)
 
 
-class Option:
+class Option(object):
     """
     Base class for all options.
     An option in our context is:
@@ -152,6 +152,39 @@ class Option:
         method to influence the sorting behavior of Options.Process().
         """
         return True
+
+class OptionProxy(object):
+   """
+   An option proxy is a simple "man-in-the-middle" type of object that can be used for customizing
+   the behavior of another SConsAddons.Options.Option object. Simply define the method to be
+   customized in a subclass of this class and do the custom work. Generally, this will probably
+   involve calling through to the method in _target that is being proxied.
+
+   This is dangerously close to subclassing, and the value of this class is highly debatable.
+   Ultimately, what is difficult about subclassing a class such as StandardPackageOption is all
+   the arguments to the constructor. Using this class, it can be much easier to simply make a
+   StandardPackageOption object and then define whichever methods actually need to be
+   customized. Perhaps what is really wrong with this class is that its implementation is too
+   simple. That is, it does not add enough bells and whistles to make it sufficiently different
+   from subclassing.
+   """
+   def __init__(self, target):
+      """
+      Constructor.
+
+      @type  target: SConsAddons.Options.Option object
+      @param target: The Option object being proxied by this object. All methods in this proxy
+                     object will "intercept" calls to the target object.
+      """
+      self._target = target
+
+   def __getattr__(self, key):
+      # If this object (its subclass, actually) has the given key, then it will be used.
+      if self.__dict__.has_key(key):
+         return self.__dict__[key]
+      # Otherwise, pass the attribute acquisition through to self._target.
+      else:
+         return getattr(self._target, key)
 
 class LocalUpdateOption(Option):
     """ Extends the base option to have another method that allows updating of environment locally """
