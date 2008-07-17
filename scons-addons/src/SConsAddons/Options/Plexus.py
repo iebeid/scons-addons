@@ -35,8 +35,7 @@ class Plexus(SConsAddons.Options.PackageOption):
       self.baseDirKey = "PlxBaseDir"
       self.requiredVersion = requiredVersion
       self.required = required
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name,
-      self.baseDirKey, help_text)
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text)
 
       self.baseDir = None;
       self.plxconfig_cmd = None;

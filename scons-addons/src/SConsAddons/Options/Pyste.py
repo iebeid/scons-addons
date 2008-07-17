@@ -111,7 +111,7 @@ class Pyste(SConsAddons.Options.PackageOption):
       self.requiredVersion = requiredVersion;
       self.required = required;
       self.available = False
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.pysteScriptKey, help_text);
+      SConsAddons.Options.PackageOption.__init__(self, name, self.pysteScriptKey, help_text);
       
       # Local helper options
       self.pysteScriptPath = None            # Full path to the script

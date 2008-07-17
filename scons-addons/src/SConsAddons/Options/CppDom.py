@@ -56,7 +56,7 @@ class CppDom(SConsAddons.Options.PackageOption):
       self.available = False
       self.autoLink = autoLink
       self.preferDynamic = preferDynamic      
-      SConsAddons.Options.LocalUpdateOption.__init__(self, name, self.baseDirKey, help_text);
+      SConsAddons.Options.PackageOption.__init__(self, name, self.baseDirKey, help_text);
       
       # configurable options
       self.baseDir = None;
