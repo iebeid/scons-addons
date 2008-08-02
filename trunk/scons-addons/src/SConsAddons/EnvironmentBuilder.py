@@ -131,7 +131,7 @@ class EnvironmentBuilder(object):
       self.debugLevel = level
       self.debugTags = tags
    def disableDebug(self):
-      self.enableDebug(level=NONE)
+      self.enableDebug(level=EnvironmentBuilder.NONE)
       
    def enableOpt(self, level=None, tags=[]):
       if not level:
@@ -139,7 +139,7 @@ class EnvironmentBuilder(object):
       self.optLevel = level
       self.optTags = tags
    def disableOpt(self):
-      self.enableOpt(NONE)
+      self.enableOpt(EnvironmentBuilder.NONE)
       
    def enableProfiling(self, val=True):
       self.profEnabled = val
@@ -152,7 +152,7 @@ class EnvironmentBuilder(object):
       self.warningLevel = level
       self.warningTags = tags
    def disableWarnings(self):
-      self.enableWarnings(NONE)
+      self.enableWarnings(EnvironmentBuilder.NONE)
    
    def enableExceptions(self, val=True):
       self.exceptionsEnabled = val
