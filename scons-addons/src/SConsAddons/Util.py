@@ -284,26 +284,45 @@ class ConfigCmdParser:
          self.lib_path_re = re.compile(r'(?: |^)-L(\S*)', re.MULTILINE)
          self.cxx_flags_re = re.compile(r'(?: |^)-D(\S*)', re.MULTILINE)
 
-
    def findLibs(self, arg="--libs"):
       if not self.valid:
          return ""
-      return self.lib_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+
+      args = self.lib_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+      for i, arg in enumerate(args):
+         args[i] = os.path.expandvars(arg)
+
+      return args
 
    def findLibPaths(self, arg="--libs"):
       if not self.valid:
          return ""
-      return self.lib_path_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+
+      args = self.lib_path_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+      for i, arg in enumerate(args):
+         args[i] = os.path.expandvars(arg)
+
+      return args
 
    def findIncludes(self, arg="--cflags"):
       if not self.valid:
          return ""
-      return self.inc_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+
+      args = self.inc_re.findall(os.popen(self.configCmd + " " + arg).read().strip()) 
+      for i, arg in enumerate(args):
+         args[i] = os.path.expandvars(arg)
+
+      return args
 
    def findCXXFlags(self, arg="--cflags"):
       if not self.valid:
          return ""
-      return self.cxx_flags_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+
+      args = self.cxx_flags_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+      for i, arg in enumerate(args):
+         args[i] = os.path.expandvars(arg)
+
+      return args
 
    def getVersion(self, arg="--version"):
       if not self.valid:
