@@ -274,6 +274,29 @@ class StandardPackageOption(PackageOption):
     """
     def __init__(self, name, help, header = None, library = None, symbol = "main",
                  required = False, dependencies = None):
+        """
+        @type  name:         string
+        @param name:         Name of the option.
+        @type  help:         string
+        @param help:         Help text about the option object. If different help per key, put
+                             help in a list.
+        @type  header:       string
+        @param header:       A header in the package to use for validating that the package
+                             described by this option is both available and valid.
+        @type  library:      string or list of strings
+        @param library:      The library to link against. This can be the name of the library or a
+                             list of library names if the library may have differnet names
+                             depending on the platform or the type (dynamic versus static).
+        @type  sybmol:       string
+        @param symbol:       A symbol to test for in the library when performing the validation
+                             step.
+        @type  required:     boolean
+        @param required:     A flag indicating whether this package is a requirement for being
+                             able to build the code that depends on the package.
+        @type  dependencies: list of SConsAddons.Options.PackageOption objects
+        @param dependencies: Other packages upon which this option depends. The availability of
+                             the dependencies is a prerequisite for this option to be processed.
+        """
         self.baseKey = name
         self.incDirKey = name + "_incdir"
         self.libDirKey = name + "_libdir"
@@ -336,9 +359,23 @@ class StandardPackageOption(PackageOption):
 
         conf_ctx = Configure(conf_env)
         if self.library and self.header:
-            result = conf_ctx.CheckLibWithHeader(self.library, self.header, "C++")
+            if type(self.library) is list:
+               for lib in self.library:
+                  result = conf_ctx.CheckLibWithHeader(lib, self.header, "C++")
+                  if result:
+                     self.library = lib
+                     break
+            else:
+               result = conf_ctx.CheckLibWithHeader(self.library, self.header, "C++")
         elif self.library:
-            result = conf_ctx.CheckLib(library=self.library, symbol=self.symbol, language="C++")
+            if type(self.library) is list:
+               for lib in self.library:
+                  result = conf_ctx.CheckLib(library=lib, symbol=self.symbol, language="C++")
+                  if result:
+                     self.library = lib
+                     break
+            else:
+               result = conf_ctx.CheckLib(library=self.library, symbol=self.symbol, language="C++")
         elif self.header:
             result = conf_ctx.CheckCXXHeader(self.header)
         elif self.baseDir is not None:
