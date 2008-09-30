@@ -355,7 +355,13 @@ class StandardPackageOption(PackageOption):
     
         conf_env = env.Copy()
         self._applyDependencies(conf_env)
+
+        # We do not want self.library to be added to conf_env. We let the checker use function
+        # below deal with that.
+        library = self.library
+        self.library = None
         self.apply(conf_env)
+        self.library = library
 
         conf_ctx = Configure(conf_env)
         if self.library and self.header:
