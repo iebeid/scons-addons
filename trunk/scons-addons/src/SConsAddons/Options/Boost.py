@@ -385,6 +385,11 @@ class Boost(SConsAddons.Options.PackageOption):
          if os.path.exists(lib64_dir):
             self.found_lib_paths = [lib64_dir]
 
+      rpath_opts = []
+      if self.toolset.startswith("gcc") and self.version_int_list[1] >= 35:
+         for path in self.found_lib_paths:
+            rpath_opts += ["-Wl,-rpath-link,%s" % path]
+
       if self.preferDynamic:
          self.found_defines.append("BOOST_ALL_DYN_LINK")
       #if not self.autoLink:
@@ -406,6 +411,7 @@ class Boost(SConsAddons.Options.PackageOption):
          conf_env = env.Copy()
          conf_env.Append(CPPPATH= self.found_incs, 
                          LIBPATH = self.found_lib_paths,
+                         LINKFLAGS = rpath_opts,
                          CPPDEFINES = self.found_defines)
          if "python" == libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
