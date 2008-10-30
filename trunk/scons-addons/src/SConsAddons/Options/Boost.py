@@ -261,7 +261,7 @@ class Boost(SConsAddons.Options.PackageOption):
             if "7.0" == ver:
                self.toolset = "vc7"
             else:
-               (major, minor) = ver.split(".")[:2]
+               (major, minor) = ver.rstrip("Exp").split(".")[:2]
                self.toolset = "vc%s%s" % (major, minor)
          elif sca_util.GetPlatform() == 'darwin' and env['CC'] == 'cc':
             self.toolset = "darwin"
