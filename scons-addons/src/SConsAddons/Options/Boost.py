@@ -122,6 +122,8 @@ class Boost(SConsAddons.Options.PackageOption):
       except:
          self.python_version = distutils.sysconfig.get_config_var("VERSION")    # ex: '2.3'
       self.python_inc_dir = distutils.sysconfig.get_python_inc()
+      self._extraBoostLibs = []
+
       if sca_util.GetPlatform() == "win32":
          self.python_embedded_link_flags = []
          self.python_lib_path = [pj(sys.prefix,'libs'),]
@@ -154,15 +156,24 @@ class Boost(SConsAddons.Options.PackageOption):
 
          self.thread_extra_libs = []
       
-   def buildFullLibNamePossibilities(self, libname, env):
-      """ Returns a list of possible library names for the given library.
-          This takes into account whether we can strip off parts of the name.
+   def _getLibNameGenerators(self, env):
       """
-      fullname = "boost_" + libname
+      Constructs a list of callables that can be used to generate variants for a given Boost
+      library name. This takes into account whether we can strip off parts of the name.
+
+      @rtype: list of callables
+      @return: A list of callable objects is returned to the caller. Each takes a single string
+               parameter that is the basic name of the Boost library (such as "filesystem"). The
+               string returned is a possible variant of that library based on factors including
+               the Boost version and whether multi-threading should be used.
+      """
+      def generateName(libname, variant):
+         return "boost_" + libname + variant
+
       debug_ext = "-d"
       if sca_util.GetPlatform() == "win32":
          debug_ext = "-gd"     # Hack for now assuming debug code and runtime
-      
+
       toolset_part   = ""
       threading_part = ""
       runtime_part   = ""
@@ -185,21 +196,20 @@ class Boost(SConsAddons.Options.PackageOption):
             if "debugrt" == var_type:
                runtime_part = debug_ext
 
-      basename = "boost_" + libname
-      fullname = basename + toolset_part + threading_part + runtime_part + version_part
-      
-      name_list = [fullname]
-      
-      if self.allowLibNameFallbacks:
-         name_list.append( basename + toolset_part   + threading_part + runtime_part + version_part)
-         name_list.append( basename + threading_part + runtime_part + version_part)
-         name_list.append( basename + threading_part + runtime_part)
+      generators = [lambda n: generateName(n, toolset_part + threading_part + runtime_part + version_part)]
 
-         name_list.append( basename + toolset_part + runtime_part + version_part)
-         name_list.append( basename + runtime_part + version_part)
-         name_list.append( basename + runtime_part)
-      
-      return name_list
+      if self.allowLibNameFallbacks:
+         # Prefer multi-threaded variants.
+         if threading_part:
+            generators.append(lambda n: generateName(n, toolset_part + threading_part + runtime_part + version_part))
+            generators.append(lambda n: generateName(n, threading_part + runtime_part + version_part))
+            generators.append(lambda n: generateName(n, threading_part + runtime_part))
+
+         generators.append(lambda n: generateName(n, toolset_part + runtime_part + version_part))
+         generators.append(lambda n: generateName(n, runtime_part + version_part))
+         generators.append(lambda n: generateName(n, runtime_part))
+
+      return generators
 
    def getFullLibName(self, libname, env, useDebug=False):
       """ Return the full name of the library we should link against
@@ -386,10 +396,8 @@ class Boost(SConsAddons.Options.PackageOption):
          if os.path.exists(lib64_dir):
             self.found_lib_paths = [lib64_dir]
 
-      rpath_opts = []
-      if self.toolset.startswith("gcc") and self.version_int_list[1] >= 35:
-         for path in self.found_lib_paths:
-            rpath_opts += ["-Wl,-rpath-link,%s" % path]
+      if self.version_int_list[1] >= 35:
+         self._extraBoostLibs.append("system")
 
       if self.preferDynamic:
          self.found_defines.append("BOOST_ALL_DYN_LINK")
@@ -398,7 +406,7 @@ class Boost(SConsAddons.Options.PackageOption):
 
       ######## BUILD CHECKS ###########  
       # --- Check building against libraries --- #   
-      def check_lib(libname, lib_filename, env):         
+      def check_lib(libname, lib_filename, extraLibs, env):         
          """ Helper method that checks if we can compile code that uses
              capabilities from the boost library 'libname' and get the
              symbols from the library lib_filename.
@@ -412,7 +420,7 @@ class Boost(SConsAddons.Options.PackageOption):
          conf_env = env.Copy()
          conf_env.Append(CPPPATH= self.found_incs, 
                          LIBPATH = self.found_lib_paths,
-                         LINKFLAGS = rpath_opts,
+                         LIBS = extraLibs,
                          CPPDEFINES = self.found_defines)
          if "python" == libname:
             conf_env.Append(CPPPATH = self.python_inc_dir,
@@ -449,24 +457,27 @@ class Boost(SConsAddons.Options.PackageOption):
       # For each lib we are supposed to find.
       #  - Search through possible names for that library
       #     - If we find one that works, store it
-      for libname in libs_to_find:
-         possible_lib_names = self.buildFullLibNamePossibilities(libname,env)         
-         #print "Finding lib: %s\nPossibilities:%s"%(libname,possible_lib_names)
+      generators = self._getLibNameGenerators(env)
 
-         found_fullname = None
-         for testname in possible_lib_names:
-            result = check_lib(libname, testname, env)
+      for libname in libs_to_find:
+         found_full_name = None
+
+         for generator in generators:
+            test_name = generator(libname)
+            extra_boost_libs = [generator(l) for l in self._extraBoostLibs]
+
+            result = check_lib(libname, test_name, extra_boost_libs, env)
             if result:
-               found_fullname = testname
+               found_full_name = test_name
                break
             
-         if not found_fullname:
+         if not found_full_name:
             passed = False
-            self.checkRequired("Unable to find library: %s tried: %s" % \
+            self.checkRequired("Unable to find library '%s'; tried '%s'" % 
                                (libname, possible_lib_names))
          else:
-            self.found_libs[libname] = found_fullname
-            print "  %s: %s"%(libname, found_fullname)
+            self.found_libs[libname] = found_full_name
+            print "  %s: %s" % (libname, found_full_name)
 
       # --- Handle final settings ---- #     
       if not passed:
