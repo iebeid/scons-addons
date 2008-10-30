@@ -126,16 +126,16 @@ class Boost(SConsAddons.Options.PackageOption):
 
       if sca_util.GetPlatform() == "win32":
          self.python_embedded_link_flags = []
-         self.python_lib_path = [pj(sys.prefix,'libs'),]
+         self.python_lib_path = [pj(sys.prefix,'libs')]
          self.python_static_lib_path = [""]                   # There is no static lib on win32
          lib_python_fname = 'python' + self.python_version.replace('.','')
-         self.python_extra_libs = [lib_python_fname,]
-         #self.python_link_flags = ["/NODEFAULTLIB:"+lib_python_fname+"_d",]
+         self.python_extra_libs = [lib_python_fname]
+         #self.python_link_flags = ["/NODEFAULTLIB:"+lib_python_fname+"_d"]
          self.python_link_flags = []
          self.thread_extra_libs = []
       else:
          # Link flags that may be needed on unix for the embedded case
-         #self.python_embedded_link_flags = [distutils.sysconfig.get_config_var('LINKFORSHARED'),]
+         #self.python_embedded_link_flags = [distutils.sysconfig.get_config_var('LINKFORSHARED')]
          self.python_embedded_link_flags = \
             distutils.sysconfig.get_config_var('LINKFORSHARED').split(' ')
          self.python_lib_path = \
@@ -426,13 +426,13 @@ class Boost(SConsAddons.Options.PackageOption):
             conf_env.Append(CPPPATH = self.python_inc_dir,
                             LIBPATH = self.python_lib_path,
                             LINKFLAGS = self.python_link_flags,
-                            #LIBS = [lib_filename,] + self.python_extra_libs
+                            #LIBS = [lib_filename] + self.python_extra_libs
                             LIBS = self.python_extra_libs
                          )
          
          # Thread library needs some additional libraries on Linux... (yuck)
          if "thread" == libname:
-            conf_env.Append(LIBS = [lib_filename,] + self.thread_extra_libs)
+            conf_env.Append(LIBS = [lib_filename] + self.thread_extra_libs)
 
          platform = sca_util.GetPlatform()
 
@@ -524,7 +524,7 @@ class Boost(SConsAddons.Options.PackageOption):
       if not self.autoLink or self.version_str < "1.34":
          #print "Full python lib name:", self.buildFullLibName('python')
          env.AppendUnique(LIBS = [self.getFullLibName('python',env, useDebug)])
-      env.AppendUnique(CPPPATH = [self.python_inc_dir,],
+      env.AppendUnique(CPPPATH = [self.python_inc_dir],
                        LINKFLAGS = self.python_embedded_link_flags + self.python_link_flags,
                        LIBPATH = self.python_lib_path,
                        LIBS = self.python_extra_libs)
@@ -545,8 +545,8 @@ class Boost(SConsAddons.Options.PackageOption):
       self.apply(env)
 
       if not self.autoLink or self.version_str < "1.34":
-         env.AppendUnique(LIBS = [self.getFullLibName("python",env, useDebug),] )    # Add on the boost python library
-      env.AppendUnique(CPPPATH = [self.python_inc_dir,],
+         env.AppendUnique(LIBS = [self.getFullLibName("python", env, useDebug)])    # Add on the boost python library
+      env.AppendUnique(CPPPATH = [self.python_inc_dir],
                        LINKFLAGS = self.python_link_flags,
                        LIBPATH = self.python_lib_path,
                        LIBS = self.python_extra_libs)
