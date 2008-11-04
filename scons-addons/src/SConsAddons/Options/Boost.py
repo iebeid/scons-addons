@@ -142,8 +142,16 @@ class Boost(SConsAddons.Options.PackageOption):
             [distutils.sysconfig.get_config_var('LIBPL')]
          self.python_static_lib_path = self.python_lib_path
          self.python_link_flags = []
-         self.python_extra_libs = \
-            distutils.sysconfig.get_config_var('LIBS').split(' ')
+         self.python_extra_libs = []
+         python_extra_libs = \
+            distutils.sysconfig.get_config_var('LIBS').split(' ') + \
+            distutils.sysconfig.get_config_var('LOCALMODLIBS').split(' ')
+
+         for item in python_extra_libs:
+            if item.startswith("-l"):
+               self.python_extra_libs.append(item)
+            else:
+               self.python_link_flags.append(item)
 
          # TODO: Figure out a more portable way (ideally extracting this
          # information from distutils.sysconfig).
