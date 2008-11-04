@@ -458,12 +458,14 @@ class Boost(SConsAddons.Options.PackageOption):
       #  - Search through possible names for that library
       #     - If we find one that works, store it
       generators = self._getLibNameGenerators(env)
+      possible_lib_names = []
 
       for libname in libs_to_find:
          found_full_name = None
 
          for generator in generators:
             test_name = generator(libname)
+            possible_lib_names.append(test_name)
             extra_boost_libs = [generator(l) for l in self._extraBoostLibs]
 
             result = check_lib(libname, test_name, extra_boost_libs, env)
@@ -473,8 +475,8 @@ class Boost(SConsAddons.Options.PackageOption):
             
          if not found_full_name:
             passed = False
-            self.checkRequired("Unable to find library '%s'; tried '%s'" % 
-                               (libname, possible_lib_names))
+            self.checkRequired("Unable to find library '%s'; tried %s" % 
+                               (libname, ", ".join(possible_lib_names)))
          else:
             self.found_libs[libname] = found_full_name
             print "  %s: %s" % (libname, found_full_name)
