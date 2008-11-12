@@ -268,12 +268,12 @@ class PackageOption(LocalUpdateOption):
                 dependency.apply(env)
 
 class StandardPackageOption(PackageOption):
-    """ Simple package option that is meant for library and header checking with very
-        little customization.  Just uses Configure.CheckXXX methods behind the scenes
-        for verification.
+    """
+    Simple package option that is meant for library and header checking with very little
+    customization.  Just uses Configure.CheckXXX methods behind the scenes for verification.
     """
     def __init__(self, name, help, header = None, library = None, symbol = "main",
-                 required = False, dependencies = None):
+                 required = False, dependencies = None, linkerFlags = None):
         """
         @type  name:         string
         @param name:         Name of the option.
@@ -295,11 +295,14 @@ class StandardPackageOption(PackageOption):
         @type  dependencies: list of SConsAddons.Options.PackageOption objects
         @param dependencies: Other packages upon which this option depends. The availability of
                              the dependencies is a prerequisite for this option to be processed.
+        @type  linkerFlags:  list of strings
+        @param linkerFlags:  A list of additional flags to pass to the linker. This will be added
+                             to the test context LINKFLAGS option.
         """
         self.baseKey = name
         self.incDirKey = name + "_incdir"
         self.libDirKey = name + "_libdir"
-        
+
         PackageOption.__init__(self, name, [self.baseKey, self.incDirKey, self.libDirKey], help,
                                dependencies)
 
@@ -311,6 +314,11 @@ class StandardPackageOption(PackageOption):
         self.library = library
         self.symbol = symbol
         self.required = required
+
+        if linkerFlags is None:
+            linkerFlags = []
+
+        self.linkerFlags = linkerFlags
 
     def startProcess(self):
         print "Checking for:", self.name
@@ -407,6 +415,11 @@ class StandardPackageOption(PackageOption):
                 print "Adding lib:", self.library
             env.Append(LIBS = [self.library])
 
+        if self.linkerFlags:
+            if self.verbose:
+                print "Adding linker flags:", self.linkerFlags
+            env.Append(LINKFLAGS = self.linkerFlags)
+
     def getSettings(self):
         """ Return list sequence of ((key,value),(key,value),).
             dict.iteritems() should work.
@@ -425,7 +438,7 @@ class MultiNamePackageOption(StandardPackageOption):
    """
 
    def __init__(self, name, help, header = None, library = None, symbol = "main", required = False,
-                dependencies = None):
+                dependencies = None, linkerFlags = None):
       """
       @type  name:         string
       @param name:         Name of the option.
@@ -450,8 +463,12 @@ class MultiNamePackageOption(StandardPackageOption):
       @type  dependencies: list of SConsAddons.Options.PackageOption objects
       @param dependencies: Other packages upon which this option depends. The availability of the
                            dependencies is a prerequisite for this option to be processed.
+      @type  linkerFlags:  list of strings
+      @param linkerFlags:  A list of additional flags to pass to the linker. This will be added to
+                           the test context LINKFLAGS option.
       """
-      StandardPackageOption.__init__(self, name, help, header, library, symbol, required, dependencies)
+      StandardPackageOption.__init__(self, name, help, header, library, symbol, required,
+                                     dependencies, linkerFlags)
 
    def _checkLibraryWithHeader(self, context, library, header, language):
       if library is list:
