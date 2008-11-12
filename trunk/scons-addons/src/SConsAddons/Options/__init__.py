@@ -38,6 +38,6 @@ __date__ = "__DATE__"
 __developer__ = "__DEVELOPER__"
 
 from SConsAddons.Options.Options import Option, OptionProxy, LocalUpdateOption, PackageOption, \
-                                        StandardPackageOption, SimpleOption, BoolOption, \
-                                        SeparatorOption, ListOption, EnumOption, Options, \
-                                        OptionError
+                                        StandardPackageOption, MultiNamePackageOption, \
+                                        SimpleOption, BoolOption, SeparatorOption, ListOption, \
+                                        EnumOption, Options, OptionError
