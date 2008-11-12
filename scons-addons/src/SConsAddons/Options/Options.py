@@ -284,9 +284,8 @@ class StandardPackageOption(PackageOption):
         @param header:       A header in the package to use for validating that the package
                              described by this option is both available and valid.
         @type  library:      string or list of strings
-        @param library:      The library to link against. This can be the name of the library or a
-                             list of library names if the library may have differnet names
-                             depending on the platform or the type (dynamic versus static).
+        @param library:      The library or libraries to link against. This can be the name of the
+                             library or a list of libraries if multiple are needed.
         @type  sybmol:       string
         @param symbol:       A symbol to test for in the library when performing the validation
                              step.
@@ -350,7 +349,6 @@ class StandardPackageOption(PackageOption):
                       self.libDir = pj(self.baseDir,'lib')
  
     def validate(self, env):
-
         passed = True
     
         conf_env = env.Copy()
@@ -365,23 +363,9 @@ class StandardPackageOption(PackageOption):
 
         conf_ctx = Configure(conf_env)
         if self.library and self.header:
-            if type(self.library) is list:
-               for lib in self.library:
-                  result = conf_ctx.CheckLibWithHeader(lib, self.header, "C++")
-                  if result:
-                     self.library = lib
-                     break
-            else:
-               result = conf_ctx.CheckLibWithHeader(self.library, self.header, "C++")
+            result = self._checkLibraryWithHeader(conf_ctx, self.library, self.header, "C++")
         elif self.library:
-            if type(self.library) is list:
-               for lib in self.library:
-                  result = conf_ctx.CheckLib(library=lib, symbol=self.symbol, language="C++")
-                  if result:
-                     self.library = lib
-                     break
-            else:
-               result = conf_ctx.CheckLib(library=self.library, symbol=self.symbol, language="C++")
+            result = self._checkLibrary(conf_ctx, self.library, self.symbol, self.header, "C++")
         elif self.header:
             result = conf_ctx.CheckCXXHeader(self.header)
         elif self.baseDir is not None:
@@ -400,6 +384,12 @@ class StandardPackageOption(PackageOption):
             self.libDir = None
         else:
             self.available = True
+
+    def _checkLibraryWithHeader(self, context, library, header, language):
+        return context.CheckLibWithHeader(library, header, language)
+
+    def _checkLibrary(self, context, library, symbol, header, langauge):
+        return context.CheckLib(library, symbol, header, langauge)
 
     def apply(self, env):
         if self.incDir:
@@ -425,6 +415,67 @@ class StandardPackageOption(PackageOption):
         return [(self.baseKey,self.baseDir),
                 (self.incDirKey, self.incDir),
                 (self.libDirKey, self.libDir)]
+
+class MultiNamePackageOption(StandardPackageOption):
+   """
+   An extension of StandardPackageOption that allows calling code to pass in a list of possible
+   library names for a package. Using this capability, user-level code can indicate an order of
+   preference for library names. This helps a lot on Windows where a package may have one name for
+   its static library and another for its dynamic.
+   """
+
+   def __init__(self, name, help, header = None, library = None, symbol = "main", required = False,
+                dependencies = None):
+      """
+      @type  name:         string
+      @param name:         Name of the option.
+      @type  help:         string
+      @param help:         Help text about the option object. If different help per key, put help
+                           in a list.
+      @type  header:       string
+      @param header:       A header in the package to use for validating that the package
+                           described by this option is both available and valid.
+      @type  library:      string or list of strings
+      @param library:      The library to link against. This can be the name of the library or a
+                           list of library names if the library may have differnet names depending
+                           on the platform or the type (dynamic versus static). If multiple
+                           libraries are involved, then they must be grouped using a nested list.
+                           For example, [["libname1", "libname2"], ["altname1", "altname2"]].
+      @type  sybmol:       string
+      @param symbol:       A symbol to test for in the library when performing the validation
+                           step.
+      @type  required:     boolean
+      @param required:     A flag indicating whether this package is a requirement for being able
+                           to build the code that depends on the package.
+      @type  dependencies: list of SConsAddons.Options.PackageOption objects
+      @param dependencies: Other packages upon which this option depends. The availability of the
+                           dependencies is a prerequisite for this option to be processed.
+      """
+      StandardPackageOption.__init__(self, name, help, header, library, symbol, required, dependencies)
+
+   def _checkLibraryWithHeader(self, context, library, header, language):
+      if library is list:
+         for lib in library:
+            result = context.CheckLibWithHeader(library, header, language)
+            if result:
+               self.library = lib
+               break
+      else:
+         result = context.CheckLibWithHeader(library, header, language)
+
+      return result
+
+   def _checkLibrary(self, context, library, symbol, header, language):
+      if library is list:
+         for lib in library:
+            result = context.CheckLib(lib, symbol, header, language)
+            if result:
+               self.library = lib
+               break
+      else:
+         result = context.CheckLib(library, symbol, header, language)
+
+      return result
 
 class SimpleOption(Option):
     """
