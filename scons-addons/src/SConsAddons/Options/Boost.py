@@ -46,7 +46,7 @@ class Boost(SConsAddons.Options.PackageOption):
          useCppPath - If true, then include path is added to CPPPATH if not, then added to CPPFLAGS directly
 	 toolset - The toolset name to use (ex: "auto","gcc", "il")
          useVersion - Attempt to use version in the library naming.
-         preferDynamic - If true, prefer linking against a dynamic library.
+         preferDynamic - If true, prefer linking against a dynamic library.in your opinion, should I be looking at boost or at pyopensg on this one?
          autoLink - If true and using msvc, then attempt to use boost's autolinking capabilies.
          allowLibNameFallbacks - If true, then we can fallback on less explicit names for libraries.
       """
@@ -139,7 +139,7 @@ class Boost(SConsAddons.Options.PackageOption):
          self.python_embedded_link_flags = \
             distutils.sysconfig.get_config_var('LINKFORSHARED').split(' ')
          self.python_lib_path = \
-            [distutils.sysconfig.get_config_var('LIBPL')]
+            [distutils.sysconfig.get_config_var('LIBDIR')]
          self.python_static_lib_path = self.python_lib_path
          self.python_link_flags = []
          self.python_extra_libs = []
