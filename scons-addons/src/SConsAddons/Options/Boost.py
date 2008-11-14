@@ -156,8 +156,9 @@ class Boost(SConsAddons.Options.PackageOption):
          # TODO: Figure out a more portable way (ideally extracting this
          # information from distutils.sysconfig).
          if sca_util.GetPlatform() == 'darwin':
-            self.python_link_flags = ['-framework', 'Python'] + \
-                                        self.python_link_flags
+            self.python_link_flags = \
+               ['-F%s' % distutils.sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX'),
+                '-framework', 'Python'] + self.python_link_flags
          else:
             lib_python_fname = 'python' + self.python_version
             self.python_extra_libs.insert(0, lib_python_fname)
