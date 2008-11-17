@@ -267,6 +267,9 @@ class PackageOption(LocalUpdateOption):
             if dependency.isAvailable():
                 dependency.apply(env)
 
+                # Apply the dependencies of our dependency.
+                dependency._applyDependencies(env)
+
 class StandardPackageOption(PackageOption):
     """
     Simple package option that is meant for library and header checking with very little
