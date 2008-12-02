@@ -77,7 +77,7 @@ def GetArch():
       elif re.search(r'x86_64', platform) or platform == "win64":
          arch = 'x64'
       # IA64, aka Itanium
-      elif re.serach(r'ia64', platform):
+      elif re.search(r'ia64', platform):
          arch = 'ia64'
          # PowerPC
       elif re.search(r'Power_Mac', platform):
