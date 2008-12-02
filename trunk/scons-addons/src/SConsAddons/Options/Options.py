@@ -474,7 +474,7 @@ class MultiNamePackageOption(StandardPackageOption):
                                      dependencies, linkerFlags)
 
    def _checkLibraryWithHeader(self, context, library, header, language):
-      if library is list:
+      if type(library) is list:
          for lib in library:
             result = context.CheckLibWithHeader(library, header, language)
             if result:
@@ -486,7 +486,7 @@ class MultiNamePackageOption(StandardPackageOption):
       return result
 
    def _checkLibrary(self, context, library, symbol, header, language):
-      if library is list:
+      if type(library) is list:
          for lib in library:
             result = context.CheckLib(lib, symbol, header, language)
             if result:
