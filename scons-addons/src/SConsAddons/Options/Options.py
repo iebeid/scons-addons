@@ -335,11 +335,19 @@ class StandardPackageOption(PackageOption):
             if self.verbose:
                 print "   %s specified or cached. [%s]."% (self.baseKey, self.baseDir)
         if optDict.has_key(self.incDirKey):
-            self.incDir = optDict[self.incDirKey]
+            inc_dir = optDict[self.incDirKey]
+            if SCons.Util.is_List(inc_dir):
+               self.incDir = inc_dir
+            else:
+               self.incDir = inc_dir.split(',')
             if self.verbose:
                 print "   %s specified or cached. [%s]."% (self.incDirKey, self.incDir)
         if optDict.has_key(self.libDirKey):
-            self.libDir = optDict[self.libDirKey]
+            lib_dir = optDict[self.libDirKey]
+            if SCons.Util.is_List(lib_dir):
+               self.libDir = lib_dir
+            else:
+               self.libDir = lib_dir.split(',')
             if self.verbose:
                 print "   %s specified or cached. [%s]."% (self.libDirKey, self.libDir)
     
@@ -349,15 +357,15 @@ class StandardPackageOption(PackageOption):
             # Only fall back on the base_dir/include if a specific
             # include dir was not given.
             if self.incDir is None and os.path.exists(pj(self.baseDir,'include')):
-                self.incDir = pj(self.baseDir,'include')
+                self.incDir = [pj(self.baseDir, 'include')]
             if self.libDir is None:
                 arch_type = GetArch()
                 if (arch_type == 'x64') or (arch_type == 'ia64'):
                    if os.path.exists(pj(self.baseDir,'lib64')):
-                      self.libDir = pj(self.baseDir,'lib64')
+                      self.libDir = [pj(self.baseDir, 'lib64')]
                 
                 if self.libDir is None and os.path.exists(pj(self.baseDir,'lib')):
-                      self.libDir = pj(self.baseDir,'lib')
+                      self.libDir = [pj(self.baseDir, 'lib')]
  
     def validate(self, env):
         passed = True
@@ -404,14 +412,18 @@ class StandardPackageOption(PackageOption):
 
     def apply(self, env):
         if self.incDir:
+            if not SCons.Util.is_List(self.incDir):
+                self.incDir = [self.incDir]
             if self.verbose:
                 print "Appending inc_dir:", self.incDir
-            env.Append(CPPPATH = [self.incDir])
+            env.Append(CPPPATH = self.incDir)
 
         if self.libDir:
+            if not SCons.Util.is_List(self.libDir):
+                self.libDir = [self.libDir]
             if self.verbose:
                 print "Appending lib_dir:", self.libDir
-            env.Append(LIBPATH = [self.libDir])
+            env.Append(LIBPATH = self.libDir)
 
         if self.library:
             if self.verbose:
