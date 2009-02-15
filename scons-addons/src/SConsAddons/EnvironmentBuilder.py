@@ -210,7 +210,7 @@ class EnvironmentBuilder(object):
                                          'standard', 
                                          ['none','minimal','standard','extensive','maximum'],
                                          {'none':EnvironmentBuilder.NONE,
-                                          'minimal':EnvironmentBuilder.STANDARD,
+                                          'minimal':EnvironmentBuilder.MINIMAL,
                                           'standard':EnvironmentBuilder.STANDARD,
                                           'extensive':EnvironmentBuilder.EXTENSIVE,
                                           'maximum':EnvironmentBuilder.MAXIMUM}))
@@ -219,7 +219,7 @@ class EnvironmentBuilder(object):
                                          'standard', 
                                          ['none','minimal','standard','extensive','maximum'],
                                          {'none':EnvironmentBuilder.NONE,
-                                          'minimal':EnvironmentBuilder.STANDARD,
+                                          'minimal':EnvironmentBuilder.MINIMAL,
                                           'standard':EnvironmentBuilder.STANDARD,
                                           'extensive':EnvironmentBuilder.EXTENSIVE,
                                           'maximum':EnvironmentBuilder.MAXIMUM}))
@@ -227,7 +227,7 @@ class EnvironmentBuilder(object):
                                          'Default optimization level for environment builder.',
                                          'standard', [],
                                          {'none':EnvironmentBuilder.NONE,
-                                          'minimal':EnvironmentBuilder.STANDARD,
+                                          'minimal':EnvironmentBuilder.MINIMAL,
                                           'standard':EnvironmentBuilder.STANDARD,
                                           'extensive':EnvironmentBuilder.EXTENSIVE,
                                           'maximum':EnvironmentBuilder.MAXIMUM}))            
