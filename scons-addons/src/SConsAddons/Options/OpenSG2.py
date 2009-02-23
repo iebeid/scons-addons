@@ -156,7 +156,7 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       else:
          self.available = True
 
-   def apply(self, env, libs=['system',], buildType=None):
+   def apply(self, env, libs = ['System'], buildType = None):
       """ Add environment options for building against OpenSG"""
 
       # A build to be made with debugging symbols and linked against the MSVC
