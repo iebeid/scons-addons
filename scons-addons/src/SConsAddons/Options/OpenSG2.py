@@ -162,7 +162,7 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       # A build to be made with debugging symbols and linked against the MSVC
       # debug runtime. This really should apply only to Windows.
       if 'dbgrt' == buildType or 'debugrt' == buildType:
-         opt_option = " --dbg-rt"
+         opt_option = " --dbgrt"
       # A build to be made without debugging symbols. This is linked against
       # the regular C/C++ runtime implementation.
       elif 'opt' == buildType or 'optimized' == buildType:
@@ -178,7 +178,7 @@ class OpenSG2(SConsAddons.Options.PackageOption):
             var_type = env["variant"]["type"]
 
             if "debugrt" == var_type:
-               opt_option = " --dbg-rt"
+               opt_option = " --dbgrt"
             elif "debug" != var_type:
                opt_option = " --opt"
             else:
@@ -193,8 +193,8 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       lib_names_str = " ".join(libs)
       extra_params = opt_option + ' ' + lib_names_str
       found_libs = cfg_cmd_parser.findLibs("--libs " + extra_params)
-      found_lib_paths = cfg_cmd_parser.findLibPaths("--libs %s"%extra_params)
-      found_includes = cfg_cmd_parser.findIncludes("--cflags %s"%extra_params)
+      found_lib_paths = cfg_cmd_parser.findLibPaths("--llibs %s" % extra_params)
+      found_includes = cfg_cmd_parser.findIncludes("--cflags %s" % extra_params)
       # NOTE: findCXXFlags seems to parse for defines.
       found_defines = cfg_cmd_parser.findCXXFlags("--cflags %s"%extra_params)
 
