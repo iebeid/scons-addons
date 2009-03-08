@@ -273,6 +273,8 @@ class ConfigCmdParser:
       # Res that when matched against config output should match the options we want
       # In future could try to use INCPREFIX and other platform neutral stuff
 
+      self.framework_re = re.compile(r'(?: |^)-framework (\S+)', re.MULTILINE)
+
       if 'win32' == GetPlatform():
          self.inc_re = re.compile(r'(?: |^)/I(\S*)', re.MULTILINE)
          self.lib_re = re.compile(r'(?: |^)(\S*\.lib)', re.M | re.I)
@@ -289,6 +291,16 @@ class ConfigCmdParser:
          return ""
 
       args = self.lib_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
+      for i, arg in enumerate(args):
+         args[i] = os.path.expandvars(arg)
+
+      return args
+
+   def findFrameworks(self, arg="--libs"):
+      if not self.valid:
+         return ""
+
+      args = self.framework_re.findall(os.popen(self.configCmd + " " + arg).read().strip())
       for i, arg in enumerate(args):
          args[i] = os.path.expandvars(arg)
 
