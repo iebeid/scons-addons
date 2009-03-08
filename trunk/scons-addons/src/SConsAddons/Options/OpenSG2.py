@@ -193,24 +193,29 @@ class OpenSG2(SConsAddons.Options.PackageOption):
       lib_names_str = " ".join(libs)
       extra_params = opt_option + ' ' + lib_names_str
       found_libs = cfg_cmd_parser.findLibs("--libs " + extra_params)
+      found_frameworks = cfg_cmd_parser.findFrameworks("--libs " + extra_params)
       found_lib_paths = cfg_cmd_parser.findLibPaths("--llibs %s" % extra_params)
       found_includes = cfg_cmd_parser.findIncludes("--cflags %s" % extra_params)
       # NOTE: findCXXFlags seems to parse for defines.
       found_defines = cfg_cmd_parser.findCXXFlags("--cflags %s"%extra_params)
 
       if self.verbose:
-         print "   found_libs      =", found_libs
-         print "   found_lib_paths =", found_lib_paths
-         print "   found_includes  =", found_includes
-         print "   found_defines   =", found_defines
+         print "   found_libs       =", found_libs
+         print "   found_frameworks =", found_frameworks
+         print "   found_lib_paths  =", found_lib_paths
+         print "   found_includes   =", found_includes
+         print "   found_defines    =", found_defines
 
       if len(found_includes):
          env.AppendUnique(CPPPATH = found_includes);
 
       if len(found_libs):
-         env.AppendUnique(LIBS = found_libs);
+         env.AppendUnique(LIBS = found_libs)
       else:
          print "ERROR: Could not find OpenSG libs for libs:%s lib_names_str:%s" % (libs, lib_names_str)
+
+      if len(found_frameworks):
+         env.AppendUnique(FRAMEWORKS = found_frameworks)
 
       if len(found_lib_paths):
          env.AppendUnique(LIBPATH = found_lib_paths);
