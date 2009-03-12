@@ -370,7 +370,7 @@ class StandardPackageOption(PackageOption):
     def validate(self, env):
         passed = True
     
-        conf_env = env.Copy()
+        conf_env = env.Clone()
         self._applyDependencies(conf_env)
 
         # We do not want self.library to be added to conf_env. We let the checker use function

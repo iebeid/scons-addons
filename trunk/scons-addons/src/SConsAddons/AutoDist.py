@@ -163,7 +163,7 @@ class FileBundle:
       
       # Clone the base environment if we have one
       if env:
-         env = env.Copy()
+         env = env.Clone()
       else:
          env = Environment()
       
@@ -204,7 +204,7 @@ class _Assembly:
 
       # Clone the base environment if we have one
       if baseEnv:
-         self.env = baseEnv.Copy()
+         self.env = baseEnv.Clone()
       else:
          self.env = Environment()
 
@@ -559,7 +559,7 @@ class Package:
          self.description = self.name + " Package"
       
       if baseEnv:
-         self.env = baseEnv.Copy()
+         self.env = baseEnv.Clone()
       else:
          self.env = Environment()
          
@@ -858,7 +858,7 @@ class TarGzPackager(Packager):
       print "Building .tar.gz dist: %s"% (target[0],)
    
    def build(self):
-      env = self.package.getEnv().Copy()
+      env = self.package.getEnv().Clone()
       dist_dir = self.package.getDistDir()
       dist_name = "%s-%s"% (self.package.getName(), self.package.getFullVersion())
       work_dir = pj(dist_dir, dist_name)
@@ -913,7 +913,7 @@ class RpmPackager(Packager):
       print "Building rpm dist: %s"% (target[0],)
    
    def build(self):
-      env = self.package.getEnv().Copy()
+      env = self.package.getEnv().Clone()
       dist_dir = self.package.getDistDir()
       
       package_arch = 'i386'    # Hardcode for now
@@ -1006,7 +1006,7 @@ def MakeSourceDist(package, baseEnv = None):
    """
    # Clone the base environment if we have one
    if baseEnv:
-      env = baseEnv.Copy()
+      env = baseEnv.Clone()
    else:
       env = Environment()
 

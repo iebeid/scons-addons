@@ -428,7 +428,7 @@ class Boost(SConsAddons.Options.PackageOption):
 
          # Create config environment
          # - Need to extend the environment
-         conf_env = env.Copy()
+         conf_env = env.Clone()
          conf_env.Append(CPPPATH= self.found_incs, 
                          LIBPATH = self.found_lib_paths,
                          LIBS = extraLibs,

@@ -87,7 +87,7 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
 
    def validateCompile(self, env):
       # Try to build against the library
-      conf_env = env.Copy()
+      conf_env = env.Clone()
       self.apply(conf_env)
       conf_ctxt = SCons.SConf.SConf(conf_env)
 

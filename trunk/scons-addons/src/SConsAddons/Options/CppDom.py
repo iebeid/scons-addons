@@ -182,7 +182,7 @@ class CppDom(SConsAddons.Options.PackageOption):
             self.found_libs = ['cppdom-%s'%lib_ver_str]         
       
       # Try to build against the library
-      conf_env = env.Copy();                     # Make a copy of the env
+      conf_env = env.Clone();                     # Make a copy of the env
       self.apply(conf_env);                  # Update it with the guessed values
       conf_ctxt = Configure(conf_env);
       if not conf_ctxt.CheckCXXHeader(pj("cppdom", "cppdom.h")):
