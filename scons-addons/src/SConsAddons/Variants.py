@@ -160,7 +160,7 @@ class VariantsHelper(object):
          # --- Build environment if needed--- #   
          build_env = None
          if baseEnv:
-            build_env = env_bldr.applyToEnvironment(baseEnv.Copy(), variant=combo)      
+            build_env = env_bldr.applyToEnvironment(baseEnv.Clone(), variant=combo)      
          
          # export the locals
          vars["variant_pass"] = variant_pass

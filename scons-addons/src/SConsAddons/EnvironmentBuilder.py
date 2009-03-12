@@ -116,7 +116,7 @@ class EnvironmentBuilder(object):
       """ Apply current builder options to an existing environment.
           Returns env argument. 
          
-         Ex: new_env = bldr.applyToEnvironment(env.Copy())
+         Ex: new_env = bldr.applyToEnvironment(env.Clone())
       """
       if variant:
          env["variant"] = variant
