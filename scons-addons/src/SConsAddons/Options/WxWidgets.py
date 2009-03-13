@@ -147,7 +147,7 @@ class WxWidgets(SConsAddons.Options.PackageOption):
       self.found_incs_as_flags = [env["INCPREFIX"] + p for p in self.found_incs];
             
       # Try to build against the library
-      conf_env = env.Copy()                 # Make a copy of the env
+      conf_env = env.Clone()                # Make a copy of the env
       self.apply(conf_env)                  # Update it with the guessed values
       conf_ctxt = Configure(conf_env);
       if not conf_ctxt.CheckCXXHeader(pj("wx", "setup.h")):
