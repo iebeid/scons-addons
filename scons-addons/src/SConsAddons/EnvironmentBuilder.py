@@ -107,8 +107,8 @@ class EnvironmentBuilder(object):
                     and available when applying options.
       """
       if options and not isinstance(options, Options.Options):
-         kw["options"] = options      
-      new_env = apply(SCons.Environment.Environment, [], kw)      
+         kw["options"] = options  
+      new_env = apply(SCons.Environment.Environment, [], kw)  
       self.applyToEnvironment(new_env,variant, options)
       return new_env
    
@@ -539,42 +539,16 @@ def msvc_misc(bldr, env):
 #      if float(msvs_version[:3]) < 8.0:
 #         pass
 
-      env.AppendUnique(CCFLAGS = ['/Wp64'])
       env.AppendUnique(CPPDEFINES = ['WIN64'])
-      msvs_version = env['MSVS']['VERSION']
       platform = 'amd64'
 
-      # The following is a hack to deal with SCons versions up to and
-      # including 0.97 not supporting the use of the 64-bit cl.exe to build
-      # 64-bit software on Windows.
-      vc_dir = r"C:\Program Files (x86)\Microsoft Visual Studio 8\VC"
-      # Extend PATH instead of using absolute paths to the executables. We do
-      # this because SCons doesn't expect to see commands with spaces, and it
-      # behaves badly when it does. In particular, with a long link line, it
-      # will use a linker command file, but it will try to use it in the
-      # following way:
-      #
-      #    "C:\Program @commandfile"
-      #
-      # That results in this error message:
-      #
-      #    The filename, directory name, or volume label syntax is incorrect.
-      os.environ['PATH'] = vc_dir + r"\bin\amd64;" + os.environ['PATH']
-      # These still have to be specified as absolute paths to ensure that
-      # SCons does not do anything to PATH behind our back that would prevent
-      # the proper compiler from being used.
-      env['CC'] = '"C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe"'
-      env['CXX'] = '"C:/Program Files (x86)/Microsoft Visual Studio 8/VC/bin/amd64/cl.exe"'
-      env.Append(LIBPATH = [vc_dir + r'\lib\amd64',
-                            vc_dir + r'\PlatformSDK\Lib\AMD64'],
-                 ARFLAGS = '/MACHINE:X64',
-                 LINKFLAGS = '/MACHINE:X64')
+      env.AppendUnique(ARFLAGS = '/MACHINE:X64',
+                       LINKFLAGS = '/MACHINE:X64')
    else:
       env.AppendUnique(CPPDEFINES = ['WIN32'])
       platform = 'x86'
-
-   if env.has_key('MSVS8_PLATFORM'):
-      env['MSVS8_PLATFORM'] = platform
+      env.AppendUnique(ARFLAGS = '/MACHINE:X86',
+                       LINKFLAGS = '/MACHINE:X86')
 
 # MSVC functions
 default_funcs.append([['cl'],[],msvc_optimizations])
