@@ -94,12 +94,14 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
       if self.headerToCheck:
          if not conf_ctxt.CheckCXXHeader(self.headerToCheck):
             print "Can't compile with %s" %self.headerToCheck
+            conf_ctxt.Finish()
             return False
 
       if self.found_libs:
          for lib in self.found_libs:
             if not conf_ctxt.CheckLib(lib, autoadd=0):
                print "Can't link %s" % str(lib)
+               conf_ctxt.Finish()
                return False
 
       conf_ctxt.Finish()
