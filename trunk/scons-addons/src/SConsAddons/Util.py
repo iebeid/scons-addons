@@ -83,22 +83,28 @@ def GetArch():
       elif re.search(r'Power_Mac', platform):
          arch = 'ppc'
    else:
-      arch_str = os.uname()[4]
-      if re.search(r'i.86', arch_str):
-         arch = 'ia32'
-      # x86_64 (aka, x64, EM64T)
-      elif re.search(r'x86_64', arch_str):
+      uname_info = os.uname()
+      # On Mac OS X 10.6 (Darwin 10), the architecture is reported as i386,
+      # but the default compiler output is x64.
+      if uname_info[0] == 'Darwin' and uname_info[2].split('.')[0] >= 10:
          arch = 'x64'
-      # IA64, aka Itanium
-      elif re.search(r'ia64', arch_str):
-         arch = 'ia64'
-      # PowerPC Macintosh
-      elif re.search(r'Power Macintosh', arch_str):
-         # XXX: Not sure if this actually works. -PH 7/24/2006
-         if re.search(r'64', arch_str):
-            arch = 'ppc64'
-         else:
-            arch = 'ppc'
+      else:
+         arch_str = uname_info[4]
+         if re.search(r'i.86', arch_str):
+            arch = 'ia32'
+         # x86_64 (aka, x64, EM64T)
+         elif re.search(r'x86_64', arch_str):
+            arch = 'x64'
+         # IA64, aka Itanium
+         elif re.search(r'ia64', arch_str):
+            arch = 'ia64'
+         # PowerPC Macintosh
+         elif re.search(r'Power Macintosh', arch_str):
+            # XXX: Not sure if this actually works. -PH 7/24/2006
+            if re.search(r'64', arch_str):
+               arch = 'ppc64'
+            else:
+               arch = 'ppc'
 
    return arch
 

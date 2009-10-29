@@ -308,7 +308,8 @@ def gcc_debug(bldr, env):
    #print "Calling gcc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
-   env.Append(CCFLAGS=["-g",])
+   env.Append(CCFLAGS = ["-g", "-fno-inline"],
+              CXXFLAGS = ["-fno-implicit-inline-templates", "-fno-default-inline"])
 
 def gcc_warnings(bldr, env):
    CCFLAGS = []
@@ -364,8 +365,9 @@ def gcc_darwin_misc(bldr,env):
    # that have been detected as being valid.
    universal_arch_list = ['ppc', 'i386', 'ppc64']
 
-   if os.uname()[2][0] >= '9':
-      universal_arch_list.append('x86_64')
+   print os.uname()
+   if os.uname()[2].split('.')[0] >= '9':
+      universal_arch_list.append('x64')
 
    if bldr.darwinUniversalEnabled:
       for a in universal_arch_list:
