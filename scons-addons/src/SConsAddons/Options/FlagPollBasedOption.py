@@ -162,6 +162,8 @@ class FlagPollBasedOption(SConsAddons.Options.PackageOption):
 
       if passed and self.compileTest:
          passed = self.validateCompile(env)
+         if not passed:
+            self.checkRequired("   Compile test failed for: %s"%self.moduleName)
 
       self.available = passed
       return passed
