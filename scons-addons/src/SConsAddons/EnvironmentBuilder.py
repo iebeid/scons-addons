@@ -344,11 +344,11 @@ def gcc_linux_misc(bldr, env):
 
    if bldr.cpuArch:
       if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
-         env.Append(CCFLAGS = ['-m32'],
-                    LINKFLAGS = ['-m32'])
+         env.AppendUnique(CCFLAGS = ['-m32'],
+                          LINKFLAGS = ['-m32'])
       elif bldr.cpuArch == EnvironmentBuilder.X64_ARCH:
-         env.Append(CCFLAGS = ['-m64'],
-                    LINKFLAGS = ['-m64'])
+         env.AppendUnique(CCFLAGS = ['-m64'],
+                          LINKFLAGS = ['-m64'])
       else:
          assert False, "Invalid arch used for Linux gcc."
 
