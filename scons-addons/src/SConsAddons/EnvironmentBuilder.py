@@ -108,7 +108,7 @@ class EnvironmentBuilder(object):
       """
       if options and not isinstance(options, Options.Options):
          kw["options"] = options  
-      new_env = apply(SCons.Environment.Environment, [], kw)  
+      new_env = apply(SCons.Environment.Environment, [], kw)
       self.applyToEnvironment(new_env,variant, options)
       return new_env
    
@@ -365,7 +365,6 @@ def gcc_darwin_misc(bldr,env):
    # that have been detected as being valid.
    universal_arch_list = ['ppc', 'i386', 'ppc64']
 
-   print os.uname()
    if os.uname()[2].split('.')[0] >= '9':
       universal_arch_list.append('x64')
 
