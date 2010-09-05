@@ -521,7 +521,12 @@ def msvc_misc(bldr, env):
 
    # Exception handling
    if bldr.exceptionsEnabled:
-      if env["MSVS"]["VERSION"] >= "7.1":
+      if env.has_key("MSVC_VERSION"):
+         msvc_version = env["MSVC_VERSION"]
+      else:
+         msvc_version = env["MSVS"]["VERSION"] 
+
+      if msvc_version >= "7.1":
          if bldr.structuredExceptionsEnabled:
             env.Append(CCFLAGS=['/EHa'])
          else:
