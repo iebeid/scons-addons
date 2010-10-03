@@ -29,7 +29,7 @@ default_funcs = []
 class EnvironmentBuilder(object):
    """ Builder class for scons environments.
        Used to build up an environment based on user settings.
-       
+
        There are default settings for all levels.  These settings can be overriden
        through the class interface or through the supported options processing.
    """
@@ -39,7 +39,7 @@ class EnvironmentBuilder(object):
    STANDARD = 2
    EXTENSIVE = 3
    MAXIMUM = 4
-   
+
    # Opt flags
    REDUCE_SIZE = 'reduce_size'
    FAST_MATH = 'fast_math'
@@ -48,7 +48,7 @@ class EnvironmentBuilder(object):
    # Warning flags
    WARN_AS_ERROR = 'warn_as_error'
    WARN_STRICT   = 'warn_strict'
-   
+
    #debug tags
    DISABLE_INLINE = 'disable_inline'
 
@@ -57,7 +57,7 @@ class EnvironmentBuilder(object):
    MSVC_MT_DBG_DLL_RT = "msvc_mt_dbg_dll_rt"
    MSVC_MT_RT         = "msvc_mt_rt"
    MSVC_MT_DBG_RT     = "msvc_mt_dbg_rt"
-   
+
    # CPU ARCH
    AUTODETECT_ARCH    = "autodetect_arch"
    IA32_ARCH          = "ia32"
@@ -70,30 +70,30 @@ class EnvironmentBuilder(object):
    def __init__(self):
       """ Initialize the class with defaults. """
       global default_funcs
-      self.debugLevel   = EnvironmentBuilder.NONE 
+      self.debugLevel   = EnvironmentBuilder.NONE
       self.debugTags    = []
       self.optLevel     = EnvironmentBuilder.NONE
       self.optTags      = []
-      self.warningLevel = EnvironmentBuilder.MINIMAL 
+      self.warningLevel = EnvironmentBuilder.MINIMAL
       self.warningTags  = []
       self.profEnabled  = False
       self.exceptionsEnabled = True
       self.structuredExceptionsEnabled = False
-      self.rttiEnabled  = True            
+      self.rttiEnabled  = True
       self.cpuArch      = None
-      
+
       # Darwin specific
       self.darwinUniversalEnabled = False
       self.darwinSdk = ''
-      
+
       # MSVC specific
       self.msvcRuntime  = None
-      
+
       # List of [ [compilers], [platforms], func ]
       # If compiler or platform list is empty, then ignore that check
       self.funcList     = copy.copy(default_funcs)
-      
-      # Defaults:  These levels are applied if the user just enables with no level      
+
+      # Defaults:  These levels are applied if the user just enables with no level
       self.defaultDebugLevel   = EnvironmentBuilder.STANDARD
       self.defaultOptLevel     = EnvironmentBuilder.STANDARD
       self.defaultWarningLevel = EnvironmentBuilder.STANDARD
@@ -110,15 +110,15 @@ class EnvironmentBuilder(object):
                     and available when applying options.
       """
       if options and not isinstance(options, Options.Options):
-         kw["options"] = options  
+         kw["options"] = options
       new_env = apply(SCons.Environment.Environment, [], kw)
       self.applyToEnvironment(new_env, variant, options)
       return new_env
-   
+
    def applyToEnvironment(self, env, variant = None, options = None):
       """ Apply current builder options to an existing environment.
-          Returns env argument. 
-         
+          Returns env argument.
+
          Ex: new_env = bldr.applyToEnvironment(env.Clone())
       """
       if variant:
@@ -135,7 +135,7 @@ class EnvironmentBuilder(object):
       self.debugTags = tags
    def disableDebug(self):
       self.enableDebug(level = EnvironmentBuilder.NONE)
-      
+
    def enableOpt(self, level = None, tags = []):
       if not level:
          level = self.defaultOptLevel
@@ -143,12 +143,12 @@ class EnvironmentBuilder(object):
       self.optTags = tags
    def disableOpt(self):
       self.enableOpt(EnvironmentBuilder.NONE)
-      
+
    def enableProfiling(self, val = True):
       self.profEnabled = val
    def disableProfiling(self):
       self.enableProfiling(False)
-   
+
    def enableWarnings(self, level = None, tags = []):
       if level is None:
          level = self.defaultWarningLevel
@@ -156,22 +156,22 @@ class EnvironmentBuilder(object):
       self.warningTags = tags
    def disableWarnings(self):
       self.enableWarnings(EnvironmentBuilder.NONE)
-   
+
    def enableExceptions(self, val = True):
       self.exceptionsEnabled = val
    def disableExceptions(self):
       self.enableExceptions(False)
-      
+
    def enableStructuredExceptions(self, val = True):
       self.structuredExceptionsEnabled = val
    def disableStructuredExceptions(self):
       self.enableStructuredExceptions(False)
-      
+
    def enableRTTI(self, val = True):
       self.rttiEnabled = val
    def disableRTTI(self):
       self.enableRTTI(False)
-      
+
    def setCpuArch(self, val = AUTODETECT_ARCH):
       if val != EnvironmentBuilder.AUTODETECT_ARCH:
          self.cpuArch = val
@@ -190,27 +190,27 @@ class EnvironmentBuilder(object):
 
    def darwin_setSdk(self, val):
       self.darwinSdk = val
-      
+
    # ---- MSVC specific ---- #
    def setMsvcRuntime(self, val):
       self.msvcRuntime = val
-   
+
    # ---- Command-line option processing ---- #
    def addOptions(self, opts):
       """ The EnvironmentBuilder has support for adding command line options to an
           option processing object.  This object has to be an instance
           of SConsAddons.Options.   Once the options are added, the user
           will be able to set defaults for the environment builder.
-          
+
           TODO: Add options for tags.
       """
       import SConsAddons.Options as sca_opts
-      
+
       assert isinstance(opts, sca_opts.Options)
-      opts.AddOption(sca_opts.SeparatorOption("\nEnvironment Builder Defaults"))      
+      opts.AddOption(sca_opts.SeparatorOption("\nEnvironment Builder Defaults"))
       opts.AddOption(sca_opts.EnumOption('default_debug_level',
                                          'Default debug level for environment builder.',
-                                         'standard', 
+                                         'standard',
                                          ['none', 'minimal', 'standard', 'extensive', 'maximum'],
                                          {'none':EnvironmentBuilder.NONE,
                                           'minimal':EnvironmentBuilder.MINIMAL,
@@ -219,7 +219,7 @@ class EnvironmentBuilder(object):
                                           'maximum':EnvironmentBuilder.MAXIMUM}))
       opts.AddOption(sca_opts.EnumOption('default_opt_level',
                                          'Default optimization level for environment builder.',
-                                         'standard', 
+                                         'standard',
                                          ['none', 'minimal', 'standard', 'extensive', 'maximum'],
                                          {'none':EnvironmentBuilder.NONE,
                                           'minimal':EnvironmentBuilder.MINIMAL,
@@ -233,12 +233,12 @@ class EnvironmentBuilder(object):
                                           'minimal':EnvironmentBuilder.MINIMAL,
                                           'standard':EnvironmentBuilder.STANDARD,
                                           'extensive':EnvironmentBuilder.EXTENSIVE,
-                                          'maximum':EnvironmentBuilder.MAXIMUM}))            
+                                          'maximum':EnvironmentBuilder.MAXIMUM}))
       if GetPlatform() == "darwin":
          opts.Add(sca_opts.BoolOption('darwin_universal',
                                       'Build universal binaries.', False))
          opts.Add('darwin_sdk', 'Darwin Platform SDK.', '')
-   
+
    def readOptions(self, optEnv):
       """ Read the processed options from the given environment. """
       self.defaultDebugLevel   = optEnv["default_debug_level"]
@@ -253,7 +253,7 @@ class EnvironmentBuilder(object):
    def _applyOptionsToEnvironment(self, env):
       tools = env["TOOLS"]
       #print "Using tools: ", tools
-      
+
       # Find the compilers/builders we are using
       c_compiler = env["CC"]
       cxx_compiler = env["CXX"]
@@ -270,7 +270,7 @@ class EnvironmentBuilder(object):
             cxx_compiler = cxx_compiler.split()[-1]
          if linker.startswith(x):
             linker = linker.split()[-1]
-      
+
       # Based on compiler and platform
       for f in self.funcList:
          (compiler_list, platform_list, func) = f
@@ -284,7 +284,7 @@ class EnvironmentBuilder(object):
 def gcc_optimizations(bldr, env):
    if EnvironmentBuilder.NONE == bldr.optLevel:
       return
-   
+
    CCFLAGS = []
    CXXFLAGS = []
    CPPDEFINES = []
@@ -303,7 +303,7 @@ def gcc_optimizations(bldr, env):
    # Fast math
    if EnvironmentBuilder.FAST_MATH in bldr.optTags:
       CCFLAGS.append('-ffast-math')
-   
+
    # TODO: Do architecture specific optimizations here
    env.AppendUnique(CXXFLAGS = CXXFLAGS, CCFLAGS = CCFLAGS, CPPDEFINES = CPPDEFINES)
 
@@ -318,7 +318,7 @@ def gcc_debug(bldr, env):
 
 def gcc_warnings(bldr, env):
    CCFLAGS = []
-   
+
    if EnvironmentBuilder.NONE == bldr.warningLevel:
       CCFLAGS.append(['-w'])
    elif bldr.warningLevel == EnvironmentBuilder.MINIMAL:
@@ -333,12 +333,12 @@ def gcc_warnings(bldr, env):
    # warnings as errors
    if EnvironmentBuilder.WARN_AS_ERROR in bldr.debugTags:
       CCFLAGS.append(['-Werror'])
-   
+
    if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
       CCFLAGS.append(['-pedantic'])
-      
+
    env.AppendUnique(CCFLAGS = CCFLAGS)
-   
+
 def gcc_misc(bldr, env):
    if bldr.profEnabled:
       env.AppendUnique(CCFLAGS = ["-pg"], LINKFLAGS = ['-pg'])
@@ -415,16 +415,16 @@ default_funcs.append([['gcc', 'g++'], ['linux'], gcc_linux_misc])
 default_funcs.append([['gcc', 'g++'], ['darwin'], gcc_darwin_misc])
 
 # ---- Irix ---- #
-# XXX: Irix support is very minimal at this time.  
+# XXX: Irix support is very minimal at this time.
 #      I don't have access to an Irix box anymore and I don't compile
 #      code for Irix very often.  This could be easily extended to support
 #      many more features (archs, warnings, etc)
 def irix_opt(bldr, env):
    if EnvironmentBuilder.NONE == bldr.optLevel:
       return
-   
+
    CCFLAGS = []
-   
+
    if bldr.optLevel == EnvironmentBuilder.MINIMAL:
       CCFLAGS.append('-O1')
    elif bldr.optLevel == EnvironmentBuilder.STANDARD:
@@ -451,11 +451,11 @@ default_funcs.append([['cc'], ['irix'], irix_debug])
 default_funcs.append([['cc'], ['irix'], irix_misc])
 
 
-# ---- MSVC ---- #      
+# ---- MSVC ---- #
 def msvc_optimizations(bldr, env):
    if EnvironmentBuilder.NONE == bldr.optLevel:
       return
-   
+
    CCFLAGS = []
    CXXFLAGS = []
    CPPDEFINES = []
@@ -475,15 +475,15 @@ def msvc_optimizations(bldr, env):
    # Fast math
    if EnvironmentBuilder.FAST_MATH in bldr.optTags:
       CCFLAGS.append(['/fp:fast'])
-   
+
    # TODO: Do architecture specific optimizations here
-   # /arch:SSE/SEE2 /G1 /G2 
+   # /arch:SSE/SEE2 /G1 /G2
    # /favor
    env.AppendUnique(CXXFLAGS = CXXFLAGS, CCFLAGS = CCFLAGS, CPPDEFINES = CPPDEFINES,
                     LINKFLAGS = LINKFLAGS)
 
 def msvc_debug(bldr, env):
-   """ TODO: Update to handle PDB debug database files. 
+   """ TODO: Update to handle PDB debug database files.
        TODO: Add support for run-time error checking.
    """
    #print "Calling msvc_debug."
@@ -494,7 +494,7 @@ def msvc_debug(bldr, env):
 
 def msvc_warnings(bldr, env):
    CCFLAGS = []
-   
+
    if EnvironmentBuilder.NONE == bldr.warningLevel:
       CCFLAGS.append(['/W0'])
    if bldr.warningLevel == EnvironmentBuilder.MINIMAL:
@@ -509,19 +509,19 @@ def msvc_warnings(bldr, env):
    # warnings as errors
    if EnvironmentBuilder.WARN_AS_ERROR in bldr.debugTags:
       CCFLAGS.append(['/WX'])
-   
+
    if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
       CCFLAGS.append(['/Za'])
-      
+
    env.AppendUnique(CCFLAGS = CCFLAGS)
-   
+
 def msvc_misc(bldr, env):
    # Runtime library
    rt_map = { EnvironmentBuilder.MSVC_MT_DLL_RT:'/MD',
               EnvironmentBuilder.MSVC_MT_DBG_DLL_RT:'/MDd',
               EnvironmentBuilder.MSVC_MT_RT:'/MT',
               EnvironmentBuilder.MSVC_MT_DBG_RT:'/MTd'
-            }   
+            }
    if rt_map.has_key(bldr.msvcRuntime):
       env.AppendUnique(CCFLAGS = [rt_map[bldr.msvcRuntime]])
 
@@ -530,7 +530,7 @@ def msvc_misc(bldr, env):
       if env.has_key("MSVC_VERSION"):
          msvc_version = env["MSVC_VERSION"]
       else:
-         msvc_version = env["MSVS"]["VERSION"] 
+         msvc_version = env["MSVS"]["VERSION"]
 
       if msvc_version >= "7.1":
          if bldr.structuredExceptionsEnabled:
@@ -543,7 +543,7 @@ def msvc_misc(bldr, env):
    # RTTI
    if bldr.rttiEnabled:
       env.AppendUnique(CCFLAGS = ["/GR"])
-      
+
    # Default defines
    env.AppendUnique(CPPDEFINES = ["_WINDOWS"])
 
@@ -588,7 +588,7 @@ def detectValidArchs():
       ret = context.TryCompile("""int main() { return 0; }""", '.c')
       context.Result( ret )
       return ret
-   
+
    valid_archs = []
    cur_arch = GetArch()
    if "ia32" == cur_arch:
@@ -596,10 +596,10 @@ def detectValidArchs():
    elif "x64" == cur_arch:
       valid_archs.append(EnvironmentBuilder.X64_ARCH)
    elif "ppc" == cur_arch:
-      valid_archs.append(EnvironmentBuilder.PPC_ARCH)   
+      valid_archs.append(EnvironmentBuilder.PPC_ARCH)
    elif "ppc64" == cur_arch:
-      valid_archs.append(EnvironmentBuilder.PPC64_ARCH)      
-   
+      valid_archs.append(EnvironmentBuilder.PPC64_ARCH)
+
    # Only handle case of using Visual C++ or GCC as the compiler for now.
    test_env = EnvironmentBuilder().buildEnvironment()
    # XXX: This is bad: GCC is not always called 'gcc'. It may also exist as
