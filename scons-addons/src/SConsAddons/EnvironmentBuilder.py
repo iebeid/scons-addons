@@ -44,11 +44,14 @@ class EnvironmentBuilder(object):
    REDUCE_SIZE = 'reduce_size'
    FAST_MATH = 'fast_math'
    ARCH_SPEC = 'arch_specific'
-   
+
    # Warning flags
    WARN_AS_ERROR = 'warn_as_error'
    WARN_STRICT   = 'warn_strict'
    
+   #debug tags
+   DISABLE_INLINE = 'disable_inline'
+
    # MSVC runtime
    MSVC_MT_DLL_RT     = "msvc_mt_dll_rt"
    MSVC_MT_DBG_DLL_RT = "msvc_mt_dbg_dll_rt"
@@ -302,14 +305,16 @@ def gcc_optimizations(bldr, env):
       CCFLAGS.append('-ffast-math')
    
    # TODO: Do architecture specific optimizations here
-   env.Append(CXXFLAGS=CXXFLAGS, CCFLAGS=CCFLAGS, CPPDEFINES=CPPDEFINES)
+   env.AppendUnique(CXXFLAGS = CXXFLAGS, CCFLAGS = CCFLAGS, CPPDEFINES = CPPDEFINES)
 
 def gcc_debug(bldr, env):
    #print "Calling gcc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
-   env.Append(CCFLAGS = ["-g", "-fno-inline"],
-              CXXFLAGS = ["-fno-implicit-inline-templates", "-fno-default-inline"])
+   env.AppendUnique(CCFLAGS = ["-g"])
+   if EnvironmentBuilder.DISABLE_INLINE in bldr.debugTags:
+      env.AppendUnique(CCFLAGS = ["-fno-inline"],
+         CXXFLAGS = ["-fno-implicit-inline-templates", "-fno-default-inline"])
 
 def gcc_warnings(bldr, env):
    CCFLAGS = []
@@ -332,15 +337,15 @@ def gcc_warnings(bldr, env):
    if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
       CCFLAGS.append(['-pedantic',])
       
-   env.Append(CCFLAGS=CCFLAGS)
+   env.AppendUnique(CCFLAGS=CCFLAGS)
    
 def gcc_misc(bldr, env):
    if bldr.profEnabled:
-      env.Append(CCFLAGS=["-pg",], LINKFLAGS=['-pg',])
+      env.AppendUnique(CCFLAGS=["-pg"], LINKFLAGS=['-pg'])
 
 def gcc_linux_misc(bldr, env):
    assert isinstance(bldr, EnvironmentBuilder)
-   env.Append(CCFLAGS = ['-pipe',])    # Add pipe to speed up compiles on Linux
+   env.AppendUnique(CCFLAGS = ['-pipe'])    # Add pipe to speed up compiles on Linux
 
    if bldr.cpuArch:
       if bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
@@ -359,7 +364,7 @@ def gcc_darwin_misc(bldr,env):
    # static universal binaries.
    env['AR'] = 'libtool'
    env['ARFLAGS'] = ['-static', '-o']
-   env.Append(CCFLAGS = ['-pipe'])
+   env.AppendUnique(CCFLAGS = ['-pipe'])
 
    # XXX: This list should be hard coded. It should contain the architectures
    # that have been detected as being valid.
@@ -370,36 +375,36 @@ def gcc_darwin_misc(bldr,env):
 
    if bldr.darwinUniversalEnabled:
       for a in universal_arch_list:
-         env.Append(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
+         env.AppendUniqie(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
    else:
       if bldr.cpuArch != None:
          if bldr.cpuArch == EnvironmentBuilder.UNIVERSAL_ARCH:
             for a in universal_arch_list:
-               env.Append(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
+               env.AppendUnique(CCFLAGS = ['-arch', a], LINKFLAGS = ['-arch', a])
          elif bldr.cpuArch == EnvironmentBuilder.X64_ARCH:
-            env.Append(CCFLAGS = ['-arch', 'x86_64'],
-                       LINKFLAGS = ['-arch', 'x86_64'])
+            env.AppendUnique(CCFLAGS = ['-arch', 'x86_64'],
+                             LINKFLAGS = ['-arch', 'x86_64'])
          elif bldr.cpuArch == EnvironmentBuilder.IA32_ARCH:
-            env.Append(CCFLAGS = ['-arch', 'i386'],
-                       LINKFLAGS = ['-arch', 'i386'])
+            env.AppendUnique(CCFLAGS = ['-arch', 'i386'],
+                             LINKFLAGS = ['-arch', 'i386'])
          elif bldr.cpuArch == EnvironmentBuilder.PPC_ARCH:
-            env.Append(CCFLAGS = ['-arch', 'ppc'],
-                       LINKFLAGS = ['-arch', 'ppc'])
+            env.AppendUnique(CCFLAGS = ['-arch', 'ppc'],
+                             LINKFLAGS = ['-arch', 'ppc'])
          elif bldr.cpuArch == EnvironmentBuilder.PPC64_ARCH:
-            env.Append(CCFLAGS = ['-arch', 'ppc64'],
-                       LINKFLAGS = ['-arch', 'ppc64'])
+            env.AppendUnique(CCFLAGS = ['-arch', 'ppc64'],
+                             LINKFLAGS = ['-arch', 'ppc64'])
          else:
             assert False, "Invalid arch used for darwin gcc."
 
    if bldr.darwinSdk != '':
-      env.Append(CCFLAGS = ['-isysroot', bldr.darwinSdk],
-                 LINKFLAGS = ['-isysroot', bldr.darwinSdk])
+      env.AppendUnique(CCFLAGS = ['-isysroot', bldr.darwinSdk],
+                       LINKFLAGS = ['-isysroot', bldr.darwinSdk])
 
       sdk_re = re.compile('MacOSX(10\..*?)u?\.sdk')
       match = sdk_re.search(bldr.darwinSdk)
       if match is not None:
          min_osx_ver = '-mmacosx-version-min=' + match.group(1)
-         env.Append(CCFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])
+         env.AppendUnique(CCFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])
 
 # GCC functions
 default_funcs.append([['gcc','g++'],[],gcc_optimizations])
@@ -429,17 +434,17 @@ def irix_opt(bldr, env):
       CCFLAGS.append('-O3')
 
    # TODO: Do architecture specific optimizations here
-   env.Append(CXXFLAGS=CXXFLAGS, CCFLAGS=CCFLAGS, CPPDEFINES=CPPDEFINES)
+   env.AppendUnique(CXXFLAGS = CXXFLAGS, CCFLAGS = CCFLAGS, CPPDEFINES = CPPDEFINES)
 
 def irix_debug(bldr, env):
    #print "Calling gcc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
-   env.Append(CCFLAGS=["-g",])
+   env.AppendUnique(CCFLAGS = ["-g"])
 
 def irix_misc(bldr, env):
    CCFLAGS = []
-   env.Append(CXXFLAGS=["-mips3","-LANG:std","-n32"])
+   env.AppendUnique(CXXFLAGS = ["-mips3", "-LANG:std", "-n32"])
 
 default_funcs.append([['cc',],['irix'],irix_opt])
 default_funcs.append([['cc',],['irix'],irix_debug])
@@ -474,7 +479,8 @@ def msvc_optimizations(bldr, env):
    # TODO: Do architecture specific optimizations here
    # /arch:SSE/SEE2 /G1 /G2 
    # /favor
-   env.Append(CXXFLAGS=CXXFLAGS, CCFLAGS=CCFLAGS, CPPDEFINES=CPPDEFINES, LINKFLAGS=LINKFLAGS)
+   env.AppendUnique(CXXFLAGS = CXXFLAGS, CCFLAGS = CCFLAGS, CPPDEFINES = CPPDEFINES,
+                    LINKFLAGS = LINKFLAGS)
 
 def msvc_debug(bldr, env):
    """ TODO: Update to handle PDB debug database files. 
@@ -483,8 +489,8 @@ def msvc_debug(bldr, env):
    #print "Calling msvc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
-   env.Append(CCFLAGS=['/Od','/Ob0','/Z7'],
-              LINKFLAGS=['/DEBUG'])
+   env.AppendUnique(CCFLAGS = ['/Od', '/Ob0', '/Z7'],
+                    LINKFLAGS = ['/DEBUG'])
 
 def msvc_warnings(bldr, env):
    CCFLAGS = []
@@ -507,7 +513,7 @@ def msvc_warnings(bldr, env):
    if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
       CCFLAGS.append(['/Za'])
       
-   env.Append(CCFLAGS=CCFLAGS)
+   env.AppendUnique(CCFLAGS = CCFLAGS)
    
 def msvc_misc(bldr, env):
    # Runtime library
@@ -517,7 +523,7 @@ def msvc_misc(bldr, env):
               EnvironmentBuilder.MSVC_MT_DBG_RT:'/MTd'
             }   
    if rt_map.has_key(bldr.msvcRuntime):
-      env.Append(CCFLAGS=[rt_map[bldr.msvcRuntime]])
+      env.AppendUnique(CCFLAGS = [rt_map[bldr.msvcRuntime]])
 
    # Exception handling
    if bldr.exceptionsEnabled:
@@ -528,15 +534,15 @@ def msvc_misc(bldr, env):
 
       if msvc_version >= "7.1":
          if bldr.structuredExceptionsEnabled:
-            env.Append(CCFLAGS=['/EHa'])
+            env.AppendUnique(CCFLAGS = ['/EHa'])
          else:
-            env.Append(CCFLAGS=['/EHsc'])
+            env.AppendUnique(CCFLAGS = ['/EHsc'])
       else:
-         env.Append(CCFLAGS=['/GX',])
+         env.AppendUnique(CCFLAGS = ['/GX'])
 
    # RTTI
    if bldr.rttiEnabled:
-      env.Append(CCFLAGS=["/GR"])
+      env.AppendUnique(CCFLAGS = ["/GR"])
       
    # Default defines
    env.AppendUnique(CPPDEFINES = ["_WINDOWS"])
@@ -565,7 +571,7 @@ default_funcs.append([['cl'],[],msvc_misc])
 # ---- DEFAULT ---- #
 def default_debug_define(bldr,env):
    if EnvironmentBuilder.NONE != bldr.optLevel and EnvironmentBuilder.NONE == bldr.debugLevel:
-      env.Append(CPPDEFINES=["NDEBUG",])
+      env.AppendUnique(CPPDEFINES = ["NDEBUG"])
 
 default_funcs.append([[],[],default_debug_define])
 
