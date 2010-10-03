@@ -101,7 +101,7 @@ class EnvironmentBuilder(object):
    def clone(self):
       return copy.copy(self)
 
-   def buildEnvironment(self, options=None, variant=None, **kw):
+   def buildEnvironment(self, options = None, variant = None, **kw):
       """ Build an environment object and apply any options to it.
           Takes same parameters as Environment() in SCons.
           options - If passed and is instance of SCons.Options.Options, it will
@@ -112,10 +112,10 @@ class EnvironmentBuilder(object):
       if options and not isinstance(options, Options.Options):
          kw["options"] = options  
       new_env = apply(SCons.Environment.Environment, [], kw)
-      self.applyToEnvironment(new_env,variant, options)
+      self.applyToEnvironment(new_env, variant, options)
       return new_env
    
-   def applyToEnvironment(self, env, variant=None, options=None):
+   def applyToEnvironment(self, env, variant = None, options = None):
       """ Apply current builder options to an existing environment.
           Returns env argument. 
          
@@ -128,15 +128,15 @@ class EnvironmentBuilder(object):
       self._applyOptionsToEnvironment(env)
       return env
 
-   def enableDebug(self, level=None, tags=[]):
+   def enableDebug(self, level = None, tags = []):
       if not level:
          level = self.defaultDebugLevel
       self.debugLevel = level
       self.debugTags = tags
    def disableDebug(self):
-      self.enableDebug(level=EnvironmentBuilder.NONE)
+      self.enableDebug(level = EnvironmentBuilder.NONE)
       
-   def enableOpt(self, level=None, tags=[]):
+   def enableOpt(self, level = None, tags = []):
       if not level:
          level = self.defaultOptLevel
       self.optLevel = level
@@ -144,12 +144,12 @@ class EnvironmentBuilder(object):
    def disableOpt(self):
       self.enableOpt(EnvironmentBuilder.NONE)
       
-   def enableProfiling(self, val=True):
+   def enableProfiling(self, val = True):
       self.profEnabled = val
    def disableProfiling(self):
       self.enableProfiling(False)
    
-   def enableWarnings(self, level=None, tags=[]):
+   def enableWarnings(self, level = None, tags = []):
       if level is None:
          level = self.defaultWarningLevel
       self.warningLevel = level
@@ -157,22 +157,22 @@ class EnvironmentBuilder(object):
    def disableWarnings(self):
       self.enableWarnings(EnvironmentBuilder.NONE)
    
-   def enableExceptions(self, val=True):
+   def enableExceptions(self, val = True):
       self.exceptionsEnabled = val
    def disableExceptions(self):
       self.enableExceptions(False)
       
-   def enableStructuredExceptions(self, val=True):
+   def enableStructuredExceptions(self, val = True):
       self.structuredExceptionsEnabled = val
    def disableStructuredExceptions(self):
       self.enableStructuredExceptions(False)
       
-   def enableRTTI(self, val=True):
+   def enableRTTI(self, val = True):
       self.rttiEnabled = val
    def disableRTTI(self):
       self.enableRTTI(False)
       
-   def setCpuArch(self, val=AUTODETECT_ARCH):
+   def setCpuArch(self, val = AUTODETECT_ARCH):
       if val != EnvironmentBuilder.AUTODETECT_ARCH:
          self.cpuArch = val
       else:
@@ -183,7 +183,7 @@ class EnvironmentBuilder(object):
          self.cpuArch = arch_map.get(GetArch(), EnvironmentBuilder.AUTODETECT_ARCH)
 
    # ---- Darwin specific ----- #
-   def darwin_enableUniversalBinaries(self, val=True):
+   def darwin_enableUniversalBinaries(self, val = True):
       self.darwinUniversalEnabled = val
    def darwin_disableUniversalBinaries(self):
       self.darwin_enableUniversalBinaries(False)
@@ -211,7 +211,7 @@ class EnvironmentBuilder(object):
       opts.AddOption(sca_opts.EnumOption('default_debug_level',
                                          'Default debug level for environment builder.',
                                          'standard', 
-                                         ['none','minimal','standard','extensive','maximum'],
+                                         ['none', 'minimal', 'standard', 'extensive', 'maximum'],
                                          {'none':EnvironmentBuilder.NONE,
                                           'minimal':EnvironmentBuilder.MINIMAL,
                                           'standard':EnvironmentBuilder.STANDARD,
@@ -220,7 +220,7 @@ class EnvironmentBuilder(object):
       opts.AddOption(sca_opts.EnumOption('default_opt_level',
                                          'Default optimization level for environment builder.',
                                          'standard', 
-                                         ['none','minimal','standard','extensive','maximum'],
+                                         ['none', 'minimal', 'standard', 'extensive', 'maximum'],
                                          {'none':EnvironmentBuilder.NONE,
                                           'minimal':EnvironmentBuilder.MINIMAL,
                                           'standard':EnvironmentBuilder.STANDARD,
@@ -258,12 +258,12 @@ class EnvironmentBuilder(object):
       c_compiler = env["CC"]
       cxx_compiler = env["CXX"]
       linker = env["LINK"]
-      # one of: ['cygwin','irix','sunos','linux','freebsd','darwin','win32']
+      # one of: ['cygwin', 'irix', 'sunos', 'linux', 'freebsd', 'darwin', 'win32']
       platform = GetPlatform()
 
       # Special case for compiler callers like distcc
       # XXX: This is a bit of a hack, but it will work for now
-      for x in ["distcc",]:
+      for x in ["distcc"]:
          if c_compiler.startswith(x):
             c_compiler = c_compiler.split()[-1]
          if cxx_compiler.startswith(x):
@@ -273,9 +273,9 @@ class EnvironmentBuilder(object):
       
       # Based on compiler and platform
       for f in self.funcList:
-         (compiler_list,platform_list, func) = f
-         if (len(compiler_list)==0) or (c_compiler in compiler_list) or (cxx_compiler in compiler_list):
-            if (len(platform_list)==0) or (platform in platform_list):
+         (compiler_list, platform_list, func) = f
+         if len(compiler_list) == 0 or c_compiler in compiler_list or cxx_compiler in compiler_list:
+            if len(platform_list) == 0 or platform in platform_list:
                func(self, env)
 
 
@@ -296,8 +296,8 @@ def gcc_optimizations(bldr, env):
          CCFLAGS.append('-O1')
       elif bldr.optLevel == EnvironmentBuilder.STANDARD:
          CCFLAGS.append('-O2')
-      elif ((bldr.optLevel == EnvironmentBuilder.EXTENSIVE) or
-            (bldr.optLevel == EnvironmentBuilder.MAXIMUM)):
+      elif (bldr.optLevel == EnvironmentBuilder.EXTENSIVE or
+            bldr.optLevel == EnvironmentBuilder.MAXIMUM):
          CCFLAGS.append('-O3')
 
    # Fast math
@@ -320,28 +320,28 @@ def gcc_warnings(bldr, env):
    CCFLAGS = []
    
    if EnvironmentBuilder.NONE == bldr.warningLevel:
-      CCFLAGS.append(['-w',])
+      CCFLAGS.append(['-w'])
    elif bldr.warningLevel == EnvironmentBuilder.MINIMAL:
       pass
    elif bldr.warningLevel == EnvironmentBuilder.STANDARD:
-      CCFLAGS.append(['-Wall',])
+      CCFLAGS.append(['-Wall'])
    elif bldr.warningLevel == EnvironmentBuilder.EXTENSIVE:
-      CCFLAGS.append(['-Wall','-Wextra'])
+      CCFLAGS.append(['-Wall', '-Wextra'])
    elif bldr.warningLevel == EnvironmentBuilder.MAXIMUM:
-      CCFLAGS.extend(['-Wall','-Wextra'])
+      CCFLAGS.extend(['-Wall', '-Wextra'])
 
    # warnings as errors
    if EnvironmentBuilder.WARN_AS_ERROR in bldr.debugTags:
-      CCFLAGS.append(['-Werror',])
+      CCFLAGS.append(['-Werror'])
    
    if EnvironmentBuilder.WARN_STRICT in bldr.debugTags:
-      CCFLAGS.append(['-pedantic',])
+      CCFLAGS.append(['-pedantic'])
       
-   env.AppendUnique(CCFLAGS=CCFLAGS)
+   env.AppendUnique(CCFLAGS = CCFLAGS)
    
 def gcc_misc(bldr, env):
    if bldr.profEnabled:
-      env.AppendUnique(CCFLAGS=["-pg"], LINKFLAGS=['-pg'])
+      env.AppendUnique(CCFLAGS = ["-pg"], LINKFLAGS = ['-pg'])
 
 def gcc_linux_misc(bldr, env):
    assert isinstance(bldr, EnvironmentBuilder)
@@ -357,7 +357,7 @@ def gcc_linux_misc(bldr, env):
       else:
          assert False, "Invalid arch used for Linux gcc."
 
-def gcc_darwin_misc(bldr,env):
+def gcc_darwin_misc(bldr, env):
    assert isinstance(bldr, EnvironmentBuilder)
 
    # We use libtool(1) here instead of ar(1) to ensure that we can build
@@ -407,12 +407,12 @@ def gcc_darwin_misc(bldr,env):
          env.AppendUnique(CCFLAGS = [min_osx_ver], LINKFLAGS = [min_osx_ver])
 
 # GCC functions
-default_funcs.append([['gcc','g++'],[],gcc_optimizations])
-default_funcs.append([['gcc','g++'],[],gcc_debug])
-default_funcs.append([['gcc','g++'],[],gcc_warnings])
-default_funcs.append([['gcc','g++'],[],gcc_misc])
-default_funcs.append([['gcc','g++'],['linux'],gcc_linux_misc])
-default_funcs.append([['gcc','g++'],['darwin'],gcc_darwin_misc])
+default_funcs.append([['gcc', 'g++'], [], gcc_optimizations])
+default_funcs.append([['gcc', 'g++'], [], gcc_debug])
+default_funcs.append([['gcc', 'g++'], [], gcc_warnings])
+default_funcs.append([['gcc', 'g++'], [], gcc_misc])
+default_funcs.append([['gcc', 'g++'], ['linux'], gcc_linux_misc])
+default_funcs.append([['gcc', 'g++'], ['darwin'], gcc_darwin_misc])
 
 # ---- Irix ---- #
 # XXX: Irix support is very minimal at this time.  
@@ -429,8 +429,8 @@ def irix_opt(bldr, env):
       CCFLAGS.append('-O1')
    elif bldr.optLevel == EnvironmentBuilder.STANDARD:
       CCFLAGS.append('-O2')
-   elif ((bldr.optLevel == EnvironmentBuilder.EXTENSIVE) or
-         (bldr.optLevel == EnvironmentBuilder.MAXIMUM)):
+   elif (bldr.optLevel == EnvironmentBuilder.EXTENSIVE or
+         bldr.optLevel == EnvironmentBuilder.MAXIMUM):
       CCFLAGS.append('-O3')
 
    # TODO: Do architecture specific optimizations here
@@ -446,9 +446,9 @@ def irix_misc(bldr, env):
    CCFLAGS = []
    env.AppendUnique(CXXFLAGS = ["-mips3", "-LANG:std", "-n32"])
 
-default_funcs.append([['cc',],['irix'],irix_opt])
-default_funcs.append([['cc',],['irix'],irix_debug])
-default_funcs.append([['cc',],['irix'],irix_misc])
+default_funcs.append([['cc'], ['irix'], irix_opt])
+default_funcs.append([['cc'], ['irix'], irix_debug])
+default_funcs.append([['cc'], ['irix'], irix_misc])
 
 
 # ---- MSVC ---- #      
@@ -459,17 +459,17 @@ def msvc_optimizations(bldr, env):
    CCFLAGS = []
    CXXFLAGS = []
    CPPDEFINES = []
-   LINKFLAGS = ["/RELEASE",]
+   LINKFLAGS = ["/RELEASE"]
 
    if EnvironmentBuilder.REDUCE_SIZE in bldr.optTags:
       CCFLAGS.extend(['/O1'])
    else:
       if bldr.optLevel == EnvironmentBuilder.MINIMAL:
-         CCFLAGS.extend(['/Ot','/Og'])
+         CCFLAGS.extend(['/Ot', '/Og'])
       elif bldr.optLevel == EnvironmentBuilder.STANDARD:
          CCFLAGS.append(['/O2'])
-      elif ((bldr.optLevel == EnvironmentBuilder.EXTENSIVE) or
-            (bldr.optLevel == EnvironmentBuilder.MAXIMUM)):
+      elif (bldr.optLevel == EnvironmentBuilder.EXTENSIVE or
+            bldr.optLevel == EnvironmentBuilder.MAXIMUM):
          CCFLAGS.append(['/Ox'])
 
    # Fast math
@@ -563,17 +563,17 @@ def msvc_misc(bldr, env):
                        LINKFLAGS = '/MACHINE:X86')
 
 # MSVC functions
-default_funcs.append([['cl'],[],msvc_optimizations])
-default_funcs.append([['cl'],[],msvc_debug])
-default_funcs.append([['cl'],[],msvc_warnings])
-default_funcs.append([['cl'],[],msvc_misc])
+default_funcs.append([['cl'], [], msvc_optimizations])
+default_funcs.append([['cl'], [], msvc_debug])
+default_funcs.append([['cl'], [], msvc_warnings])
+default_funcs.append([['cl'], [], msvc_misc])
 
 # ---- DEFAULT ---- #
-def default_debug_define(bldr,env):
+def default_debug_define(bldr, env):
    if EnvironmentBuilder.NONE != bldr.optLevel and EnvironmentBuilder.NONE == bldr.debugLevel:
       env.AppendUnique(CPPDEFINES = ["NDEBUG"])
 
-default_funcs.append([[],[],default_debug_define])
+default_funcs.append([[], [], default_debug_define])
 
 
 # ---- Helpers ---- #
@@ -585,7 +585,7 @@ def detectValidArchs():
    def CheckArch(context, archName):
       """ Custom config context check for checking arch in this method. """
       context.Message( 'Checking for arch [%s] ...'%archName )
-      ret = context.TryCompile("""int main() { return 0; }""",'.c')
+      ret = context.TryCompile("""int main() { return 0; }""", '.c')
       context.Result( ret )
       return ret
    
@@ -617,10 +617,10 @@ def detectValidArchs():
                      EnvironmentBuilder.UNIVERSAL_ARCH]
       if os.uname()[2][0] >= '9':
          arch_checks.insert(3, EnvironmentBuilder.X64_ARCH)
-   elif cur_arch in ["ia32","x64"]: # Check x86 platforms
+   elif cur_arch in ["ia32", "x64"]: # Check x86 platforms
       arch_checks = [EnvironmentBuilder.IA32_ARCH,
                      EnvironmentBuilder.X64_ARCH]
-   elif cur_arch in ["ppc","ppc64"]:   # Check PowerPC architectures
+   elif cur_arch in ["ppc", "ppc64"]:   # Check PowerPC architectures
       arch_checks = [EnvironmentBuilder.PPC_ARCH,
                      EnvironmentBuilder.PPC64_ARCH]
 
@@ -629,7 +629,7 @@ def detectValidArchs():
          env_bldr = EnvironmentBuilder()
          env_bldr.setCpuArch(test_arch)
          conf_env = env_bldr.buildEnvironment()
-         conf_ctxt = conf_env.Configure(custom_tests={"CheckArch":CheckArch})
+         conf_ctxt = conf_env.Configure(custom_tests = {"CheckArch":CheckArch})
          passed_test = conf_ctxt.CheckArch(test_arch)
          conf_ctxt.Finish()
          if passed_test:
