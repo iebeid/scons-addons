@@ -459,12 +459,16 @@ def msvc_optimizations(bldr, env):
    CCFLAGS = []
    CXXFLAGS = []
    CPPDEFINES = []
-   LINKFLAGS = ["/RELEASE"]
+   LINKFLAGS = []
+   if EnvironmentBuilder.NONE == bldr.debugLevel:
+      LINKFLAGS = ["/RELEASE"]
 
    if EnvironmentBuilder.REDUCE_SIZE in bldr.optTags:
       CCFLAGS.extend(['/O1'])
    else:
-      if bldr.optLevel == EnvironmentBuilder.MINIMAL:
+      if bldr.optLevel == EnvironmentBuilder.NONE:
+         CCFLAGS.extend(['/Od'])
+      elif bldr.optLevel == EnvironmentBuilder.MINIMAL:
          CCFLAGS.extend(['/Ot', '/Og'])
       elif bldr.optLevel == EnvironmentBuilder.STANDARD:
          CCFLAGS.append(['/O2'])
@@ -489,7 +493,7 @@ def msvc_debug(bldr, env):
    #print "Calling msvc_debug."
    if EnvironmentBuilder.NONE == bldr.debugLevel:
       return
-   env.AppendUnique(CCFLAGS = ['/Od', '/Ob0', '/Z7'],
+   env.AppendUnique(CCFLAGS = ['/Ob0', '/Z7'],
                     LINKFLAGS = ['/DEBUG'])
 
 def msvc_warnings(bldr, env):
