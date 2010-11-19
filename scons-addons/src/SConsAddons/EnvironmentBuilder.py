@@ -453,9 +453,6 @@ default_funcs.append([['cc'], ['irix'], irix_misc])
 
 # ---- MSVC ---- #
 def msvc_optimizations(bldr, env):
-   if EnvironmentBuilder.NONE == bldr.optLevel:
-      return
-
    CCFLAGS = []
    CXXFLAGS = []
    CPPDEFINES = []
@@ -477,7 +474,7 @@ def msvc_optimizations(bldr, env):
          CCFLAGS.append(['/Ox'])
 
    # Fast math
-   if EnvironmentBuilder.FAST_MATH in bldr.optTags:
+   if EnvironmentBuilder.FAST_MATH in bldr.optTags and bldr.optLevel != EnvironmentBuilder.NONE:
       CCFLAGS.append(['/fp:fast'])
 
    # TODO: Do architecture specific optimizations here
