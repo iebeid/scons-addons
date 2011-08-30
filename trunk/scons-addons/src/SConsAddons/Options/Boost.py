@@ -522,7 +522,11 @@ class Boost(SConsAddons.Options.PackageOption):
       env.AppendUnique(CPPDEFINES = self.found_defines,
                        LIBPATH = self.found_lib_paths)
       if not self.autoLink:
-         full_libs = [self.getFullLibName(l,env, useDebug) for l in self.lib_names if 'python' != l]         
+         if libs is not None:
+            lib_names = libs
+         else:
+            lib_names = self.lib_names
+         full_libs = [self.getFullLibName(l,env, useDebug) for l in lib_names if 'python' != l]         
          env.AppendUnique(LIBS = full_libs)      
 
 
