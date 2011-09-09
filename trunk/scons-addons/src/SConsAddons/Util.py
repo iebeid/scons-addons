@@ -74,7 +74,7 @@ def GetArch():
       if re.search(r'i.86', platform) or platform == "win32":
          arch = 'ia32'
       # x86_64 (aka, x64, EM64T)
-      elif re.search(r'x86_64', platform) or platform == "win64":
+      elif re.search(r'x86_64', platform) or platform in ("win64", "win-amd64"):
          arch = 'x64'
       # IA64, aka Itanium
       elif re.search(r'ia64', platform):
