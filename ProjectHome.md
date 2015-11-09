@@ -1,0 +1,1 @@
+A collection of classes and functions built on the SCons APIs to further speed up the process of creating cross-platform build systems.
